@@ -2,6 +2,7 @@
   import { login as authLogin, currentUser } from '$lib/stores/auth';
   import { authApi } from '$lib/api';
   import { goto } from '$app/navigation';
+  import Logo from '../../logo.png';
 
   let username = $state('admin');
   let password = $state('');
@@ -31,6 +32,7 @@
 
 <div class="login-container">
   <div class="login-card">
+    <img src={Logo} alt="Cinar Sistemas" class="login-logo" />
     <h1>Cinar Sistemas 2026</h1>
     <h2>Iniciar Sesión</h2>
 
@@ -71,6 +73,13 @@
     width: 100%;
     max-width: 400px;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  .login-logo {
+    display: block;
+    margin: 0 auto 1rem;
+    max-width: 120px;
+    height: auto;
   }
 
   h1 {

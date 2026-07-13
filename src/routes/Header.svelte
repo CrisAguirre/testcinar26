@@ -1,6 +1,7 @@
 <script lang="ts">
   import { isAuthenticated, currentUser, logout } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
+  import Logotipo from '../Logotipo.png';
 
   function handleLogout() {
     logout();
@@ -10,6 +11,7 @@
 
 <header>
   <div class="brand">
+    <img src={Logotipo} alt="Cinar Sistemas" class="logotipo" />
     <h1>Cinar Sistemas</h1>
   </div>
 
@@ -40,6 +42,17 @@
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(8px);
     border-bottom: 1px solid #e5e7eb;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .logotipo {
+    height: 32px;
+    width: auto;
   }
 
   .brand h1 {

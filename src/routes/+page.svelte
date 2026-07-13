@@ -93,7 +93,7 @@
 
 {#if $isAuthenticated}
   <div class="dashboard">
-    <h1>Bienvenido, {$currentUser?.full_name || $currentUser?.username}</h1>
+    <h1>Bienvenid@, {$currentUser?.full_name || $currentUser?.username}</h1>
     <p class="role-badge">Rol: {$currentUser?.role}</p>
 
     <div class="card">

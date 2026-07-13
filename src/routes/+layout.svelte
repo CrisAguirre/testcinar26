@@ -23,7 +23,7 @@
   </main>
 
   <footer>
-    <p>Cinar Sistemas 2026 &mdash;Desarrollo Web 1</p>
+    <p>Cinar Sistemas 2026 &mdash;</p>
   </footer>
 </div>
 

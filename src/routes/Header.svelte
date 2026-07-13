@@ -12,7 +12,6 @@
 <header>
   <div class="brand">
     <img src={Logotipo} alt="Cinar Sistemas" class="logotipo" />
-    <h1>Cinar Sistemas</h1>
   </div>
 
   <nav>
@@ -51,12 +50,6 @@
   .logotipo {
     height: 32px;
     width: auto;
-  }
-
-  .brand h1 {
-    font-size: 1.1rem;
-    margin: 0;
-    color: white;
   }
 
   nav {

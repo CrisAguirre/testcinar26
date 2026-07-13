@@ -241,13 +241,13 @@
       </div>
     {/if}
 
-    <div class="subject-card" onclick={() => window.location.href='/desarrollo-web-1'}>
+    <div class="subject-card">
       <div class="subject-card-inner">
         <div class="subject-icon">&#128218;</div>
         <h2>Desarrollo Web 1</h2>
-        <p class="subject-desc">Ingresa a la asignatura para ver tus evaluaciones</p>
+        <p class="subject-desc">Accede a tus evaluaciones desde los botones abajo</p>
         <div class="subject-exams">
-          <div class="exam-card" onclick={(e) => { e.stopPropagation(); window.location.href='/desarrollo-web-1/parcial-1'; }}>
+          <div class="exam-card" onclick={() => window.location.href='/desarrollo-web-1/parcial-1'}>
             <span class="exam-icon">&#128221;</span>
             <span class="exam-label">Parcial 1</span>
             <span class="exam-arrow">&#8594;</span>

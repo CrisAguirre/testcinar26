@@ -39,9 +39,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem 1.5rem;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--color-theme-2);
   }
 
   .brand {
@@ -58,7 +56,7 @@
   .brand h1 {
     font-size: 1.1rem;
     margin: 0;
-    color: var(--color-theme-1);
+    color: white;
   }
 
   nav {
@@ -77,14 +75,14 @@
 
   a {
     text-decoration: none;
-    color: var(--color-text);
+    color: white;
     font-weight: 600;
     font-size: 0.9rem;
-    transition: color 0.2s;
+    transition: opacity 0.2s;
   }
 
   a:hover {
-    color: var(--color-theme-1);
+    opacity: 0.8;
   }
 
   .user-info {
@@ -95,22 +93,22 @@
 
   .username {
     font-size: 0.85rem;
-    color: #666;
+    color: rgba(255, 255, 255, 0.85);
   }
 
   .logout-btn {
     padding: 0.4rem 0.85rem;
-    background: none;
-    border: 2px solid #e5e7eb;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.4);
     border-radius: 6px;
     font-size: 0.8rem;
     cursor: pointer;
     transition: all 0.2s;
-    color: #666;
+    color: white;
   }
 
   .logout-btn:hover {
-    border-color: #dc2626;
-    color: #dc2626;
+    background: rgba(255, 255, 255, 0.3);
+    border-color: white;
   }
 </style>

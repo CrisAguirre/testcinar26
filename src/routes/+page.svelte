@@ -425,19 +425,57 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 10px;
-    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     backdrop-filter: blur(4px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .exam-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+    background-size: 200% 200%;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .exam-card:hover::before {
+    opacity: 1;
+    animation: cardShine 0.8s ease forwards;
+  }
+
+  @keyframes cardShine {
+    0%   { background-position: 200% 200%; }
+    100% { background-position: -200% -200%; }
   }
 
   .exam-card:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: translateX(6px);
+    background: rgba(255, 255, 255, 0.22);
+    transform: translateY(-3px) scale(1.02);
     border-color: rgba(255, 255, 255, 0.5);
+    box-shadow:
+      0 8px 30px rgba(0,0,0,0.15),
+      0 0 0 1px rgba(255,255,255,0.2);
+  }
+
+  .exam-card:active {
+    transform: translateY(-1px) scale(1);
+  }
+
+  .exam-card .exam-arrow {
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .exam-card:hover .exam-arrow {
+    transform: translateX(4px);
   }
 
   .exam-icon {

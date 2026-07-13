@@ -5,7 +5,7 @@
 
   function handleLogout() {
     logout();
-    goto('/');
+    goto('/login');
   }
 </script>
 
@@ -18,7 +18,9 @@
     {#if $isAuthenticated}
       <ul>
         <li><a href="/">Inicio</a></li>
-        <li><a href="/dashboard">Calificaciones</a></li>
+        {#if $currentUser?.role === 'admin'}
+          <li><a href="/dashboard">Calificaciones</a></li>
+        {/if}
       </ul>
       <div class="user-info">
         <span class="username">{$currentUser?.full_name || $currentUser?.username}</span>

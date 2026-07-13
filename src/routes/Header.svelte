@@ -11,7 +11,7 @@
 
 <header>
   <div class="brand">
-    <img src={Logotipo} alt="Cinar Sistemas" class="logotipo" />
+    <a href="/"><img src={Logotipo} alt="Cinar Sistemas" class="logotipo" /></a>
   </div>
 
   <nav>

@@ -37,6 +37,10 @@
 
   function getAttemptCount(): number {
     if (loadingServer) return getLocalAttempts().length;
+    if (serverAttempts === 0) {
+      try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(DETAIL_KEY); } catch {}
+      return 0;
+    }
     return Math.max(serverAttempts, getLocalAttempts().length);
   }
 

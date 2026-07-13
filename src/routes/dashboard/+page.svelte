@@ -184,11 +184,17 @@
   }
 
   async function resetAttempts() {
-    const examGrades = grades.filter((g: any) => g.subject === 'Desarrollo Web 1 - Parcial 1');
-    if (examGrades.length === 0) {
-      if (!confirm('No hay calificaciones de "Desarrollo Web 1 - Parcial 1" en el servidor. ¿Limpiar localStorage del navegador actual de todos modos?')) return;
+    const examGrades = grades.filter(
+      (g: any) => g.subject === 'Desarrollo Web 1 - Parcial 1' && g.student?._id !== $currentUser?.id
+    );
+    const adminGrade = grades.find(
+      (g: any) => g.subject === 'Desarrollo Web 1 - Parcial 1' && g.student?._id === $currentUser?.id
+    );
+    const toDelete = examGrades.length;
+    if (toDelete === 0) {
+      if (!confirm('No hay calificaciones de estudiantes para "Desarrollo Web 1 - Parcial 1" en el servidor.')) return;
     } else {
-      if (!confirm(`¿Eliminar ${examGrades.length} calificaciones de "Desarrollo Web 1 - Parcial 1" del servidor y reiniciar los intentos?`)) return;
+      if (!confirm(`¿Eliminar ${toDelete} calificaciones de estudiantes para "Desarrollo Web 1 - Parcial 1" y reiniciar los intentos? (tu calificación como admin se conserva)`)) return;
     }
 
     resetting = true;
@@ -199,7 +205,7 @@
       localStorage.removeItem('parcial1_attempts');
       localStorage.removeItem('parcial1_details');
       grades = await gradesApi.getAll({});
-      alert(`Intentos reiniciados. Se eliminaron ${examGrades.length} registros del servidor y los datos locales.`);
+      alert(`Intentos reiniciados. Se eliminaron ${toDelete} registros del servidor (se conservó ${adminGrade ? '1 registro del administrador' : '0 del administrador'}).`);
     } catch (err) {
       error = err instanceof Error ? err.message : 'Error al reiniciar intentos';
     } finally {

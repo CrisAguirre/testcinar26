@@ -1,13 +1,10 @@
 <script lang="ts">
   import { isAuthenticated } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
 
   let searchQuery = $state('');
   let visibleCategories = $state<Set<number>>(new Set());
-  let categoryRefs = $state<Map<number, HTMLElement>>(new Map());
-  let mouseX = $state(0);
-  let mouseY = $state(0);
+  let categoryRefs = new Map<number, HTMLElement>();
   let heroGlowX = $state(50);
   let heroGlowY = $state(50);
 
@@ -93,14 +90,23 @@
     return map[tag] || '';
   }
 
-  function setCatRef(index: number) {
-    return (el: HTMLElement | null) => {
-      if (el) { categoryRefs.set(index, el); }
+  let observer: IntersectionObserver | null = null;
+
+  function setCatRef(node: HTMLElement, index: number) {
+    node.setAttribute('data-cat-index', String(index));
+    categoryRefs.set(index, node);
+    if (observer) observer.observe(node);
+    return {
+      destroy() {
+        categoryRefs.delete(index);
+        if (observer) observer.unobserve(node);
+      }
     };
   }
 
-  onMount(() => {
-    const observer = new IntersectionObserver(
+  $effect(() => {
+    if (typeof IntersectionObserver === 'undefined') return;
+    observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           const idx = Number(entry.target.getAttribute('data-cat-index'));
@@ -113,12 +119,9 @@
       { threshold: 0.15 }
     );
 
-    for (const [idx, el] of categoryRefs) {
-      el.setAttribute('data-cat-index', String(idx));
-      observer.observe(el);
-    }
+    for (const [, el] of categoryRefs) observer.observe(el);
 
-    return () => observer.disconnect();
+    return () => observer?.disconnect();
   });
 
   function handleMouseMove(e: MouseEvent) {
@@ -233,6 +236,7 @@
     text-align: center;
     overflow: hidden;
     isolation: isolate;
+    border-radius: 0 0 32px 32px;
   }
 
   .hero-bg {
@@ -242,6 +246,7 @@
     background-size: 200% 200%;
     animation: heroShift 12s ease-in-out infinite alternate;
     z-index: 0;
+    border-radius: inherit;
   }
 
   @keyframes heroShift {

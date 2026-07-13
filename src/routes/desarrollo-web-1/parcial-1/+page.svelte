@@ -1,6 +1,26 @@
 <script lang="ts">
   import { selectRandomQuestions } from '$lib/data/parcial1';
+  import { gradesApi } from '$lib/api';
+  import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
+
+  const STORAGE_KEY = 'parcial1_attempts';
+  const DETAIL_KEY = 'parcial1_details';
+
+  const EXAM_DATE = new Date(2026, 6, 15);
+  const WINDOW1_END = new Date(2026, 6, 15, 18, 45);
+  const WINDOW2_START = new Date(2026, 6, 15, 18, 45);
+  const WINDOW2_END = new Date(2026, 6, 15, 20, 0);
+
+  interface AttemptRecord {
+    date: string;
+    mcScore: number;
+    mcTotal: number;
+    openCount: number;
+    tabSwitches: number;
+    timeUsed: number;
+    gradeId?: string;
+  }
 
   let started = $state(false);
   let finished = $state(false);
@@ -16,8 +36,42 @@
   let pendingOpen = $state(0);
   let results = $state<Record<number, { correct: boolean; userAnswer: any; correctAnswer: any }>>({});
 
+  let attempts = $state<AttemptRecord[]>([]);
+  let currentAttemptNumber = $state(0);
+
   const totalQuestions = 20;
   const totalTime = 45 * 60;
+
+  function getAttempts(): AttemptRecord[] {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch { return []; }
+  }
+
+  function saveAttempt(record: AttemptRecord) {
+    const list = getAttempts();
+    list.push(record);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    attempts = list;
+  }
+
+  function getAvailableSlots(): { total: number; used: number; remaining: number; windowLabel: string; enabled: boolean } {
+    const now = new Date();
+    const used = getAttempts().length;
+
+    if (now < WINDOW1_END) {
+      return { total: 2, used: Math.min(used, 2), remaining: Math.max(0, 2 - used), windowLabel: 'Antes del examen (hasta 18:45)', enabled: used < 2 };
+    } else if (now >= WINDOW2_START && now < WINDOW2_END) {
+      const usedInWindow2 = Math.max(0, used - 2);
+      return { total: 2, used: usedInWindow2, remaining: Math.max(0, 2 - usedInWindow2), windowLabel: 'Ventana de examen (18:45 - 20:00)', enabled: used < 4 };
+    } else {
+      const allUsed = used >= 4;
+      return { total: 4, used, remaining: 0, windowLabel: 'Fuera de la ventana de examen', enabled: false };
+    }
+  }
+
+  let slots = $state(getAvailableSlots());
 
   $effect(() => {
     if (timeLeft <= 0 && started && !finished) {
@@ -44,6 +98,9 @@
     currentIndex = 0;
     timeLeft = totalTime;
     tabSwitchCount = 0;
+
+    const all = getAttempts();
+    currentAttemptNumber = all.length + 1;
 
     timerInterval = setInterval(() => {
       timeLeft--;
@@ -72,7 +129,7 @@
     return answers[qId] !== undefined && answers[qId] !== '';
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (timerInterval) {
       clearInterval(timerInterval);
       timerInterval = null;
@@ -100,6 +157,52 @@
     pendingOpen = openCount;
     results = res;
     finished = true;
+
+    const attemptRecord: AttemptRecord = {
+      date: new Date().toISOString(),
+      mcScore: score,
+      mcTotal: totalMc,
+      openCount,
+      tabSwitches: tabSwitchCount,
+      timeUsed: totalTime - timeLeft
+    };
+
+    saveAttempt(attemptRecord);
+
+    const detailData = {
+      attempt: attemptRecord,
+      questions: questions.map(q => ({
+        id: q.id,
+        tema: q.tema,
+        type: q.type,
+        question: q.question,
+        options: q.type === 'mc' ? q.options : undefined,
+        correctAnswer: q.type === 'mc' ? q.answer : undefined,
+        userAnswer: answers[q.id]
+      }))
+    };
+    const allDetails = JSON.parse(localStorage.getItem(DETAIL_KEY) || '[]');
+    allDetails.push(detailData);
+    localStorage.setItem(DETAIL_KEY, JSON.stringify(allDetails));
+
+    if ($currentUser?._id) {
+      try {
+        const grade = await gradesApi.create({
+          student: $currentUser._id,
+          subject: 'Desarrollo Web 1 - Parcial 1',
+          score,
+          max_score: totalMc,
+          period: '2026-1',
+          comments: `Intento ${getAttempts().length} | Preguntas abiertas: ${openCount} | Cambios de pestaña: ${tabSwitchCount} | Tiempo usado: ${formatTime(totalTime - timeLeft)}`
+        });
+        attemptRecord.gradeId = grade._id;
+        saveAttempt(attemptRecord);
+      } catch (err) {
+        console.error('Error al guardar calificación:', err);
+      }
+    }
+
+    slots = getAvailableSlots();
   }
 
   onDestroy(() => {
@@ -123,42 +226,122 @@
         <h1>Parcial 1 - Desarrollo Web 1</h1>
         <p class="welcome-subtitle">Evaluación de conocimientos</p>
 
-        <div class="recommendations">
-          <h2>📌 Recomendaciones importantes</h2>
-          <ul>
-            <li>
-              <strong>⏱ Tiempo límite:</strong> Dispondrás de <strong>45 minutos</strong> para completar las 20 preguntas.
-              El examen se enviará automáticamente al cumplirse el tiempo.
-            </li>
-            <li>
-              <strong>📝 Tipos de preguntas:</strong> El examen incluye preguntas de <strong>selección múltiple</strong>
-              (con una única respuesta correcta) y preguntas <strong>abiertas</strong> (respuesta escrita).
-            </li>
-            <li>
-              <strong>✅ Corrección automática (selección múltiple):</strong> Al finalizar el examen, las preguntas
-              de selección múltiple se calificarán automáticamente y verás tu resultado de inmediato.
-            </li>
-            <li>
-              <strong>⏳ Revisión manual (abiertas):</strong> Las preguntas abiertas serán revisadas y calificadas
-              posteriormente por el administrador del sitio.
-            </li>
-            <li>
-              <strong>🚫 Sin consultas externas:</strong> No está permitido cambiar de pestaña o ventana para consultar
-              en Google u otros recursos. El sistema detectará los cambios de pestaña.
-            </li>
-            <li>
-              <strong>✅ Navegación:</strong> Puedes navegar entre preguntas usando los botones Anterior/Siguiente
-              o el índice de preguntas. Las preguntas respondidas se marcarán en verde.
-            </li>
-            <li>
-              <strong>📊 Progreso:</strong> Revisa la barra de progreso para saber cuántas preguntas has respondido.
-            </li>
-          </ul>
+        <div class="attempts-section">
+          <h2>🎯 Intentos disponibles</h2>
+          <p class="attempts-info">Dispones de <strong>4 intentos</strong> en total para este examen.</p>
+          <div class="attempts-grid">
+            <div class="attempt-card {slots.remaining > 0 && slots.used < 2 ? 'available' : 'used'}">
+              <div class="attempt-number">Intento 1</div>
+              <div class="attempt-status">
+                {#if attempts.length >= 1}
+                  <span class="used-badge">✓ Utilizado</span>
+                {:else if slots.remaining > 0 && slots.used < 2}
+                  <span class="ready-badge">Disponible</span>
+                {:else}
+                  <span class="blocked-badge">—</span>
+                {/if}
+              </div>
+            </div>
+            <div class="attempt-card {slots.remaining > 0 && slots.used < 2 ? 'available' : 'used'}">
+              <div class="attempt-number">Intento 2</div>
+              <div class="attempt-status">
+                {#if attempts.length >= 2}
+                  <span class="used-badge">✓ Utilizado</span>
+                {:else if slots.remaining > 0 && slots.used < 2}
+                  <span class="ready-badge">Disponible</span>
+                {:else}
+                  <span class="blocked-badge">—</span>
+                {/if}
+              </div>
+            </div>
+            <div class="attempt-card {slots.enabled && slots.used >= 2 ? 'available' : (attempts.length >= 3 ? 'used' : 'blocked')}">
+              <div class="attempt-number">Intento 3</div>
+              <div class="attempt-status">
+                {#if attempts.length >= 3}
+                  <span class="used-badge">✓ Utilizado</span>
+                {:else if slots.enabled && slots.used >= 2}
+                  <span class="ready-badge">Disponible</span>
+                {:else}
+                  <span class="blocked-badge">Bloqueado</span>
+                {/if}
+              </div>
+            </div>
+            <div class="attempt-card {slots.enabled && slots.used >= 3 ? 'available' : (attempts.length >= 4 ? 'used' : 'blocked')}">
+              <div class="attempt-number">Intento 4</div>
+              <div class="attempt-status">
+                {#if attempts.length >= 4}
+                  <span class="used-badge">✓ Utilizado</span>
+                {:else if slots.enabled && slots.used >= 3}
+                  <span class="ready-badge">Disponible</span>
+                {:else}
+                  <span class="blocked-badge">Bloqueado</span>
+                {/if}
+              </div>
+            </div>
+          </div>
+          <div class="window-info">
+            <strong>📅 Ventana 1 (Intentos 1-2):</strong> Hasta el 15 de julio, 18:45<br>
+            <strong>📅 Ventana 2 (Intentos 3-4):</strong> 15 de julio, 18:45 - 20:00
+          </div>
         </div>
 
-        <button onclick={startExam} class="start-btn">
-          Comenzar Examen
-        </button>
+        {#if attempts.length > 0}
+          <div class="previous-attempts">
+            <h2>📊 Intentos anteriores</h2>
+            {#each attempts as att, i}
+              <div class="attempt-history-item">
+                <span class="attempt-label">Intento {i + 1}</span>
+                <span class="attempt-meta">{new Date(att.date).toLocaleString('es-CO')}</span>
+                <span class="attempt-meta">MC: {att.mcScore}/{att.mcTotal}</span>
+                <span class="attempt-meta">Abiertas: {att.openCount}</span>
+              </div>
+            {/each}
+          </div>
+        {/if}
+
+        {#if slots.remaining > 0}
+          <div class="recommendations">
+            <h2>📌 Recomendaciones importantes</h2>
+            <ul>
+              <li>
+                <strong>⏱ Tiempo límite:</strong> Dispondrás de <strong>45 minutos</strong> para completar las 20 preguntas.
+                El examen se enviará automáticamente al cumplirse el tiempo.
+              </li>
+              <li>
+                <strong>📝 Tipos de preguntas:</strong> El examen incluye preguntas de <strong>selección múltiple</strong>
+                (con una única respuesta correcta) y preguntas <strong>abiertas</strong> (respuesta escrita).
+              </li>
+              <li>
+                <strong>✅ Corrección automática (selección múltiple):</strong> Al finalizar el examen, las preguntas
+                de selección múltiple se calificarán automáticamente y verás tu resultado de inmediato.
+              </li>
+              <li>
+                <strong>⏳ Revisión manual (abiertas):</strong> Las preguntas abiertas serán revisadas y calificadas
+                posteriormente por el administrador del sitio.
+              </li>
+              <li>
+                <strong>🚫 Sin consultas externas:</strong> No está permitido cambiar de pestaña o ventana para consultar
+                en Google u otros recursos. El sistema detectará los cambios de pestaña.
+              </li>
+              <li>
+                <strong>✅ Navegación:</strong> Puedes navegar entre preguntas usando los botones Anterior/Siguiente
+                o el índice de preguntas. Las preguntas respondidas se marcarán en verde.
+              </li>
+              <li>
+                <strong>📊 Progreso:</strong> Revisa la barra de progreso para saber cuántas preguntas has respondido.
+              </li>
+            </ul>
+          </div>
+
+          <button onclick={startExam} class="start-btn">
+            {attempts.length === 0 ? 'Comenzar Examen' : `Iniciar Intento ${attempts.length + 1}`}
+          </button>
+        {:else}
+          <div class="no-attempts">
+            <p>No tienes intentos disponibles en este momento.</p>
+          </div>
+          <a href="/" class="back-btn">Volver al Inicio</a>
+        {/if}
       </div>
     </div>
 
@@ -166,7 +349,7 @@
     <div class="finish-screen">
       <div class="finish-card">
         <div class="finish-icon">✅</div>
-        <h1>Examen Finalizado</h1>
+        <h1>Intento {currentAttemptNumber} Finalizado</h1>
         {#if tabSwitchCount > 0}
           <p class="tab-warning">
             ⚠ Se detectaron {tabSwitchCount} cambio(s) de pestaña durante el examen.
@@ -196,6 +379,10 @@
             <span class="summary-label">Tiempo utilizado</span>
             <span class="summary-value">{formatTime(totalTime - timeLeft)}</span>
           </div>
+          <div class="summary-item">
+            <span class="summary-label">Intentos restantes</span>
+            <span class="summary-value">{slots.remaining}</span>
+          </div>
         </div>
 
         <div class="answers-review">
@@ -222,6 +409,11 @@
           {/each}
         </div>
 
+        {#if slots.remaining > 0}
+          <button onclick={() => { finished = false; }} class="start-btn" style="margin-bottom:0.75rem">
+            {slots.remaining > 0 ? `Realizar Intento ${attempts.length + 1}` : ''}
+          </button>
+        {/if}
         <a href="/" class="back-btn">Volver al Inicio</a>
       </div>
     </div>
@@ -230,7 +422,7 @@
     <div class="exam-screen">
       <div class="exam-header">
         <div class="exam-header-left">
-          <h1>Parcial 1</h1>
+          <h1>Intento {currentAttemptNumber}</h1>
           <span class="question-counter">Pregunta {currentIndex + 1} de {totalQuestions}</span>
         </div>
         <div class="exam-header-right">
@@ -311,7 +503,7 @@
             </button>
           {:else}
             <button class="submit-btn" onclick={handleSubmit}>
-              Finalizar Examen
+              Finalizar Intento
             </button>
           {/if}
         </div>
@@ -363,6 +555,125 @@
     color: #888;
     margin: 0 0 1.5rem;
     font-size: 0.95rem;
+  }
+
+  .attempts-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .attempts-section h2 {
+    font-size: 1.05rem;
+    margin: 0 0 0.5rem;
+  }
+
+  .attempts-info {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0 0 1rem;
+  }
+
+  .attempts-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .attempt-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 0.75rem;
+    text-align: center;
+    background: #f9fafb;
+  }
+
+  .attempt-card.available {
+    border-color: #22c55e;
+    background: #f0fdf4;
+  }
+
+  .attempt-card.used {
+    border-color: #e5e7eb;
+    background: #f3f4f6;
+    opacity: 0.7;
+  }
+
+  .attempt-card.blocked {
+    border-color: #fca5a5;
+    background: #fef2f2;
+    opacity: 0.7;
+  }
+
+  .attempt-number {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #444;
+    margin-bottom: 0.35rem;
+  }
+
+  .attempt-status {
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  .ready-badge {
+    color: #16a34a;
+  }
+
+  .used-badge {
+    color: #9ca3af;
+  }
+
+  .blocked-badge {
+    color: #dc2626;
+  }
+
+  .window-info {
+    font-size: 0.8rem;
+    color: #888;
+    line-height: 1.6;
+    background: #f8fafc;
+    padding: 0.6rem 0.85rem;
+    border-radius: 8px;
+  }
+
+  .previous-attempts {
+    margin-bottom: 1.5rem;
+  }
+
+  .previous-attempts h2 {
+    font-size: 1rem;
+    margin: 0 0 0.6rem;
+  }
+
+  .attempt-history-item {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.82rem;
+    flex-wrap: wrap;
+  }
+
+  .attempt-label {
+    font-weight: 700;
+    color: #444;
+    min-width: 80px;
+  }
+
+  .attempt-meta {
+    color: #888;
+  }
+
+  .no-attempts {
+    text-align: center;
+    padding: 2rem;
+    color: #dc2626;
+    font-weight: 600;
+    background: #fef2f2;
+    border-radius: 10px;
+    margin-bottom: 1rem;
   }
 
   .recommendations {

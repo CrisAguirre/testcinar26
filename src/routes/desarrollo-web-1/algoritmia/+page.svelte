@@ -17,7 +17,7 @@
     <div class="card-icon">&#129302;</div>
     <h1>Algoritmia</h1>
     <p class="subtitle">Desarrollo Web 1 — Próximamente</p>
-    <p class="desc">Esta evaluación estará disponible pronto. Vuelve más tarde.</p>
+    <p class="desc">Esta sección estará disponible pronto. Vuelve más tarde.</p>
     <a href="/" class="back-btn">Volver al Inicio</a>
   </div>
 </div>

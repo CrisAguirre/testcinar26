@@ -406,7 +406,7 @@
   /* ── Categories ── */
   .categories {
     max-width: 900px;
-    margin: -0.5rem auto 0;
+    margin: 2rem auto 0;
     padding: 0 1.5rem 3rem;
     display: flex;
     flex-direction: column;

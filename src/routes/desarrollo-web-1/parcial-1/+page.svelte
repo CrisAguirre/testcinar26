@@ -12,16 +12,6 @@
   const WINDOW2_START = new Date(2026, 6, 15, 18, 45);
   const WINDOW2_END = new Date(2026, 6, 15, 20, 0);
 
-  interface AttemptRecord {
-    date: string;
-    mcScore: number;
-    mcTotal: number;
-    openCount: number;
-    tabSwitches: number;
-    timeUsed: number;
-    gradeId?: string;
-  }
-
   let started = $state(false);
   let finished = $state(false);
   let questions = $state<any[]>([]);
@@ -36,29 +26,44 @@
   let pendingOpen = $state(0);
   let results = $state<Record<number, { correct: boolean; userAnswer: any; correctAnswer: any }>>({});
 
-  let attempts = $state<AttemptRecord[]>([]);
   let currentAttemptNumber = $state(0);
+  let serverAttempts = $state(0);
+  let serverGrades = $state<any[]>([]);
+  let loadingServer = $state(true);
+  let saveError = $state('');
 
   const totalQuestions = 20;
   const totalTime = 45 * 60;
 
-  function getAttempts(): AttemptRecord[] {
+  function getLocalAttempts(): any[] {
     try {
       const data = localStorage.getItem(STORAGE_KEY);
       return data ? JSON.parse(data) : [];
     } catch { return []; }
   }
 
-  function saveAttempt(record: AttemptRecord) {
-    const list = getAttempts();
-    list.push(record);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    attempts = list;
+  function getAttemptCount(): number {
+    return loadingServer ? getLocalAttempts().length : serverAttempts;
+  }
+
+  async function loadServerAttempts() {
+    if (!$currentUser?._id) { loadingServer = false; return; }
+    try {
+      const all = await gradesApi.getMine();
+      const examGrades = all.filter((g: any) => g.subject === 'Desarrollo Web 1 - Parcial 1');
+      serverGrades = examGrades;
+      serverAttempts = examGrades.length;
+    } catch {
+      serverAttempts = getLocalAttempts().length;
+    } finally {
+      loadingServer = false;
+      slots = getAvailableSlots();
+    }
   }
 
   function getAvailableSlots(): { total: number; used: number; remaining: number; windowLabel: string; enabled: boolean } {
     const now = new Date();
-    const used = getAttempts().length;
+    const used = getAttemptCount();
 
     if (now < WINDOW1_END) {
       return { total: 2, used: Math.min(used, 2), remaining: Math.max(0, 2 - used), windowLabel: 'Antes del examen (hasta 18:45)', enabled: used < 2 };
@@ -66,7 +71,6 @@
       const usedInWindow2 = Math.max(0, used - 2);
       return { total: 2, used: usedInWindow2, remaining: Math.max(0, 2 - usedInWindow2), windowLabel: 'Ventana de examen (18:45 - 20:00)', enabled: used < 4 };
     } else {
-      const allUsed = used >= 4;
       return { total: 4, used, remaining: 0, windowLabel: 'Fuera de la ventana de examen', enabled: false };
     }
   }
@@ -77,6 +81,10 @@
     if (timeLeft <= 0 && started && !finished) {
       handleSubmit();
     }
+  });
+
+  onMount(() => {
+    loadServerAttempts();
   });
 
   function getAttemptType(n: number): string {
@@ -107,8 +115,7 @@
     timeLeft = totalTime;
     tabSwitchCount = 0;
 
-    const all = getAttempts();
-    currentAttemptNumber = all.length + 1;
+    currentAttemptNumber = getAttemptCount() + 1;
 
     timerInterval = setInterval(() => {
       timeLeft--;
@@ -139,6 +146,7 @@
   }
 
   async function handleSubmit() {
+    saveError = '';
     if (timerInterval) {
       clearInterval(timerInterval);
       timerInterval = null;
@@ -167,37 +175,11 @@
     results = res;
     finished = true;
 
-    const attemptRecord: AttemptRecord = {
-      date: new Date().toISOString(),
-      mcScore: score,
-      mcTotal: totalMc,
-      openCount,
-      tabSwitches: tabSwitchCount,
-      timeUsed: totalTime - timeLeft
-    };
-
-    saveAttempt(attemptRecord);
-
-    const detailData = {
-      attempt: attemptRecord,
-      questions: questions.map(q => ({
-        id: q.id,
-        tema: q.tema,
-        type: q.type,
-        question: q.question,
-        options: q.type === 'mc' ? q.options : undefined,
-        correctAnswer: q.type === 'mc' ? q.answer : undefined,
-        userAnswer: answers[q.id]
-      }))
-    };
-    const allDetails = JSON.parse(localStorage.getItem(DETAIL_KEY) || '[]');
-    allDetails.push(detailData);
-    localStorage.setItem(DETAIL_KEY, JSON.stringify(allDetails));
-
     if ($currentUser?._id) {
       try {
+        const attemptNum = getAttemptCount() + 1;
         const examData = {
-          attemptNumber: getAttempts().length,
+          attemptNumber: attemptNum,
           tabSwitches: tabSwitchCount,
           timeUsed: totalTime - timeLeft,
           mcScore: score,
@@ -223,12 +205,18 @@
           max_score: totalMc,
           period: '2026-1',
           examData: JSON.stringify(examData),
-          comments: `${getAttemptLabel(getAttempts().length)} | MC: ${score}/${totalMc} | Abiertas: ${openCount} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`
+          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${totalMc} | Abiertas: ${openCount} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`
         });
-        attemptRecord.gradeId = grade._id;
-        saveAttempt(attemptRecord);
+
+        if (grade && grade._id) {
+          const localList = getLocalAttempts();
+          localList.push({ date: new Date().toISOString(), mcScore: score, mcTotal: totalMc, openCount, tabSwitches: tabSwitchCount, timeUsed: totalTime - timeLeft, gradeId: grade._id });
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
+          await loadServerAttempts();
+        }
       } catch (err) {
-        console.error('Error al guardar calificación:', err);
+        const msg = err instanceof Error ? err.message : 'Error de conexión al guardar';
+        saveError = `No se pudo guardar el examen en el servidor: ${msg}. Tus respuestas se guardaron localmente.`;
       }
     }
 
@@ -264,7 +252,7 @@
               <div class="attempt-number">{getAttemptLabel(1)}</div>
               <div class="attempt-type-badge prep">Preparación</div>
               <div class="attempt-status">
-                {#if attempts.length >= 1}
+                {#if getAttemptCount() >= 1}
                   <span class="used-badge">✓ Utilizado</span>
                 {:else if slots.remaining > 0 && slots.used < 2}
                   <span class="ready-badge">Disponible</span>
@@ -277,7 +265,7 @@
               <div class="attempt-number">{getAttemptLabel(2)}</div>
               <div class="attempt-type-badge prep">Preparación</div>
               <div class="attempt-status">
-                {#if attempts.length >= 2}
+                {#if getAttemptCount() >= 2}
                   <span class="used-badge">✓ Utilizado</span>
                 {:else if slots.remaining > 0 && slots.used < 2}
                   <span class="ready-badge">Disponible</span>
@@ -286,11 +274,11 @@
                 {/if}
               </div>
             </div>
-            <div class="attempt-card {slots.enabled && slots.used >= 2 ? 'available' : (attempts.length >= 3 ? 'used' : 'blocked')}">
+            <div class="attempt-card {slots.enabled && slots.used >= 2 ? 'available' : (getAttemptCount() >= 3 ? 'used' : 'blocked')}">
               <div class="attempt-number">{getAttemptLabel(3)}</div>
               <div class="attempt-type-badge eval">Evaluación</div>
               <div class="attempt-status">
-                {#if attempts.length >= 3}
+                {#if getAttemptCount() >= 3}
                   <span class="used-badge">✓ Utilizado</span>
                 {:else if slots.enabled && slots.used >= 2}
                   <span class="ready-badge">Disponible</span>
@@ -299,11 +287,11 @@
                 {/if}
               </div>
             </div>
-            <div class="attempt-card {slots.enabled && slots.used >= 3 ? 'available' : (attempts.length >= 4 ? 'used' : 'blocked')}">
+            <div class="attempt-card {slots.enabled && slots.used >= 3 ? 'available' : (getAttemptCount() >= 4 ? 'used' : 'blocked')}">
               <div class="attempt-number">{getAttemptLabel(4)}</div>
               <div class="attempt-type-badge eval">Evaluación</div>
               <div class="attempt-status">
-                {#if attempts.length >= 4}
+                {#if getAttemptCount() >= 4}
                   <span class="used-badge">✓ Utilizado</span>
                 {:else if slots.enabled && slots.used >= 3}
                   <span class="ready-badge">Disponible</span>
@@ -319,21 +307,23 @@
           </div>
         </div>
 
-        {#if attempts.length > 0}
+        {#if serverGrades.length > 0}
           <div class="previous-attempts">
             <h2>📊 Intentos anteriores</h2>
-            {#each attempts as att, i}
+            {#each serverGrades as g, i}
               <div class="attempt-history-item">
                 <span class="attempt-label">{getAttemptLabel(i + 1)}</span>
-                <span class="attempt-meta">{new Date(att.date).toLocaleString('es-CO')}</span>
-                <span class="attempt-meta">MC: {att.mcScore}/{att.mcTotal}</span>
-                <span class="attempt-meta">Abiertas: {att.openCount}</span>
+                <span class="attempt-meta">{new Date(g.createdAt || g.date).toLocaleString('es-CO')}</span>
+                <span class="attempt-meta">Puntaje: {g.score}/{g.max_score}</span>
+                <span class="attempt-meta">{(g.comments || '').split('|')[0] || ''}</span>
               </div>
             {/each}
           </div>
         {/if}
 
-        {#if slots.remaining > 0}
+        {#if loadingServer}
+          <p class="loading-text">Cargando datos del servidor...</p>
+        {:else if slots.remaining > 0}
           <div class="recommendations">
             <h2>📌 Recomendaciones importantes</h2>
             <ul>
@@ -368,7 +358,7 @@
           </div>
 
           <button onclick={startExam} class="start-btn">
-            {attempts.length === 0 ? 'Comenzar Examen' : `Iniciar ${getAttemptLabel(attempts.length + 1)}`}
+            {getAttemptCount() === 0 ? 'Comenzar Examen' : `Iniciar ${getAttemptLabel(getAttemptCount() + 1)}`}
           </button>
         {:else}
           <div class="no-attempts">
@@ -403,6 +393,10 @@
             <div class="score-status pending">⏳ Pendiente de revisión</div>
           </div>
         </div>
+
+        {#if saveError}
+          <div class="save-error">⚠ {saveError}</div>
+        {/if}
 
         <div class="summary">
           <div class="summary-item">
@@ -445,7 +439,7 @@
 
         {#if slots.remaining > 0}
           <button onclick={() => { finished = false; }} class="start-btn" style="margin-bottom:0.75rem">
-            {slots.remaining > 0 ? `Realizar ${getAttemptLabel(attempts.length + 1)}` : ''}
+            {slots.remaining > 0 ? `Realizar ${getAttemptLabel(getAttemptCount() + 1)}` : ''}
           </button>
         {/if}
         <a href="/" class="back-btn">Volver al Inicio</a>
@@ -1028,6 +1022,18 @@
   .finish-info {
     color: #666;
     margin: 0.5rem 0 1.5rem;
+  }
+
+  .save-error {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    color: #dc2626;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-align: center;
   }
 
   .summary {

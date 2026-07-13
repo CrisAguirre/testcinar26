@@ -1,4 +1,4 @@
-const API_URL = '/api';
+const API_URL = 'https://testcinar26bknd.onrender.com/api';
 
 function getToken() {
   return typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;

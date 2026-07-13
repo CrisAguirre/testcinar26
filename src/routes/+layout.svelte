@@ -2,6 +2,7 @@
   import Header from './Header.svelte';
   import './layout.css';
   import { isAuthenticated } from '$lib/stores/auth';
+  import { page } from '$app/stores';
 
   let { children } = $props();
 </script>
@@ -10,7 +11,7 @@
   <Header />
 
   <main>
-    {#if $isAuthenticated}
+    {#if $isAuthenticated || $page.url.pathname === '/login'}
       {@render children()}
     {:else}
       <div class="welcome">
@@ -22,7 +23,7 @@
   </main>
 
   <footer>
-    <p>Cinar Sistemas 2026 &mdash; Ingeniería de Software I</p>
+    <p>Cinar Sistemas 2026 &mdash;Desarrollo Web 1</p>
   </footer>
 </div>
 

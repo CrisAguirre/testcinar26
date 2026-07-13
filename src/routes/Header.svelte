@@ -18,7 +18,7 @@
     {#if $isAuthenticated}
       <ul>
         <li><a href="/">Inicio</a></li>
-        {#if $currentUser?.role === 'admin'}
+        {#if $currentUser?.role === 'admin' || $currentUser?.role === 'coordinator'}
           <li><a href="/dashboard">Calificaciones</a></li>
         {/if}
       </ul>

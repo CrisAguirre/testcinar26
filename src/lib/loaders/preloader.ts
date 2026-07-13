@@ -82,7 +82,7 @@ export async function preloadAll(): Promise<void> {
 async function tryPreloadAllGrades(): Promise<any[] | null> {
   try {
     const user = get(currentUser);
-    if (user?.role === 'admin' || user?.role === 'teacher') {
+    if (user?.role === 'admin' || user?.role === 'teacher' || user?.role === 'coordinator') {
       return await gradesApi.getAll({});
     }
   } catch {}

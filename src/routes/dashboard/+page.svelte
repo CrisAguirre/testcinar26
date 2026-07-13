@@ -133,6 +133,11 @@
       .reduce((a: number, q: any) => a + (q.openMaxScore || 5), 0);
   }
 
+  function getOpenReviewedCount(data: any): number {
+    if (!data?.questions) return 0;
+    return data.questions.filter((q: any) => q.type === 'open' && openScores[q.id] > 0).length;
+  }
+
   async function saveReview() {
     if (!reviewGrade || !reviewData) return;
     savingReview = true;
@@ -149,13 +154,16 @@
         }
       }
 
+      const baseComment = reviewGrade.comments?.replace(/\s*\|\s*Revisado.*$/, '') || '';
+      const reviewNote = ` | Revisado - Abiertas: ${openScore}/${openMax}`;
+
       await gradesApi.update(reviewGrade._id, {
         student: reviewGrade.student?._id || reviewGrade.student,
         subject: reviewGrade.subject,
         score: mcCorrect + openScore,
         max_score: mcTotal + openMax,
         period: reviewGrade.period,
-        comments: reviewGrade.comments + ` | Revisado - Abiertas: ${openScore}/${openMax}`,
+        comments: baseComment + reviewNote,
         examData: JSON.stringify(reviewData)
       });
 
@@ -243,7 +251,7 @@
   {#if showReview && reviewData && $isAdmin}
     <div class="modal-overlay" onclick={() => showReview = false}>
       <div class="modal modal-wide" onclick={(e) => e.stopPropagation()}>
-        <h2>Revisar Examen</h2>
+        <h2>Ver Detalle - {reviewGrade?.subject || 'Examen'}</h2>
         <div class="review-meta">
           <span><strong>Estudiante:</strong> {reviewGrade?.student?.full_name || 'N/A'}</span>
           <span><strong>Intento:</strong> {reviewData.attemptNumber || '—'}</span>
@@ -258,7 +266,7 @@
           </div>
           <div class="review-summary-card">
             <div class="review-summary-value">{getTotalOpenScore()}/{getTotalOpenMax()}</div>
-            <div class="review-summary-label">Abiertas (por revisar)</div>
+            <div class="review-summary-label">Abiertas {getOpenReviewedCount(reviewData) > 0 ? `(revisadas: ${getOpenReviewedCount(reviewData)})` : '(por revisar)'}</div>
           </div>
           <div class="review-summary-card">
             <div class="review-summary-value">{getMcCorrectCount(reviewData) + getTotalOpenScore()}/{getMcTotalCount(reviewData) + getTotalOpenMax()}</div>
@@ -363,8 +371,8 @@
               <td>{grade.period}</td>
               {#if $isAdmin}
                 <td class="actions">
-                  {#if hasExamData(grade) && grade.subject?.includes('Parcial')}
-                    <button onclick={() => openReview(grade)} class="btn-sm btn-review">Revisar</button>
+                  {#if hasExamData(grade)}
+                    <button onclick={() => openReview(grade)} class="btn-sm btn-review">Ver Detalle</button>
                   {/if}
                   <button onclick={() => openEdit(grade)} class="btn-sm">Editar</button>
                   <button onclick={() => handleDelete(grade._id)} class="btn-sm btn-danger">Eliminar</button>

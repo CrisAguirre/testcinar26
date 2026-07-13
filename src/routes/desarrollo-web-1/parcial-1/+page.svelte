@@ -175,29 +175,32 @@
     results = res;
     finished = true;
 
+    const attemptNum = getAttemptCount() + 1;
+    const localRecord = { date: new Date().toISOString(), mcScore: score, mcTotal: totalMc, openCount, tabSwitches: tabSwitchCount, timeUsed: totalTime - timeLeft, gradeId: undefined as string | undefined };
+
+    const examData = {
+      attemptNumber: attemptNum,
+      tabSwitches: tabSwitchCount,
+      timeUsed: totalTime - timeLeft,
+      mcScore: score,
+      mcTotal: totalMc,
+      questions: questions.map(q => ({
+        id: q.id,
+        tema: q.tema,
+        type: q.type,
+        question: q.question,
+        options: q.type === 'mc' ? q.options : undefined,
+        correctAnswer: q.type === 'mc' ? q.answer : undefined,
+        studentAnswer: answers[q.id],
+        isCorrect: q.type === 'mc' ? answers[q.id] === q.answer : undefined,
+        openScore: null,
+        openMaxScore: q.type === 'open' ? 5 : undefined
+      }))
+    };
+
+    let gradeId: string | undefined;
     if ($currentUser?._id) {
       try {
-        const attemptNum = getAttemptCount() + 1;
-        const examData = {
-          attemptNumber: attemptNum,
-          tabSwitches: tabSwitchCount,
-          timeUsed: totalTime - timeLeft,
-          mcScore: score,
-          mcTotal: totalMc,
-          questions: questions.map(q => ({
-            id: q.id,
-            tema: q.tema,
-            type: q.type,
-            question: q.question,
-            options: q.type === 'mc' ? q.options : undefined,
-            correctAnswer: q.type === 'mc' ? q.answer : undefined,
-            studentAnswer: answers[q.id],
-            isCorrect: q.type === 'mc' ? answers[q.id] === q.answer : undefined,
-            openScore: null,
-            openMaxScore: q.type === 'open' ? 5 : undefined
-          }))
-        };
-
         const grade = await gradesApi.create({
           student: $currentUser._id,
           subject: 'Desarrollo Web 1 - Parcial 1',
@@ -207,18 +210,20 @@
           examData: JSON.stringify(examData),
           comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${totalMc} | Abiertas: ${openCount} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`
         });
-
         if (grade && grade._id) {
-          const localList = getLocalAttempts();
-          localList.push({ date: new Date().toISOString(), mcScore: score, mcTotal: totalMc, openCount, tabSwitches: tabSwitchCount, timeUsed: totalTime - timeLeft, gradeId: grade._id });
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
-          await loadServerAttempts();
+          gradeId = grade._id;
+          localRecord.gradeId = grade._id;
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Error de conexión al guardar';
-        saveError = `No se pudo guardar el examen en el servidor: ${msg}. Tus respuestas se guardaron localmente.`;
+        const msg = err instanceof Error ? err.message : 'Error de conexión';
+        saveError = `No se pudo guardar el examen en el servidor: ${msg}. Tus respuestas se guardaron localmente. El administrador debe revisar manualmente.`;
       }
     }
+
+    const localList = getLocalAttempts();
+    localList.push(localRecord);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
+    if (gradeId) await loadServerAttempts();
 
     slots = getAvailableSlots();
   }

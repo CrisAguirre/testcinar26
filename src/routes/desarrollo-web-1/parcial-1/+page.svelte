@@ -79,6 +79,14 @@
     }
   });
 
+  function getAttemptType(n: number): string {
+    return n <= 2 ? 'Preparación' : 'Evaluación';
+  }
+
+  function getAttemptLabel(n: number): string {
+    return `Intento ${n} (${getAttemptType(n)})`;
+  }
+
   function formatTime(seconds: number): string {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -187,13 +195,34 @@
 
     if ($currentUser?._id) {
       try {
+        const examData = {
+          attemptNumber: getAttempts().length,
+          tabSwitches: tabSwitchCount,
+          timeUsed: totalTime - timeLeft,
+          mcScore: score,
+          mcTotal: totalMc,
+          questions: questions.map(q => ({
+            id: q.id,
+            tema: q.tema,
+            type: q.type,
+            question: q.question,
+            options: q.type === 'mc' ? q.options : undefined,
+            correctAnswer: q.type === 'mc' ? q.answer : undefined,
+            studentAnswer: answers[q.id],
+            isCorrect: q.type === 'mc' ? answers[q.id] === q.answer : undefined,
+            openScore: null,
+            openMaxScore: q.type === 'open' ? 5 : undefined
+          }))
+        };
+
         const grade = await gradesApi.create({
           student: $currentUser._id,
           subject: 'Desarrollo Web 1 - Parcial 1',
           score,
           max_score: totalMc,
           period: '2026-1',
-          comments: `Intento ${getAttempts().length} | Preguntas abiertas: ${openCount} | Cambios de pestaña: ${tabSwitchCount} | Tiempo usado: ${formatTime(totalTime - timeLeft)}`
+          examData: JSON.stringify(examData),
+          comments: `${getAttemptLabel(getAttempts().length)} | MC: ${score}/${totalMc} | Abiertas: ${openCount} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`
         });
         attemptRecord.gradeId = grade._id;
         saveAttempt(attemptRecord);
@@ -228,10 +257,11 @@
 
         <div class="attempts-section">
           <h2>🎯 Intentos disponibles</h2>
-          <p class="attempts-info">Dispones de <strong>4 intentos</strong> en total para este examen.</p>
+          <p class="attempts-info">Dispones de <strong>4 intentos</strong> en total: <strong>2 de Preparación</strong> (antes del examen) y <strong>2 de Evaluación</strong> (durante el examen).</p>
           <div class="attempts-grid">
             <div class="attempt-card {slots.remaining > 0 && slots.used < 2 ? 'available' : 'used'}">
-              <div class="attempt-number">Intento 1</div>
+              <div class="attempt-number">{getAttemptLabel(1)}</div>
+              <div class="attempt-type-badge prep">Preparación</div>
               <div class="attempt-status">
                 {#if attempts.length >= 1}
                   <span class="used-badge">✓ Utilizado</span>
@@ -243,7 +273,8 @@
               </div>
             </div>
             <div class="attempt-card {slots.remaining > 0 && slots.used < 2 ? 'available' : 'used'}">
-              <div class="attempt-number">Intento 2</div>
+              <div class="attempt-number">{getAttemptLabel(2)}</div>
+              <div class="attempt-type-badge prep">Preparación</div>
               <div class="attempt-status">
                 {#if attempts.length >= 2}
                   <span class="used-badge">✓ Utilizado</span>
@@ -255,7 +286,8 @@
               </div>
             </div>
             <div class="attempt-card {slots.enabled && slots.used >= 2 ? 'available' : (attempts.length >= 3 ? 'used' : 'blocked')}">
-              <div class="attempt-number">Intento 3</div>
+              <div class="attempt-number">{getAttemptLabel(3)}</div>
+              <div class="attempt-type-badge eval">Evaluación</div>
               <div class="attempt-status">
                 {#if attempts.length >= 3}
                   <span class="used-badge">✓ Utilizado</span>
@@ -267,7 +299,8 @@
               </div>
             </div>
             <div class="attempt-card {slots.enabled && slots.used >= 3 ? 'available' : (attempts.length >= 4 ? 'used' : 'blocked')}">
-              <div class="attempt-number">Intento 4</div>
+              <div class="attempt-number">{getAttemptLabel(4)}</div>
+              <div class="attempt-type-badge eval">Evaluación</div>
               <div class="attempt-status">
                 {#if attempts.length >= 4}
                   <span class="used-badge">✓ Utilizado</span>
@@ -280,8 +313,8 @@
             </div>
           </div>
           <div class="window-info">
-            <strong>📅 Ventana 1 (Intentos 1-2):</strong> Hasta el 15 de julio, 18:45<br>
-            <strong>📅 Ventana 2 (Intentos 3-4):</strong> 15 de julio, 18:45 - 20:00
+            <strong>📅 Ventana 1 — Preparación (Intentos 1-2):</strong> Hasta el 15 de julio, 18:45<br>
+            <strong>📅 Ventana 2 — Evaluación (Intentos 3-4):</strong> 15 de julio, 18:45 - 20:00
           </div>
         </div>
 
@@ -290,7 +323,7 @@
             <h2>📊 Intentos anteriores</h2>
             {#each attempts as att, i}
               <div class="attempt-history-item">
-                <span class="attempt-label">Intento {i + 1}</span>
+                <span class="attempt-label">{getAttemptLabel(i + 1)}</span>
                 <span class="attempt-meta">{new Date(att.date).toLocaleString('es-CO')}</span>
                 <span class="attempt-meta">MC: {att.mcScore}/{att.mcTotal}</span>
                 <span class="attempt-meta">Abiertas: {att.openCount}</span>
@@ -334,7 +367,7 @@
           </div>
 
           <button onclick={startExam} class="start-btn">
-            {attempts.length === 0 ? 'Comenzar Examen' : `Iniciar Intento ${attempts.length + 1}`}
+            {attempts.length === 0 ? 'Comenzar Examen' : `Iniciar ${getAttemptLabel(attempts.length + 1)}`}
           </button>
         {:else}
           <div class="no-attempts">
@@ -349,7 +382,7 @@
     <div class="finish-screen">
       <div class="finish-card">
         <div class="finish-icon">✅</div>
-        <h1>Intento {currentAttemptNumber} Finalizado</h1>
+        <h1>{getAttemptLabel(currentAttemptNumber)} — Finalizado</h1>
         {#if tabSwitchCount > 0}
           <p class="tab-warning">
             ⚠ Se detectaron {tabSwitchCount} cambio(s) de pestaña durante el examen.
@@ -411,7 +444,7 @@
 
         {#if slots.remaining > 0}
           <button onclick={() => { finished = false; }} class="start-btn" style="margin-bottom:0.75rem">
-            {slots.remaining > 0 ? `Realizar Intento ${attempts.length + 1}` : ''}
+            {slots.remaining > 0 ? `Realizar ${getAttemptLabel(attempts.length + 1)}` : ''}
           </button>
         {/if}
         <a href="/" class="back-btn">Volver al Inicio</a>
@@ -422,7 +455,7 @@
     <div class="exam-screen">
       <div class="exam-header">
         <div class="exam-header-left">
-          <h1>Intento {currentAttemptNumber}</h1>
+          <h1>{getAttemptLabel(currentAttemptNumber)}</h1>
           <span class="question-counter">Pregunta {currentIndex + 1} de {totalQuestions}</span>
         </div>
         <div class="exam-header-right">
@@ -503,7 +536,7 @@
             </button>
           {:else}
             <button class="submit-btn" onclick={handleSubmit}>
-              Finalizar Intento
+              Finalizar {getAttemptType(currentAttemptNumber)}
             </button>
           {/if}
         </div>
@@ -608,7 +641,28 @@
     font-size: 0.82rem;
     font-weight: 700;
     color: #444;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .attempt-type-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.1rem 0.45rem;
+    border-radius: 10px;
+    display: inline-block;
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .attempt-type-badge.prep {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+
+  .attempt-type-badge.eval {
+    background: #dcfce7;
+    color: #16a34a;
   }
 
   .attempt-status {

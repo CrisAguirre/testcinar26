@@ -12,13 +12,16 @@
   let editingId: string | null = $state(null);
   let formData = $state({ student: '', subject: '', score: 0, max_score: 100, period: '', comments: '' });
 
+  let showReview = $state(false);
+  let reviewGrade: any = $state(null);
+  let reviewData: any = $state(null);
+  let openScores = $state<Record<number, number>>({});
+  let savingReview = $state(false);
+
   onMount(async () => {
     if (!$isAuthenticated) return;
     try {
       grades = await gradesApi.getAll({});
-      if ($isAdmin) {
-        students = await authApi.profile();
-      }
     } catch (err) {
       error = err instanceof Error ? err.message : 'Error al cargar datos';
     } finally {
@@ -69,6 +72,107 @@
       error = err instanceof Error ? err.message : 'Error al eliminar';
     }
   }
+
+  function parseExamData(grade: any): any | null {
+    if (grade.examData) {
+      try {
+        return typeof grade.examData === 'string' ? JSON.parse(grade.examData) : grade.examData;
+      } catch { return null; }
+    }
+    return null;
+  }
+
+  function hasExamData(grade: any): boolean {
+    return !!parseExamData(grade);
+  }
+
+  function openReview(grade: any) {
+    reviewGrade = grade;
+    reviewData = parseExamData(grade);
+    openScores = {};
+
+    if (reviewData?.questions) {
+      for (const q of reviewData.questions) {
+        if (q.type === 'open') {
+          if (q.openScore !== null && q.openScore !== undefined) {
+            openScores[q.id] = q.openScore;
+          } else {
+            openScores[q.id] = 0;
+          }
+        }
+      }
+    }
+
+    showReview = true;
+  }
+
+  function getMcCorrectCount(data: any): number {
+    if (!data?.questions) return 0;
+    return data.questions.filter((q: any) => q.type === 'mc' && q.isCorrect).length;
+  }
+
+  function getMcTotalCount(data: any): number {
+    if (!data?.questions) return 0;
+    return data.questions.filter((q: any) => q.type === 'mc').length;
+  }
+
+  function getOpenTotalCount(data: any): number {
+    if (!data?.questions) return 0;
+    return data.questions.filter((q: any) => q.type === 'open').length;
+  }
+
+  function getTotalOpenScore(): number {
+    return Object.values(openScores).reduce((a, b) => a + b, 0);
+  }
+
+  function getTotalOpenMax(): number {
+    if (!reviewData?.questions) return 0;
+    return reviewData.questions
+      .filter((q: any) => q.type === 'open')
+      .reduce((a: number, q: any) => a + (q.openMaxScore || 5), 0);
+  }
+
+  async function saveReview() {
+    if (!reviewGrade || !reviewData) return;
+    savingReview = true;
+
+    try {
+      const mcCorrect = getMcCorrectCount(reviewData);
+      const mcTotal = getMcTotalCount(reviewData);
+      const openScore = getTotalOpenScore();
+      const openMax = getTotalOpenMax();
+
+      for (const q of reviewData.questions) {
+        if (q.type === 'open') {
+          q.openScore = openScores[q.id] || 0;
+        }
+      }
+
+      await gradesApi.update(reviewGrade._id, {
+        student: reviewGrade.student?._id || reviewGrade.student,
+        subject: reviewGrade.subject,
+        score: mcCorrect + openScore,
+        max_score: mcTotal + openMax,
+        period: reviewGrade.period,
+        comments: reviewGrade.comments + ` | Revisado - Abiertas: ${openScore}/${openMax}`,
+        examData: JSON.stringify(reviewData)
+      });
+
+      showReview = false;
+      grades = await gradesApi.getAll({});
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Error al guardar revisión';
+    } finally {
+      savingReview = false;
+    }
+  }
+
+  function formatTime(seconds: number): string {
+    if (!seconds) return '—';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
 </script>
 
 <svelte:head>
@@ -106,6 +210,100 @@
     </div>
   {/if}
 
+  {#if showReview && reviewData && $isAdmin}
+    <div class="modal-overlay" onclick={() => showReview = false}>
+      <div class="modal modal-wide" onclick={(e) => e.stopPropagation()}>
+        <h2>Revisar Examen</h2>
+        <div class="review-meta">
+          <span><strong>Estudiante:</strong> {reviewGrade?.student?.full_name || 'N/A'}</span>
+          <span><strong>Intento:</strong> {reviewData.attemptNumber || '—'}</span>
+          <span><strong>Tiempo:</strong> {formatTime(reviewData.timeUsed)}</span>
+          <span><strong>Cambios pestaña:</strong> {reviewData.tabSwitches || 0}</span>
+        </div>
+
+        <div class="review-summary">
+          <div class="review-summary-card">
+            <div class="review-summary-value">{getMcCorrectCount(reviewData)}/{getMcTotalCount(reviewData)}</div>
+            <div class="review-summary-label">Selección múltiple</div>
+          </div>
+          <div class="review-summary-card">
+            <div class="review-summary-value">{getTotalOpenScore()}/{getTotalOpenMax()}</div>
+            <div class="review-summary-label">Abiertas (por revisar)</div>
+          </div>
+          <div class="review-summary-card">
+            <div class="review-summary-value">{getMcCorrectCount(reviewData) + getTotalOpenScore()}/{getMcTotalCount(reviewData) + getTotalOpenMax()}</div>
+            <div class="review-summary-label">Total</div>
+          </div>
+        </div>
+
+        <div class="review-questions">
+          {#each reviewData.questions as q, i}
+            <div class="review-question {q.type === 'open' ? 'open-review' : ''}">
+              <div class="review-q-header">
+                <span class="review-q-num">Pregunta {i + 1}</span>
+                <span class="review-q-badge {q.type === 'mc' ? 'badge-mc' : 'badge-open'}">
+                  {q.type === 'mc' ? 'Selección Múltiple' : 'Abierta'}
+                </span>
+                <span class="review-q-tema">Tema {q.tema}</span>
+              </div>
+              <p class="review-q-text">{q.question}</p>
+
+              {#if q.type === 'mc'}
+                <div class="review-mc-options">
+                  {#each q.options as opt, oi}
+                    <div class="review-option {q.studentAnswer === oi ? 'review-selected' : ''} {oi === q.correctAnswer ? 'review-correct' : ''}">
+                      <span class="review-option-indicator">
+                        {#if oi === q.correctAnswer}✓{:else if q.studentAnswer === oi && !q.isCorrect}✗{:else}&bull;{/if}
+                      </span>
+                      <span>{opt}</span>
+                      {#if oi === q.correctAnswer}
+                        <span class="review-correct-label">Correcta</span>
+                      {/if}
+                    </div>
+                  {/each}
+                </div>
+                <div class="review-mc-result">
+                  {#if q.isCorrect}
+                    <span class="result-correct">✓ Correcta</span>
+                  {:else if q.studentAnswer !== undefined && q.studentAnswer !== ''}
+                    <span class="result-incorrect">✗ Incorrecta</span>
+                  {:else}
+                    <span class="result-unanswered">— Sin responder</span>
+                  {/if}
+                </div>
+              {:else}
+                <div class="review-open-answer">
+                  <strong>Respuesta del estudiante:</strong>
+                  <p class="review-student-answer">{q.studentAnswer || '—'}</p>
+                </div>
+                <div class="review-open-score">
+                  <label>
+                    Calificación (0-{q.openMaxScore || 5}):
+                    <input
+                      type="number"
+                      min="0"
+                      max={q.openMaxScore || 5}
+                      bind:value={openScores[q.id]}
+                      oninput={() => openScores[q.id] = Math.min(Math.max(Number(openScores[q.id]) || 0, 0), q.openMaxScore || 5)}
+                    />
+                    <span class="open-max">/ {q.openMaxScore || 5}</span>
+                  </label>
+                </div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+
+        <div class="form-actions">
+          <button type="button" onclick={() => showReview = false} class="btn-cancel">Cerrar</button>
+          <button onclick={saveReview} disabled={savingReview} class="btn-primary">
+            {savingReview ? 'Guardando...' : 'Guardar Calificaciones'}
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
+
   {#if loading}
     <p class="loading">Cargando...</p>
   {:else if grades.length === 0}
@@ -135,6 +333,9 @@
               <td>{grade.period}</td>
               {#if $isAdmin}
                 <td class="actions">
+                  {#if hasExamData(grade) && grade.subject?.includes('Parcial')}
+                    <button onclick={() => openReview(grade)} class="btn-sm btn-review">Revisar</button>
+                  {/if}
                   <button onclick={() => openEdit(grade)} class="btn-sm">Editar</button>
                   <button onclick={() => handleDelete(grade._id)} class="btn-sm btn-danger">Eliminar</button>
                 </td>
@@ -225,6 +426,8 @@
   .btn-sm:hover { background: #f9fafb; }
   .btn-danger { color: #dc2626; border-color: #fca5a5; }
   .btn-danger:hover { background: #fef2f2; }
+  .btn-review { color: #1d4ed8; border-color: #93c5fd; }
+  .btn-review:hover { background: #eff6ff; }
 
   .btn-primary {
     padding: 0.6rem 1.2rem;
@@ -238,6 +441,7 @@
   }
 
   .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .btn-cancel {
     padding: 0.6rem 1.2rem;
@@ -267,6 +471,10 @@
     max-width: 480px;
     max-height: 90vh;
     overflow-y: auto;
+  }
+
+  .modal-wide {
+    max-width: 720px;
   }
 
   .modal h2 {
@@ -305,5 +513,204 @@
     justify-content: flex-end;
     gap: 0.75rem;
     margin-top: 0.5rem;
+  }
+
+  .review-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .review-summary {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .review-summary-card {
+    flex: 1;
+    min-width: 120px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.75rem;
+    text-align: center;
+  }
+
+  .review-summary-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--color-theme-1);
+  }
+
+  .review-summary-label {
+    font-size: 0.72rem;
+    color: #888;
+    font-weight: 600;
+    margin-top: 0.15rem;
+  }
+
+  .review-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .review-question {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  .review-question.open-review {
+    border-left: 4px solid #f59e0b;
+  }
+
+  .review-q-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .review-q-num {
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: #444;
+  }
+
+  .review-q-badge {
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .badge-mc {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+
+  .badge-open {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .review-q-tema {
+    font-size: 0.72rem;
+    color: #888;
+  }
+
+  .review-q-text {
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: #1f2937;
+    margin: 0 0 0.75rem;
+  }
+
+  .review-mc-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .review-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    border: 1px solid #e5e7eb;
+  }
+
+  .review-option.review-correct {
+    background: #f0fdf4;
+    border-color: #86efac;
+  }
+
+  .review-option.review-selected:not(.review-correct) {
+    background: #fef2f2;
+    border-color: #fca5a5;
+  }
+
+  .review-option-indicator {
+    font-weight: bold;
+    width: 16px;
+    text-align: center;
+  }
+
+  .review-correct-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #16a34a;
+    margin-left: auto;
+  }
+
+  .review-mc-result {
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .result-correct { color: #16a34a; }
+  .result-incorrect { color: #dc2626; }
+  .result-unanswered { color: #9ca3af; }
+
+  .review-open-answer {
+    margin-bottom: 0.75rem;
+  }
+
+  .review-open-answer strong {
+    font-size: 0.82rem;
+    color: #444;
+  }
+
+  .review-student-answer {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #1f2937;
+    background: #f9fafb;
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin: 0.35rem 0 0;
+    white-space: pre-wrap;
+  }
+
+  .review-open-score label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #444;
+  }
+
+  .review-open-score input {
+    width: 70px;
+    padding: 0.35rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  .review-open-score input:focus {
+    outline: none;
+    border-color: var(--color-theme-1);
+  }
+
+  .open-max {
+    font-weight: 400;
+    color: #888;
   }
 </style>

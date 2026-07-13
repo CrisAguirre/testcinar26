@@ -250,7 +250,7 @@
       <div class="subject-card-inner">
         <div class="subject-icon">&#128218;</div>
         <h2>Desarrollo Web 1</h2>
-        <p class="subject-desc">Accede a tus evaluaciones desde los botones abajo</p>
+        <p class="subject-desc">Accede a tus contenidos y evaluaciones desde los siguientes accesos:</p>
         <div class="subject-exams">
           <div class="exam-card" onclick={() => window.location.href='/desarrollo-web-1/parcial-1'}>
             <span class="exam-icon">&#128221;</span>

@@ -786,4 +786,106 @@
     font-weight: 400;
     color: #888;
   }
+
+  @media (max-width: 600px) {
+    .page {
+      padding: 0.5rem 0;
+    }
+
+    .header {
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .header h1 {
+      font-size: 1.2rem;
+    }
+
+    .header-actions {
+      width: 100%;
+    }
+
+    .header-actions button {
+      flex: 1;
+      text-align: center;
+      font-size: 0.78rem;
+      padding: 0.5rem 0.75rem;
+    }
+
+    .table-wrapper {
+      padding: 0.5rem;
+    }
+
+    th, td {
+      padding: 0.45rem 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .actions {
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+
+    .actions button {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+    }
+
+    .modal {
+      padding: 1rem;
+    }
+
+    .modal-wide {
+      max-width: 100%;
+    }
+
+    .review-summary-card {
+      min-width: 80px;
+      padding: 0.5rem;
+    }
+
+    .review-summary-value {
+      font-size: 1rem;
+    }
+
+    .review-question {
+      padding: 0.75rem;
+    }
+
+    .review-q-header {
+      font-size: 0.78rem;
+    }
+
+    .review-q-text {
+      font-size: 0.85rem;
+    }
+
+    .review-option {
+      font-size: 0.78rem;
+      padding: 0.35rem 0.5rem;
+    }
+
+    .review-open-score label {
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+    }
+
+    .review-open-score input {
+      width: 60px;
+    }
+
+    .review-student-answer {
+      font-size: 0.82rem;
+      padding: 0.5rem;
+    }
+
+    .form-actions {
+      flex-wrap: wrap;
+    }
+
+    .form-actions button {
+      flex: 1;
+      text-align: center;
+    }
+  }
 </style>

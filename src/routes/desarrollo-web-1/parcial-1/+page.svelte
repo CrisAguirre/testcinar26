@@ -1155,4 +1155,133 @@
   .review-status.pending-review {
     color: #d97706;
   }
+
+  @media (max-width: 600px) {
+    .welcome-card, .finish-card {
+      padding: 1.25rem;
+    }
+
+    .welcome-card h1, .finish-card h1 {
+      font-size: 1.2rem;
+    }
+
+    .attempts-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .attempt-card {
+      padding: 0.5rem;
+    }
+
+    .attempt-number {
+      font-size: 0.75rem;
+    }
+
+    .exam-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .exam-header-right {
+      justify-content: space-between;
+    }
+
+    .exam-header-left h1 {
+      font-size: 1.1rem;
+    }
+
+    .timer {
+      font-size: 0.95rem;
+      padding: 0.4rem 0.75rem;
+    }
+
+    .question-card {
+      padding: 1rem;
+    }
+
+    .question-text {
+      font-size: 0.95rem;
+    }
+
+    .option-label {
+      padding: 0.65rem 0.85rem;
+      font-size: 0.88rem;
+    }
+
+    .open-answer {
+      min-height: 120px;
+      padding: 0.75rem;
+      font-size: 0.88rem;
+    }
+
+    .exam-actions {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .exam-actions .nav-btn,
+    .exam-actions .submit-btn {
+      flex: 1;
+      min-width: 0;
+      text-align: center;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    .exam-actions .submit-btn {
+      width: 100%;
+    }
+
+    .score-section {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .score-card {
+      min-width: 0;
+      max-width: none;
+    }
+
+    .score-value {
+      font-size: 1.5rem;
+    }
+
+    .summary {
+      gap: 1rem;
+    }
+
+    .summary-value {
+      font-size: 1.1rem;
+    }
+
+    .recommendations {
+      padding: 1rem;
+    }
+
+    .recommendations li {
+      font-size: 0.85rem;
+    }
+
+    .previous-attempts {
+      font-size: 0.82rem;
+    }
+
+    .attempt-history-item {
+      font-size: 0.75rem;
+      gap: 0.4rem;
+    }
+
+    .attempt-label {
+      min-width: 60px;
+    }
+
+    .window-info {
+      font-size: 0.72rem;
+    }
+
+    .tab-warning-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+    }
+  }
 </style>

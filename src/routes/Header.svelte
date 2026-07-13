@@ -106,4 +106,39 @@
     background: rgba(255, 255, 255, 0.3);
     border-color: white;
   }
+
+  @media (max-width: 600px) {
+    header {
+      flex-wrap: wrap;
+      padding: 0.5rem 1rem;
+      gap: 0.5rem;
+    }
+
+    nav {
+      width: 100%;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    ul {
+      flex: 1;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .user-info {
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .username {
+      font-size: 0.78rem;
+    }
+
+    .logout-btn {
+      padding: 0.35rem 0.7rem;
+      font-size: 0.75rem;
+    }
+  }
 </style>

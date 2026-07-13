@@ -699,4 +699,67 @@
       transform: translateY(0);
     }
   }
+
+  @media (max-width: 600px) {
+    .dashboard {
+      padding: 0.5rem 0;
+    }
+
+    h1 {
+      font-size: 1.2rem;
+    }
+
+    .card {
+      padding: 1rem;
+    }
+
+    th, td {
+      padding: 0.5rem;
+      font-size: 0.78rem;
+    }
+
+    .subject-card-inner {
+      padding: 1.25rem;
+    }
+
+    .subject-card h2 {
+      font-size: 1.1rem;
+    }
+
+    .exam-card {
+      padding: 0.6rem 0.85rem;
+    }
+
+    .modal {
+      padding: 1rem;
+    }
+
+    .detail-summary-card {
+      min-width: 90px;
+      padding: 0.5rem;
+    }
+
+    .detail-summary-value {
+      font-size: 1rem;
+    }
+
+    .detail-question {
+      padding: 0.75rem;
+    }
+
+    .detail-q-header {
+      font-size: 0.78rem;
+    }
+
+    .detail-q-result {
+      width: 100%;
+      margin-left: 0;
+      margin-top: 0.3rem;
+    }
+
+    .detail-option {
+      font-size: 0.78rem;
+      padding: 0.35rem 0.5rem;
+    }
+  }
 </style>

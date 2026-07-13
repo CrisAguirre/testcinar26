@@ -156,4 +156,36 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+
+  @media (max-width: 600px) {
+    .login-container {
+      padding: 1rem;
+    }
+
+    .login-card {
+      padding: 1.5rem;
+    }
+
+    .login-logo {
+      max-width: 80px;
+    }
+
+    h1 {
+      font-size: 1rem;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+    }
+
+    input {
+      padding: 0.55rem 0.75rem;
+      font-size: 0.95rem;
+    }
+
+    button {
+      padding: 0.65rem;
+      font-size: 0.95rem;
+    }
+  }
 </style>

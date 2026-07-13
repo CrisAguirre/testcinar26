@@ -93,7 +93,7 @@
         <h2>{editingId ? 'Editar' : 'Nueva'} Calificación</h2>
         <form onsubmit={handleSubmit}>
           <label>Materia <input type="text" bind:value={formData.subject} required /></label>
-          <label>Nota <input type="number" bind:value={formData.score} min="0" bind:max={formData.max_score} required /></label>
+          <label>Nota <input type="number" bind:value={formData.score} min="0" max={formData.max_score} required /></label>
           <label>Nota Máxima <input type="number" bind:value={formData.max_score} min="1" /></label>
           <label>Período <input type="text" bind:value={formData.period} placeholder="Ej: 2026-1" required /></label>
           <label>Comentarios <textarea bind:value={formData.comments}></textarea></label>

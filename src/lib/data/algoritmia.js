@@ -231,6 +231,206 @@ Fin`,
       { type: 'process', text: 'Escribir contador' },
       { type: 'end', text: 'Fin' }
     ]
+  },
+  {
+    id: 6,
+    title: 'Factorial de un número',
+    icon: '❕',
+    practicePrompt: 'Escribe en pseudocódigo un algoritmo que calcule el factorial de un número entero positivo N. El factorial de N (N!) es el producto de todos los enteros desde 1 hasta N.',
+    problem: {
+      scenario: 'En análisis combinatorio se necesita calcular el factorial de un número para determinar permutaciones posibles. El factorial de N (N!) se define como el producto de todos los números enteros positivos desde 1 hasta N.',
+      example: 'Entrada: 5 → Salida: 120 (1×2×3×4×5) | Entrada: 0 → Salida: 1 (por definición)'
+    },
+    sequence: [
+      { step: 1, desc: 'Leer el número N' },
+      { step: 2, desc: 'Si N es 0 o 1, retornar 1 (casos base)' },
+      { step: 3, desc: 'Inicializar un acumulador resultado en 1' },
+      { step: 4, desc: 'Desde i = 2 hasta N, repetir:' },
+      { step: 5, desc: '  Multiplicar resultado por i y almacenar en resultado' },
+      { step: 6, desc: 'Retornar resultado como el factorial de N' }
+    ],
+    solution: `Inicio
+  Leer N
+  Si N = 0 O N = 1 Entonces
+    Escribir 1
+    Terminar
+  Fin Si
+  resultado ← 1
+  Para i desde 2 hasta N:
+    resultado ← resultado * i
+  Fin Para
+  Escribir "Factorial:", resultado
+Fin`,
+    conceptosClave: ['Acumuladores multiplicativos', 'Ciclos definidos', 'Casos base'],
+    flowchart: [
+      { type: 'start', text: 'Inicio' },
+      { type: 'process', text: 'Leer N' },
+      { type: 'decision', text: '¿N = 0 o\nN = 1?' },
+      { type: 'process', text: 'resultado ← 1\ni ← 2', branch: 'No' },
+      { type: 'decision', text: '¿i <= N?' },
+      { type: 'process', text: 'resultado ← resultado * i\ni++' },
+      { type: 'process', text: 'Escribir 1', branch: 'Sí' },
+      { type: 'process', text: 'Escribir resultado' },
+      { type: 'end', text: 'Fin' }
+    ]
+  },
+  {
+    id: 7,
+    title: 'Número palíndromo',
+    icon: '🔁',
+    practicePrompt: 'Escribe en pseudocódigo un algoritmo que determine si un número entero es palíndromo (se lee igual al derecho y al revés). Por ejemplo: 1221 es palíndromo, 1234 no lo es.',
+    problem: {
+      scenario: 'Un sistema de validación de códigos debe verificar si un número de identificación es capicúa (palíndromo numérico), ya que ciertos códigos válidos tienen esta propiedad de simetría.',
+      example: 'Entrada: 1221 → Salida: Es palíndromo | Entrada: 1234 → Salida: No es palíndromo'
+    },
+    sequence: [
+      { step: 1, desc: 'Leer el número original N' },
+      { step: 2, desc: 'Guardar el número original en una variable temporal' },
+      { step: 3, desc: 'Inicializar invertido en 0' },
+      { step: 4, desc: 'Mientras temporal sea mayor que 0, repetir:' },
+      { step: 5, desc: '  Obtener el último dígito: digito ← temporal % 10' },
+      { step: 6, desc: '  Agregar el dígito al invertido: invertido ← invertido * 10 + digito' },
+      { step: 7, desc: '  Eliminar el último dígito: temporal ← temporal / 10' },
+      { step: 8, desc: 'Comparar invertido con el original: si son iguales, es palíndromo; si no, no lo es' }
+    ],
+    solution: `Inicio
+  Leer N
+  original ← N
+  invertido ← 0
+  Mientras N > 0:
+    digito ← N % 10
+    invertido ← invertido * 10 + digito
+    N ← N / 10
+  Fin Mientras
+  Si original = invertido Entonces
+    Escribir "Es palíndromo"
+  Sino
+    Escribir "No es palíndromo"
+  Fin Si
+Fin`,
+    conceptosClave: ['Descomposición numérica', 'Operador módulo', 'Inversión', 'Comparación'],
+    flowchart: [
+      { type: 'start', text: 'Inicio' },
+      { type: 'process', text: 'Leer N\noriginal ← N' },
+      { type: 'process', text: 'invertido ← 0' },
+      { type: 'decision', text: '¿N > 0?' },
+      { type: 'process', text: 'digito ← N % 10\ninvertido ← invertido*10 + digito\nN ← N / 10' },
+      { type: 'decision', text: '¿original =\ninvertido?' },
+      { type: 'process', text: 'Escribir "Es\npalíndromo"', branch: 'Sí' },
+      { type: 'process', text: 'Escribir "No es\npalíndromo"', branch: 'No' },
+      { type: 'end', text: 'Fin' }
+    ]
+  },
+  {
+    id: 8,
+    title: 'Tabla de multiplicar',
+    icon: '✖️',
+    practicePrompt: 'Escribe en pseudocódigo un algoritmo que genere la tabla de multiplicar de un número N ingresado por el usuario, desde el 1 hasta el 10.',
+    problem: {
+      scenario: 'Una aplicación educativa necesita generar tablas de multiplicar interactivas para ayudar a los estudiantes a practicar operaciones aritméticas básicas.',
+      example: 'Entrada: 5 → Salida: 5×1=5, 5×2=10, 5×3=15, ..., 5×10=50'
+    },
+    sequence: [
+      { step: 1, desc: 'Leer el número N para generar su tabla' },
+      { step: 2, desc: 'Inicializar un contador i en 1' },
+      { step: 3, desc: 'Mientras i sea menor o igual a 10, repetir:' },
+      { step: 4, desc: '  Calcular resultado ← N × i' },
+      { step: 5, desc: '  Mostrar: "N × i = resultado"' },
+      { step: 6, desc: '  Incrementar i en 1' },
+      { step: 7, desc: 'Al terminar el ciclo, la tabla está completa' }
+    ],
+    solution: `Inicio
+  Leer N
+  i ← 1
+  Mientras i <= 10:
+    resultado ← N * i
+    Escribir N, "x", i, "=", resultado
+    i ← i + 1
+  Fin Mientras
+Fin`,
+    conceptosClave: ['Ciclos condicionales', 'Multiplicación', 'Formato de salida', 'Contadores'],
+    flowchart: [
+      { type: 'start', text: 'Inicio' },
+      { type: 'process', text: 'Leer N\ni ← 1' },
+      { type: 'decision', text: '¿i <= 10?' },
+      { type: 'process', text: 'result ← N * i\nMostrar "N×i=result"\ni++' },
+      { type: 'end', text: 'Fin' }
+    ]
+  },
+  {
+    id: 9,
+    title: 'Máximo Común Divisor (MCD)',
+    icon: '📐',
+    practicePrompt: 'Escribe en pseudocódigo un algoritmo que calcule el Máximo Común Divisor (MCD) de dos números enteros positivos utilizando el algoritmo de Euclides.',
+    problem: {
+      scenario: 'En criptografía y simplificación de fracciones se requiere calcular el MCD de dos números. El algoritmo de Euclides es el método más eficiente: se divide el mayor entre el menor y se repite con el residuo hasta obtener cero.',
+      example: 'Entrada: 48, 18 → Salida: MCD = 6 (48/18 = 2 residuo 12, 18/12 = 1 residuo 6, 12/6 = 2 residuo 0)'
+    },
+    sequence: [
+      { step: 1, desc: 'Leer los dos números A y B' },
+      { step: 2, desc: 'Mientras B sea diferente de 0, repetir:' },
+      { step: 3, desc: '  Guardar el residuo de A dividido B: residuo ← A % B' },
+      { step: 4, desc: '  Asignar A ← B' },
+      { step: 5, desc: '  Asignar B ← residuo' },
+      { step: 6, desc: 'Al salir del ciclo, A contiene el MCD' },
+      { step: 7, desc: 'Retornar A como el MCD de los números originales' }
+    ],
+    solution: `Inicio
+  Leer A, B
+  Mientras B != 0:
+    residuo ← A % B
+    A ← B
+    B ← residuo
+  Fin Mientras
+  Escribir "MCD:", A
+Fin`,
+    conceptosClave: ['Algoritmo de Euclides', 'Operador módulo', 'Intercambio de variables', 'Iteración condicional'],
+    flowchart: [
+      { type: 'start', text: 'Inicio' },
+      { type: 'process', text: 'Leer A, B' },
+      { type: 'decision', text: '¿B != 0?' },
+      { type: 'process', text: 'residuo ← A % B\nA ← B\nB ← residuo' },
+      { type: 'process', text: 'Escribir "MCD:", A' },
+      { type: 'end', text: 'Fin' }
+    ]
+  },
+  {
+    id: 10,
+    title: 'Suma de dígitos',
+    icon: '➕',
+    practicePrompt: 'Escribe en pseudocódigo un algoritmo que sume todos los dígitos de un número entero positivo. Por ejemplo, para 1234 la suma es 1+2+3+4 = 10.',
+    problem: {
+      scenario: 'Un sistema de validación de tarjetas de crédito utiliza la suma de dígitos como parte del algoritmo de Luhn. Dado un número, se debe descomponer dígito por dígito y calcular la suma total.',
+      example: 'Entrada: 1234 → Salida: 10 (1+2+3+4) | Entrada: 987 → Salida: 24 (9+8+7)'
+    },
+    sequence: [
+      { step: 1, desc: 'Leer el número N' },
+      { step: 2, desc: 'Inicializar suma en 0' },
+      { step: 3, desc: 'Mientras N sea mayor que 0, repetir:' },
+      { step: 4, desc: '  Obtener el último dígito: digito ← N % 10' },
+      { step: 5, desc: '  Sumar el dígito al acumulador: suma ← suma + digito' },
+      { step: 6, desc: '  Eliminar el último dígito: N ← N / 10' },
+      { step: 7, desc: 'Retornar suma como el total de los dígitos' }
+    ],
+    solution: `Inicio
+  Leer N
+  suma ← 0
+  Mientras N > 0:
+    digito ← N % 10
+    suma ← suma + digito
+    N ← N / 10
+  Fin Mientras
+  Escribir "Suma de dígitos:", suma
+Fin`,
+    conceptosClave: ['Descomposición numérica', 'Acumuladores', 'Operador módulo', 'División entera'],
+    flowchart: [
+      { type: 'start', text: 'Inicio' },
+      { type: 'process', text: 'Leer N\nsuma ← 0' },
+      { type: 'decision', text: '¿N > 0?' },
+      { type: 'process', text: 'digito ← N % 10\nsuma ← suma + digito\nN ← N / 10' },
+      { type: 'process', text: 'Escribir "Suma:", suma' },
+      { type: 'end', text: 'Fin' }
+    ]
   }
 ];
 

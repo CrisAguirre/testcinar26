@@ -262,6 +262,11 @@
             <span class="exam-label">Algoritmia</span>
             <span class="exam-arrow">&#8594;</span>
           </div>
+          <div class="exam-card" onclick={() => window.location.href='/desarrollo-web-1/enlaces-de-consulta'}>
+            <span class="exam-icon">&#128279;</span>
+            <span class="exam-label">Enlaces de Consulta</span>
+            <span class="exam-arrow">&#8594;</span>
+          </div>
         </div>
       </div>
     </div>

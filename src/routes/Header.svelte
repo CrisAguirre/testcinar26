@@ -114,6 +114,11 @@
       gap: 0.5rem;
     }
 
+    .brand {
+      width: 100%;
+      justify-content: center;
+    }
+
     nav {
       width: 100%;
       flex-wrap: wrap;

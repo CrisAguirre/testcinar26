@@ -125,6 +125,7 @@
 
   function goToQuestion(index: number) {
     if (index >= 0 && index < totalQuestions) {
+      if (index > currentIndex && !isQuestionAnswered(questions[currentIndex]?.id)) return;
       currentIndex = index;
     }
   }
@@ -357,8 +358,8 @@
                 en Google u otros recursos. El sistema detectará los cambios de pestaña.
               </li>
               <li>
-                <strong>✅ Navegación:</strong> Puedes navegar entre preguntas usando los botones Anterior/Siguiente
-                o el índice de preguntas. Las preguntas respondidas se marcarán en verde.
+                <strong>✅ Navegación secuencial:</strong> Debes responder cada pregunta para poder avanzar a la siguiente.
+                Puedes volver atrás con el botón Anterior.
               </li>
               <li>
                 <strong>📊 Progreso:</strong> Revisa la barra de progreso para saber cuántas preguntas has respondido.
@@ -474,19 +475,7 @@
       </div>
 
       <div class="exam-body">
-        <div class="question-nav">
-          {#each questions as q, i}
-            <button
-              class="nav-dot {i === currentIndex ? 'active' : ''} {isQuestionAnswered(q.id) ? 'answered' : ''}"
-              onclick={() => goToQuestion(i)}
-              title="Pregunta {i + 1}"
-            >
-              {i + 1}
-            </button>
-          {/each}
-        </div>
-
-        <div class="question-card">
+  <div class="question-card">
           <div class="question-header">
             <span class="question-type-badge {questions[currentIndex]?.type === 'mc' ? 'mc' : 'open'}">
               {questions[currentIndex]?.type === 'mc' ? 'Selección Múltiple' : 'Pregunta Abierta'}
@@ -531,7 +520,11 @@
           </button>
 
           {#if currentIndex < totalQuestions - 1}
-            <button class="nav-btn" onclick={() => goToQuestion(currentIndex + 1)}>
+            <button
+              class="nav-btn"
+              onclick={() => goToQuestion(currentIndex + 1)}
+              disabled={!isQuestionAnswered(questions[currentIndex]?.id)}
+            >
               Siguiente →
             </button>
           {:else}
@@ -869,54 +862,7 @@
     gap: 1rem;
   }
 
-  .question-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
-    padding: 0.75rem;
-    border-radius: 10px;
-    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
-  }
-
-  .nav-dot {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    border: 2px solid #e5e7eb;
-    background: white;
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: #666;
-  }
-
-  .nav-dot:hover {
-    border-color: var(--color-theme-1, #3b82f6);
-    color: var(--color-theme-1, #3b82f6);
-  }
-
-  .nav-dot.active {
-    border-color: var(--color-theme-1, #3b82f6);
-    background: var(--color-theme-1, #3b82f6);
-    color: white;
-  }
-
-  .nav-dot.answered {
-    border-color: #22c55e;
-    background: #f0fdf4;
-    color: #16a34a;
-  }
-
-  .nav-dot.active.answered {
-    background: var(--color-theme-1, #3b82f6);
-    border-color: var(--color-theme-1, #3b82f6);
-    color: white;
-  }
-
-  .question-card {
+.question-card {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 14px;

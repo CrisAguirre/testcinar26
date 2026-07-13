@@ -65,6 +65,21 @@
         </div>
       {/if}
     </div>
+
+    <div class="subject-card" onclick={() => window.location.href='/desarrollo-web-1'}>
+      <div class="subject-card-inner">
+        <div class="subject-icon">&#128218;</div>
+        <h2>Desarrollo Web 1</h2>
+        <p class="subject-desc">Ingresa a la asignatura para ver tus evaluaciones</p>
+        <div class="subject-exams">
+          <div class="exam-card" onclick={(e) => { e.stopPropagation(); window.location.href='/desarrollo-web-1/parcial-1'; }}>
+            <span class="exam-icon">&#128221;</span>
+            <span class="exam-label">Parcial 1</span>
+            <span class="exam-arrow">&#8594;</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 {/if}
 
@@ -137,5 +152,112 @@
 
   tr:last-child td {
     border-bottom: none;
+  }
+
+  .subject-card {
+    margin-top: 1.5rem;
+    perspective: 1000px;
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  .subject-card-inner {
+    background: linear-gradient(135deg, var(--color-theme-2), #2c5f8a);
+    border-radius: 16px;
+    padding: 2rem;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 20px rgba(64, 117, 166, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .subject-card-inner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .subject-card-inner:hover::before {
+    opacity: 1;
+  }
+
+  .subject-card-inner:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(64, 117, 166, 0.4);
+  }
+
+  .subject-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .subject-card h2 {
+    font-size: 1.3rem;
+    margin: 0 0 0.25rem;
+    color: white;
+  }
+
+  .subject-desc {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.75);
+    margin: 0 0 1.25rem;
+  }
+
+  .subject-exams {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .exam-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(4px);
+  }
+
+  .exam-card:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateX(6px);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .exam-icon {
+    font-size: 1.3rem;
+  }
+
+  .exam-label {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .exam-arrow {
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 </style>

@@ -17,6 +17,7 @@
   let reviewData: any = $state(null);
   let openScores = $state<Record<number, number>>({});
   let savingReview = $state(false);
+  let resetting = $state(false);
 
   onMount(async () => {
     if (!$isAuthenticated) return;
@@ -173,6 +174,30 @@
     const s = seconds % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
+
+  async function resetAttempts() {
+    const examGrades = grades.filter((g: any) => g.subject === 'Desarrollo Web 1 - Parcial 1');
+    if (examGrades.length === 0) {
+      if (!confirm('No hay calificaciones de "Desarrollo Web 1 - Parcial 1" en el servidor. ¿Limpiar localStorage del navegador actual de todos modos?')) return;
+    } else {
+      if (!confirm(`¿Eliminar ${examGrades.length} calificaciones de "Desarrollo Web 1 - Parcial 1" del servidor y reiniciar los intentos?`)) return;
+    }
+
+    resetting = true;
+    try {
+      for (const g of examGrades) {
+        await gradesApi.delete(g._id);
+      }
+      localStorage.removeItem('parcial1_attempts');
+      localStorage.removeItem('parcial1_details');
+      grades = await gradesApi.getAll({});
+      alert(`Intentos reiniciados. Se eliminaron ${examGrades.length} registros del servidor y los datos locales.`);
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Error al reiniciar intentos';
+    } finally {
+      resetting = false;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -182,9 +207,14 @@
 <div class="page">
   <div class="header">
     <h1>Gestión de Calificaciones</h1>
-    {#if $isAdmin}
-      <button onclick={openCreate} class="btn-primary">+ Nueva Calificación</button>
-    {/if}
+    <div class="header-actions">
+      {#if $isAdmin}
+        <button onclick={resetAttempts} disabled={resetting} class="btn-reset">
+          {resetting ? 'Reiniciando...' : '🔄 Reiniciar Intentos Parcial 1'}
+        </button>
+        <button onclick={openCreate} class="btn-primary">+ Nueva Calificación</button>
+      {/if}
+    </div>
   </div>
 
   {#if error}
@@ -356,13 +386,42 @@
   .header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 1rem;
     margin-bottom: 1.5rem;
+    flex-wrap: wrap;
   }
 
   .header h1 {
     font-size: 1.5rem;
     margin: 0;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-reset {
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .btn-reset:hover {
+    opacity: 0.9;
+  }
+
+  .btn-reset:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .loading, .empty, .error {

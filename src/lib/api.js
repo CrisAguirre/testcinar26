@@ -39,6 +39,8 @@ export const gradesApi = {
   getMine: () => api('GET', '/grades/mine'),
   getById: (id) => api('GET', `/grades/${id}`),
   create: (data) => api('POST', '/grades', data),
+  submitMine: (data) => api('POST', '/grades/mine', data),
+  updateMine: (id, data) => api('PUT', `/grades/mine/${id}`, data),
   update: (id, data) => api('PUT', `/grades/${id}`, data),
   delete: (id) => api('DELETE', `/grades/${id}`)
 };

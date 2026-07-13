@@ -1,8 +1,6 @@
 <script lang="ts">
   import Header from './Header.svelte';
   import './layout.css';
-  import { isAuthenticated } from '$lib/stores/auth';
-  import { page } from '$app/stores';
 
   let { children } = $props();
 </script>
@@ -11,15 +9,7 @@
   <Header />
 
   <main>
-    {#if $isAuthenticated || $page.url.pathname === '/login'}
-      {@render children()}
-    {:else}
-      <div class="welcome">
-        <h1>Bienvenido a Cinar Sistemas 2026</h1>
-        <p>Plataforma de gestión de calificaciones</p>
-        <a href="/login" class="btn">Iniciar Sesión</a>
-      </div>
-    {/if}
+    {@render children()}
   </main>
 
   <footer>
@@ -43,41 +33,6 @@
     max-width: 64rem;
     margin: 0 auto;
     box-sizing: border-box;
-  }
-
-  .welcome {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    text-align: center;
-    gap: 1rem;
-  }
-
-  .welcome h1 {
-    font-size: 2rem;
-    margin: 0;
-  }
-
-  .welcome p {
-    font-size: 1.1rem;
-    color: #666;
-  }
-
-  .btn {
-    display: inline-block;
-    padding: 0.75rem 2rem;
-    background: var(--color-theme-1);
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    font-weight: 700;
-    transition: opacity 0.2s;
-  }
-
-  .btn:hover {
-    opacity: 0.9;
   }
 
   footer {

@@ -2,6 +2,7 @@
   import { isAuthenticated, currentUser, isAdmin } from '$lib/stores/auth';
   import { onMount } from 'svelte';
   import { gradesApi } from '$lib/api';
+  import { goto } from '$app/navigation';
 
   let grades: any[] = $state([]);
   let loading = $state(true);
@@ -12,7 +13,10 @@
   let detailData: any = $state(null);
 
   onMount(async () => {
-    if (!$isAuthenticated) return;
+    if (!$isAuthenticated) {
+      goto('/login');
+      return;
+    }
     try {
       const data = await gradesApi.getMine();
       grades = data;

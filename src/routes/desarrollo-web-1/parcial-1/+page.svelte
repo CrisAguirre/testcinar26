@@ -3,14 +3,7 @@
   import { gradesApi } from '$lib/api';
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
-
-  const STORAGE_KEY = 'parcial1_attempts';
-  const DETAIL_KEY = 'parcial1_details';
-
-  const EXAM_DATE = new Date(2026, 6, 15);
-  const WINDOW1_END = new Date(2026, 6, 15, 18, 45);
-  const WINDOW2_START = new Date(2026, 6, 15, 18, 45);
-  const WINDOW2_END = new Date(2026, 6, 15, 20, 0);
+  import { STORAGE_KEY, DETAIL_KEY, WINDOW1_END, WINDOW2_START, WINDOW2_END, TOTAL_QUESTIONS, TOTAL_TIME, formatTime, getAttemptLabel, getAttemptType, calculateScore, buildExamData } from '$lib/exam';
 
   let started = $state(false);
   let finished = $state(false);
@@ -43,11 +36,12 @@
   }
 
   function getAttemptCount(): number {
-    return loadingServer ? getLocalAttempts().length : serverAttempts;
+    if (loadingServer) return getLocalAttempts().length;
+    return Math.max(serverAttempts, getLocalAttempts().length);
   }
 
   async function loadServerAttempts() {
-    if (!$currentUser?._id) { loadingServer = false; return; }
+    if (!$currentUser?.id) { loadingServer = false; return; }
     try {
       const all = await gradesApi.getMine();
       const examGrades = all.filter((g: any) => g.subject === 'Desarrollo Web 1 - Parcial 1');
@@ -87,19 +81,9 @@
     loadServerAttempts();
   });
 
-  function getAttemptType(n: number): string {
-    return n <= 2 ? 'Preparación' : 'Evaluación';
-  }
-
-  function getAttemptLabel(n: number): string {
-    return `Intento ${n} (${getAttemptType(n)})`;
-  }
-
-  function formatTime(seconds: number): string {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  }
+  $effect(() => {
+    if ($currentUser) loadServerAttempts();
+  });
 
   function getProgressPercent(): number {
     const answered = Object.keys(answers).length;
@@ -199,24 +183,28 @@
     };
 
     let gradeId: string | undefined;
-    if ($currentUser?._id) {
+    if ($currentUser?.id) {
       try {
-        const grade = await gradesApi.create({
-          student: $currentUser._id,
+        const res = await gradesApi.submitMine({
           subject: 'Desarrollo Web 1 - Parcial 1',
           score,
           max_score: totalMc,
           period: '2026-1',
-          examData: JSON.stringify(examData),
           comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${totalMc} | Abiertas: ${openCount} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`
         });
+        const grade = res.grade || res;
         if (grade && grade._id) {
           gradeId = grade._id;
           localRecord.gradeId = grade._id;
+          try {
+            await gradesApi.updateMine(grade._id, { examData: JSON.stringify(examData) });
+          } catch {
+            console.warn('examData no se pudo adjuntar, pero la nota está guardada');
+          }
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Error de conexión';
-        saveError = `No se pudo guardar el examen en el servidor: ${msg}. Tus respuestas se guardaron localmente. El administrador debe revisar manualmente.`;
+        saveError = `No se pudo guardar en el servidor: ${msg}. Las respuestas están guardadas localmente.`;
       }
     }
 

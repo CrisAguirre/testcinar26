@@ -435,7 +435,7 @@ export const questionBank = [
 ];
 
 export function selectRandomQuestions(count = 20) {
-  const distribution = [
+  const baseDistribution = [
     { tema: 1, count: 2 },
     { tema: 2, count: 2 },
     { tema: 3, count: 2 },
@@ -445,10 +445,44 @@ export function selectRandomQuestions(count = 20) {
     { tema: 7, count: 6 }
   ];
 
+  const totalBase = baseDistribution.reduce((s, d) => s + d.count, 0);
+
+  let distribution;
+  if (count !== totalBase) {
+    const factor = count / totalBase;
+    distribution = baseDistribution.map(d => ({
+      tema: d.tema,
+      count: Math.max(1, Math.round(d.count * factor))
+    }));
+    let diff = count - distribution.reduce((s, d) => s + d.count, 0);
+    let i = 0;
+    while (diff !== 0) {
+      const idx = i % distribution.length;
+      if (diff > 0) {
+        const pool = questionBank.filter(q => q.tema === distribution[idx].tema);
+        if (distribution[idx].count < pool.length) {
+          distribution[idx].count++;
+          diff--;
+        }
+      } else {
+        if (distribution[idx].count > 1) {
+          distribution[idx].count--;
+          diff++;
+        }
+      }
+      i++;
+    }
+  } else {
+    distribution = baseDistribution;
+  }
+
   const selected = [];
 
   for (const dist of distribution) {
     const pool = questionBank.filter(q => q.tema === dist.tema);
+    if (pool.length < dist.count) {
+      throw new Error(`No hay suficientes preguntas para tema ${dist.tema}: se requieren ${dist.count}, hay ${pool.length}`);
+    }
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
     selected.push(...shuffled.slice(0, dist.count));
   }

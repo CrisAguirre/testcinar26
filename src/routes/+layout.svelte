@@ -23,7 +23,7 @@
   </main>
 
   <footer>
-    <p>Cinar Sistemas 2026 &mdash;</p>
+    <p>Cinar Sistemas 2026 - Todos los derechos reservados</p>
   </footer>
 </div>
 

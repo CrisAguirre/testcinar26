@@ -166,7 +166,7 @@
   /* ── Hero ── */
   .hero {
     position: relative;
-    padding: 3rem 1.5rem 2.5rem;
+    padding: 1rem 1.5rem 1.25rem;
     text-align: center;
     overflow: hidden;
     isolation: isolate;
@@ -207,20 +207,20 @@
   }
 
   .orb-1 {
-    width: 400px;
-    height: 400px;
+    width: 200px;
+    height: 200px;
     background: radial-gradient(circle, rgba(59,130,246,0.5), transparent);
-    top: -10%;
+    top: -20%;
     left: calc(var(--mx, 50) * 1%);
     transform: translateX(-50%);
     animation-duration: 14s;
   }
 
   .orb-2 {
-    width: 300px;
-    height: 300px;
+    width: 150px;
+    height: 150px;
     background: radial-gradient(circle, rgba(139,92,246,0.4), transparent);
-    bottom: -15%;
+    bottom: -30%;
     right: calc((100 - var(--mx, 50)) * 1%);
     transform: translateX(50%);
     animation-duration: 11s;
@@ -228,10 +228,10 @@
   }
 
   .orb-3 {
-    width: 250px;
-    height: 250px;
+    width: 120px;
+    height: 120px;
     background: radial-gradient(circle, rgba(5,150,105,0.3), transparent);
-    top: 40%;
+    top: 30%;
     left: calc(var(--mx, 50) * 0.5%);
     animation-duration: 17s;
     animation-delay: -6s;
@@ -290,7 +290,7 @@
     font-size: 0.82rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.5rem;
     backdrop-filter: blur(4px);
   }
   .back-btn:hover {
@@ -305,8 +305,8 @@
   }
 
   .hero-icon {
-    font-size: 3rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.6rem;
+    margin-bottom: 0.25rem;
     filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));
     animation: iconPulse 3s ease-in-out infinite;
   }
@@ -318,8 +318,8 @@
   }
 
   h1 {
-    font-size: 2rem;
-    margin: 0 0 0.5rem;
+    font-size: 1.3rem;
+    margin: 0 0 0.25rem;
     color: white;
     text-shadow: 0 2px 20px rgba(0,0,0,0.3);
     animation: titleGlow 4s ease-in-out infinite alternate;
@@ -332,9 +332,9 @@
   }
 
   .hero-sub {
-    font-size: 0.95rem;
+    font-size: 0.75rem;
     color: rgba(255,255,255,0.65);
-    margin: 0 0 1.5rem;
+    margin: 0 0 0.75rem;
   }
 
   /* ── Search ── */
@@ -683,10 +683,10 @@
   /* ── Responsive ── */
   @media (max-width: 600px) {
     .hero {
-      padding: 2rem 1rem 1.5rem;
+      padding: 0.75rem 1rem 1rem;
     }
     h1 {
-      font-size: 1.4rem;
+      font-size: 1.1rem;
     }
     .hero-sub {
       font-size: 0.82rem;

@@ -221,7 +221,9 @@
       clearInterval(timerInterval);
       timerInterval = null;
     }
-    document.removeEventListener('visibilitychange', handleVisibility);
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', handleVisibility);
+    }
   });
 </script>
 

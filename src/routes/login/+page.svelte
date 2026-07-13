@@ -33,7 +33,7 @@
 <div class="login-container">
   <div class="login-card">
     <img src={Logo} alt="Cinar Sistemas" class="login-logo" />
-    <h1>Cinar Sistemas 2026</h1>
+    <h1>Plataforma Educativa</h1>
     <h2>Iniciar Sesión</h2>
 
     {#if error}
@@ -84,7 +84,7 @@
 
   h1 {
     font-size: 1.2rem;
-    color: var(--color-theme-1);
+    color: #000;
     text-align: center;
     margin: 0 0 0.25rem;
   }

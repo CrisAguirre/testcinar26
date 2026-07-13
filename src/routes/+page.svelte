@@ -3,9 +3,12 @@
   import { onMount } from 'svelte';
   import { gradesApi } from '$lib/api';
   import { goto } from '$app/navigation';
+  import { preloadedMyGrades } from '$lib/stores/preloaded';
 
-  let grades: any[] = $state([]);
-  let loading = $state(true);
+  let { data } = $props();
+
+  let grades: any[] = $state(data.grades || []);
+  let loading = $state(!data.grades || data.grades.length === 0);
   let error = $state('');
 
   let showDetail = $state(false);
@@ -17,9 +20,11 @@
       goto('/login');
       return;
     }
+    if (grades.length > 0) { loading = false; return; }
     try {
-      const data = await gradesApi.getMine();
-      grades = data;
+      const result = await gradesApi.getMine();
+      grades = result;
+      preloadedMyGrades.set(result);
     } catch (err) {
       error = err instanceof Error ? err.message : 'Error al cargar datos';
     } finally {
@@ -250,6 +255,11 @@
           <div class="exam-card" onclick={() => window.location.href='/desarrollo-web-1/parcial-1'}>
             <span class="exam-icon">&#128221;</span>
             <span class="exam-label">Parcial 1</span>
+            <span class="exam-arrow">&#8594;</span>
+          </div>
+          <div class="exam-card" onclick={() => window.location.href='/desarrollo-web-1/algoritmia'}>
+            <span class="exam-icon">&#129302;</span>
+            <span class="exam-label">Algoritmia</span>
             <span class="exam-arrow">&#8594;</span>
           </div>
         </div>

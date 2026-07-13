@@ -1,6 +1,6 @@
-const API_URL = 'https://testcinar26bknd.onrender.com/api';
+export const API_URL = 'https://testcinar26bknd.onrender.com/api';
 
-function getToken() {
+export function getToken() {
   return typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
 }
 

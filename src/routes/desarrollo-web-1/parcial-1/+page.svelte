@@ -4,6 +4,9 @@
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { STORAGE_KEY, DETAIL_KEY, WINDOW1_END, WINDOW2_START, WINDOW2_END, TOTAL_QUESTIONS, TOTAL_TIME, formatTime, getAttemptLabel, getAttemptType, calculateScore, buildExamData } from '$lib/exam';
+  import { preloadedMyGrades } from '$lib/stores/preloaded';
+
+  let { data } = $props();
 
   let started = $state(false);
   let finished = $state(false);
@@ -21,8 +24,8 @@
 
   let currentAttemptNumber = $state(0);
   let serverAttempts = $state(0);
-  let serverGrades = $state<any[]>([]);
-  let loadingServer = $state(true);
+  let serverGrades = $state<any[]>(data.serverGrades || []);
+  let loadingServer = $state(!data.serverGrades);
   let saveError = $state('');
 
   const totalQuestions = 20;
@@ -47,7 +50,11 @@
   async function loadServerAttempts() {
     if (!$currentUser?.id) { loadingServer = false; return; }
     try {
-      const all = await gradesApi.getMine();
+      let all = data.serverGrades;
+      if (!all || all.length === 0) {
+        all = await gradesApi.getMine();
+        preloadedMyGrades.set(all);
+      }
       const examGrades = all.filter((g: any) => g.subject === 'Desarrollo Web 1 - Parcial 1');
       serverGrades = examGrades;
       serverAttempts = examGrades.length;

@@ -8,17 +8,17 @@ export const load: PageLoad = async () => {
   if (browser) {
     const cached = get(preloadedMyGrades);
     if (cached && cached.length > 0) {
-      return { grades: cached };
+      return { serverGrades: cached };
     }
 
     try {
       const grades = await gradesApi.getMine();
       preloadedMyGrades.set(grades);
-      return { grades };
+      return { serverGrades: grades };
     } catch {
-      return { grades: [] };
+      return { serverGrades: [] };
     }
   }
 
-  return { grades: [] };
+  return { serverGrades: [] };
 };

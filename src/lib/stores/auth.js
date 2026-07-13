@@ -7,7 +7,7 @@ export const token = writable(storedToken);
 export const currentUser = writable(storedUser ? JSON.parse(storedUser) : null);
 
 export const isAuthenticated = derived(currentUser, ($user) => $user !== null);
-export const isAdmin = derived(currentUser, ($user) => $user?.role === 'admin');
+export const isAdmin = derived(currentUser, ($user) => $user?.role === 'admin' || $user?.role === 'coordinator');
 
 export function login(userData, tokenValue) {
   localStorage.setItem('token', tokenValue);

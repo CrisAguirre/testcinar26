@@ -2,10 +2,12 @@
   import { isAuthenticated, currentUser, isAdmin } from '$lib/stores/auth';
   import { onMount } from 'svelte';
   import { gradesApi } from '$lib/api';
+  import { preloadedGrades } from '$lib/stores/preloaded';
 
-  let grades: any[] = $state([]);
-  let students: any[] = $state([]);
-  let loading = $state(true);
+  let { data } = $props();
+
+  let grades: any[] = $state(data.grades || []);
+  let loading = $state(!data.grades || data.grades.length === 0);
   let error = $state('');
 
   let showForm = $state(false);
@@ -21,8 +23,10 @@
 
   onMount(async () => {
     if (!$isAuthenticated) return;
+    if (grades.length > 0) { loading = false; return; }
     try {
       grades = await gradesApi.getAll({});
+      preloadedGrades.set(grades);
     } catch (err) {
       error = err instanceof Error ? err.message : 'Error al cargar datos';
     } finally {

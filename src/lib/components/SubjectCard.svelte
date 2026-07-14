@@ -99,7 +99,7 @@
       <span class="shooting-star s2"></span>
       <span class="shooting-star s3"></span>
       <span class="code-sym sym-1">&lt;/&gt;</span>
-      <span class="code-sym sym-2">{ }</span>
+      <span class="code-sym sym-2">{'{\u00A0}'}</span>
       <span class="code-sym sym-3">//</span>
       <span class="code-sym sym-4">&lt;!-- --&gt;</span>
       <span class="code-sym sym-5">JS</span>

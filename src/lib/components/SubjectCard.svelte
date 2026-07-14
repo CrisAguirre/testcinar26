@@ -245,23 +245,14 @@
     gap: 0.4rem;
     font-size: 0.9rem;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.9);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.4);
     padding-bottom: 0.15rem;
     text-decoration: none;
   }
 
-  .subject-card:hover .subject-cta {
-    color: white;
-    border-bottom-color: rgba(255, 255, 255, 0.7);
-  }
-
   .cta-arrow {
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .subject-card:hover .cta-arrow {
-    transform: translateX(4px);
   }
 
   .subject-decor {
@@ -287,50 +278,55 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 70px;
+    width: 60px;
     height: 1.5px;
     background: linear-gradient(to left, rgba(255, 255, 255, 0.6), transparent);
-    transform: translate(-50%, -50%) rotate(135deg);
+    transform: translate(-50%, -50%) rotate(var(--star-angle, 135deg));
   }
 
   .s1 {
-    top: 10%;
-    right: 5%;
-    animation: shootStar 3s 1s infinite;
+    top: 8%;
+    right: 10%;
+    --star-angle: 135deg;
+    animation: shootStarBL 3s 1s infinite;
   }
 
   .s2 {
-    top: 30%;
-    right: 30%;
-    animation: shootStar 4s 2.5s infinite;
+    top: 45%;
+    left: 20%;
+    --star-angle: -45deg;
+    animation: shootStarTR 4s 2.5s infinite;
   }
 
   .s3 {
-    top: 55%;
-    right: 15%;
-    animation: shootStar 3.5s 4s infinite;
+    top: 60%;
+    right: 25%;
+    --star-angle: -135deg;
+    animation: shootStarBR 3.5s 4s infinite;
   }
 
-  @keyframes shootStar {
-    0% {
-      transform: translate(0, 0);
-      opacity: 0;
-    }
-    5% {
-      opacity: 1;
-    }
-    25% {
-      transform: translate(-200px, 200px);
-      opacity: 1;
-    }
-    30% {
-      transform: translate(-240px, 240px);
-      opacity: 0;
-    }
-    100% {
-      transform: translate(-240px, 240px);
-      opacity: 0;
-    }
+  @keyframes shootStarBL {
+    0% { transform: translate(0, 0); opacity: 0; }
+    5% { opacity: 1; }
+    25% { transform: translate(-180px, 180px); opacity: 1; }
+    30% { transform: translate(-220px, 220px); opacity: 0; }
+    100% { transform: translate(-220px, 220px); opacity: 0; }
+  }
+
+  @keyframes shootStarTR {
+    0% { transform: translate(0, 0); opacity: 0; }
+    5% { opacity: 1; }
+    25% { transform: translate(160px, -160px); opacity: 1; }
+    30% { transform: translate(200px, -200px); opacity: 0; }
+    100% { transform: translate(200px, -200px); opacity: 0; }
+  }
+
+  @keyframes shootStarBR {
+    0% { transform: translate(0, 0); opacity: 0; }
+    5% { opacity: 1; }
+    25% { transform: translate(150px, 150px); opacity: 1; }
+    30% { transform: translate(190px, 190px); opacity: 0; }
+    100% { transform: translate(190px, 190px); opacity: 0; }
   }
 
   .code-sym {

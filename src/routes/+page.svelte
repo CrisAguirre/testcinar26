@@ -263,7 +263,7 @@
       <SubjectCard
         icon="📚"
         title="Desarrollo Web 1"
-        description="Accede a tus contenidos y evaluaciones"
+        description="Accede a tus contenidos, evaluaciones y notas"
         href="/desarrollo-web-1"
       />
     </div>

@@ -26,7 +26,7 @@
     <span class="header-icon">📚</span>
     <h1>Desarrollo Web 1</h1>
     <p class="header-desc">
-      Accede a tus contenidos y evaluaciones desde los siguientes accesos:
+      Accede a tus contenidos, evaluaciones y notas desde los siguientes accesos:
     </p>
   </div>
 

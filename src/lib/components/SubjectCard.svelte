@@ -268,13 +268,15 @@
     gap: 0.4rem;
     font-size: 0.85rem;
     font-weight: 700;
-    color: var(--color-primary);
-    background: white;
+    color: white;
+    background: linear-gradient(135deg, #5B9BD5, #1A365D, #0B0E14, #1A365D, #5B9BD5);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
     padding: 0.5rem 1.2rem;
     border-radius: 999px;
-    border: none;
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
   }
 
   .cta-arrow {

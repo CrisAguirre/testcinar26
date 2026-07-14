@@ -1,5 +1,6 @@
 <script lang="ts">
   import { motion } from '@humanspeak/svelte-motion';
+  import { goto } from '$app/navigation';
 
   let {
     icon,
@@ -30,14 +31,31 @@
     tiltX = 0;
     tiltY = 0;
   }
+
+  function handleClick() {
+    goto(href);
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      goto(href);
+    }
+  }
 </script>
 
-<a
-  {href}
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+<motion.div
   class="subject-card"
   bind:this={cardEl}
   onmousemove={handleMouseMove}
   onmouseleave={handleMouseLeave}
+  onclick={handleClick}
+  onkeydown={handleKeydown}
+  tabindex="0"
+  role="link"
+  whileHover={{ scale: 1.02 }}
+  whileTap={{ scale: 0.98 }}
   style="--tiltX: {tiltX}deg; --tiltY: {tiltY}deg"
 >
   <motion.div
@@ -84,29 +102,22 @@
       Entrar <span class="cta-arrow">→</span>
     </motion.span>
   </div>
-</a>
+</motion.div>
 
 <style>
   .subject-card {
-    display: block;
     position: relative;
     perspective: 800px;
-    animation: cardRise 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-    text-decoration: none;
-    color: inherit;
+    cursor: pointer;
+    outline: none;
     transform: rotateX(var(--tiltX)) rotateY(var(--tiltY));
     transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  @keyframes cardRise {
-    from {
-      opacity: 0;
-      transform: translateY(40px) scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
+  .subject-card:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 20px;
   }
 
   .subject-glow {

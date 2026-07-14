@@ -4,6 +4,7 @@
   import { gradesApi } from '$lib/api';
   import { goto } from '$app/navigation';
   import { preloadedMyGrades } from '$lib/stores/preloaded';
+  import SubjectCard from '$lib/components/SubjectCard.svelte';
 
   let { data } = $props();
 
@@ -258,30 +259,16 @@
       </div>
     {/if}
 
-    <div class="subject-card">
-      <div class="subject-card-inner">
-        <div class="subject-icon">&#128218;</div>
-        <h2>Desarrollo Web 1</h2>
-        <p class="subject-desc">Accede a tus contenidos y evaluaciones desde los siguientes accesos:</p>
-        <div class="subject-exams">
-          <a href="/desarrollo-web-1/parcial-1" class="exam-card">
-            <span class="exam-icon">&#128221;</span>
-            <span class="exam-label">Parcial 1</span>
-            <span class="exam-arrow">&#8594;</span>
-          </a>
-          <a href="/desarrollo-web-1/algoritmia" class="exam-card">
-            <span class="exam-icon">&#129302;</span>
-            <span class="exam-label">Algoritmia</span>
-            <span class="exam-arrow">&#8594;</span>
-          </a>
-          <a href="/desarrollo-web-1/enlaces-de-consulta" class="exam-card">
-            <span class="exam-icon">&#128279;</span>
-            <span class="exam-label">Enlaces de Consulta</span>
-            <span class="exam-arrow">&#8594;</span>
-          </a>
-        </div>
-      </div>
-    </div>
+    <SubjectCard
+      icon="&#128218;"
+      title="Desarrollo Web 1"
+      description="Accede a tus contenidos y evaluaciones desde los siguientes accesos:"
+      links={[
+        { href: '/desarrollo-web-1/parcial-1', icon: '&#128221;', label: 'Parcial 1' },
+        { href: '/desarrollo-web-1/algoritmia', icon: '&#129302;', label: 'Algoritmia' },
+        { href: '/desarrollo-web-1/enlaces-de-consulta', icon: '&#128279;', label: 'Enlaces de Consulta' }
+      ]}
+    />
   </div>
 {/if}
 
@@ -370,141 +357,6 @@
     color: var(--color-accent);
     font-weight: 600;
     font-size: 0.8rem;
-  }
-
-  .subject-card {
-    margin-top: 1.5rem;
-    perspective: 1000px;
-    animation: fadeInUp 0.6s ease-out;
-  }
-
-  .subject-card-inner {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-    border-radius: 16px;
-    padding: 2rem;
-    color: white;
-    cursor: pointer;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    box-shadow: 0 4px 20px rgba(64, 117, 166, 0.3);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .subject-card-inner::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
-    opacity: 0;
-    transition: opacity 0.4s ease;
-  }
-
-  .subject-card-inner:hover::before {
-    opacity: 1;
-  }
-
-  .subject-card-inner:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(64, 117, 166, 0.4);
-  }
-
-  .subject-icon {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .subject-card h2 {
-    font-size: 1.3rem;
-    margin: 0 0 0.25rem;
-    color: white;
-  }
-
-  .subject-desc {
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.75);
-    margin: 0 0 1.25rem;
-  }
-
-  .subject-exams {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .exam-card {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    padding: 0.85rem 1rem;
-    color: inherit;
-    text-decoration: none;
-    cursor: pointer;
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .exam-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
-    background-size: 200% 200%;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    pointer-events: none;
-  }
-
-  .exam-card:hover::before {
-    opacity: 1;
-    animation: cardShine 0.8s ease forwards;
-  }
-
-  @keyframes cardShine {
-    0%   { background-position: 200% 200%; }
-    100% { background-position: -200% -200%; }
-  }
-
-  .exam-card:hover {
-    background: rgba(255, 255, 255, 0.22);
-    transform: translateY(-3px) scale(1.02);
-    border-color: rgba(255, 255, 255, 0.5);
-    box-shadow:
-      0 8px 30px rgba(0,0,0,0.15),
-      0 0 0 1px rgba(255,255,255,0.2);
-  }
-
-  .exam-card:active {
-    transform: translateY(-1px) scale(1);
-  }
-
-  .exam-card .exam-arrow {
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .exam-card:hover .exam-arrow {
-    transform: translateX(4px);
-  }
-
-  .exam-icon {
-    font-size: 1.3rem;
-  }
-
-  .exam-label {
-    flex: 1;
-    font-weight: 600;
-    font-size: 0.95rem;
-  }
-
-  .exam-arrow {
-    font-size: 1.1rem;
-    transition: transform 0.3s ease;
   }
 
   .modal-overlay {
@@ -756,17 +608,6 @@
     opacity: 0.9;
   }
 
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
   @media (max-width: 600px) {
     .dashboard {
       padding: 0.5rem 0;
@@ -783,18 +624,6 @@
     th, td {
       padding: 0.5rem;
       font-size: 0.78rem;
-    }
-
-    .subject-card-inner {
-      padding: 1.25rem;
-    }
-
-    .subject-card h2 {
-      font-size: 1.1rem;
-    }
-
-    .exam-card {
-      padding: 0.6rem 0.85rem;
     }
 
     .modal {

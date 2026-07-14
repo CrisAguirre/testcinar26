@@ -86,8 +86,7 @@
         {icon}
       </motion.span>
       <motion.h2
-        class="subject-title"
-        class:bold={boldTitle}
+        class="subject-title {boldTitle ? 'bold' : ''}"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
@@ -108,7 +107,8 @@
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.5, duration: 0.4 }}
-        whileHover={{ gap: '0.7rem' }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.97 }}
       >
         Entrar <span class="cta-arrow">→</span>
       </motion.a>
@@ -249,12 +249,14 @@
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 700;
-    color: white;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.4);
-    padding-bottom: 0.15rem;
+    color: var(--color-primary);
+    background: white;
+    padding: 0.5rem 1.2rem;
+    border-radius: 999px;
     text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
   .cta-arrow {

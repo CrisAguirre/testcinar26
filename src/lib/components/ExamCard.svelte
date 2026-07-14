@@ -1,13 +1,40 @@
 <script lang="ts">
+  import { motion } from '@humanspeak/svelte-motion';
+
   let { href, icon, label, delay = 0 }: { href: string; icon: string; label: string; delay?: number } = $props();
 </script>
 
-<a {href} class="exam-card" style="--delay: {delay}s">
-  <span class="exam-shine"></span>
-  <span class="exam-icon">{icon}</span>
+<motion.a
+  {href}
+  class="exam-card"
+  initial={{ opacity: 0, y: 24, scale: 0.95 }}
+  animate={{ opacity: 1, y: 0, scale: 1 }}
+  transition={{ delay, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+  whileHover={{ y: -6, scale: 1.03, borderColor: 'var(--color-accent)' }}
+  whileTap={{ scale: 0.98, y: -2 }}
+>
+  <motion.span
+    class="exam-shine"
+    initial={{ opacity: 0 }}
+    whileHover={{ opacity: 1 }}
+    transition={{ duration: 0.4 }}
+  />
+  <motion.span
+    class="exam-icon"
+    whileHover={{ rotate: [0, -10, 8, -5, 0], scale: 1.25 }}
+    transition={{ duration: 0.5 }}
+  >
+    {icon}
+  </motion.span>
   <span class="exam-label">{label}</span>
-  <span class="exam-arrow">&#8594;</span>
-</a>
+  <motion.span
+    class="exam-arrow"
+    whileHover={{ x: [0, 6, 0] }}
+    transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+  >
+    &#8594;
+  </motion.span>
+</motion.a>
 
 <style>
   .exam-card {
@@ -23,39 +50,14 @@
     cursor: pointer;
     position: relative;
     overflow: hidden;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    animation-delay: var(--delay);
-    transition:
-      background 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-      border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-      transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-      box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes cardEnter {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.3s ease;
   }
 
   .exam-card:hover {
-    background: var(--color-surface-hover);
-    transform: translateY(-3px) scale(1.02);
-    border-color: var(--color-accent);
     box-shadow:
       0 8px 30px rgba(0, 0, 0, 0.1),
-      0 0 0 1px var(--color-accent);
-  }
-
-  .exam-card:active {
-    transform: translateY(-1px) scale(1);
+      0 0 20px color-mix(in srgb, var(--color-accent) 10%, transparent);
   }
 
   .exam-shine {
@@ -63,37 +65,13 @@
     inset: 0;
     background: linear-gradient(135deg, transparent 40%, color-mix(in srgb, var(--color-accent) 8%, transparent) 50%, transparent 60%);
     background-size: 200% 200%;
-    opacity: 0;
-    transition: opacity 0.4s ease;
     pointer-events: none;
-  }
-
-  .exam-card:hover .exam-shine {
-    opacity: 1;
-    animation: shineSweep 0.8s ease forwards;
-  }
-
-  @keyframes shineSweep {
-    0% { background-position: 200% 200%; }
-    100% { background-position: -200% -200%; }
   }
 
   .exam-icon {
     font-size: 1.3rem;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
     z-index: 1;
-  }
-
-  .exam-card:hover .exam-icon {
-    animation: iconPulse 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  @keyframes iconPulse {
-    0% { transform: scale(1) rotate(0deg); }
-    40% { transform: scale(1.3) rotate(-8deg); }
-    70% { transform: scale(1.1) rotate(4deg); }
-    100% { transform: scale(1) rotate(0deg); }
   }
 
   .exam-label {
@@ -106,19 +84,7 @@
 
   .exam-arrow {
     font-size: 1.1rem;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
     z-index: 1;
-  }
-
-  .exam-card:hover .exam-arrow {
-    animation: arrowSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  @keyframes arrowSlide {
-    0% { transform: translateX(0); opacity: 1; }
-    50% { transform: translateX(8px); opacity: 0; }
-    51% { transform: translateX(-4px); opacity: 0; }
-    100% { transform: translateX(0); opacity: 1; }
   }
 </style>

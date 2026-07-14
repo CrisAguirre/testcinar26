@@ -14,11 +14,11 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     padding: 0.85rem 1rem;
-    color: inherit;
+    color: var(--color-text-primary);
     text-decoration: none;
     cursor: pointer;
     position: relative;
@@ -46,12 +46,12 @@
   }
 
   .exam-card:hover {
-    background: rgba(255, 255, 255, 0.22);
+    background: var(--color-surface-hover);
     transform: translateY(-3px) scale(1.02);
-    border-color: rgba(255, 255, 255, 0.5);
+    border-color: var(--color-accent);
     box-shadow:
-      0 8px 30px rgba(0, 0, 0, 0.15),
-      0 0 0 1px rgba(255, 255, 255, 0.2);
+      0 8px 30px rgba(0, 0, 0, 0.1),
+      0 0 0 1px var(--color-accent);
   }
 
   .exam-card:active {
@@ -61,7 +61,7 @@
   .exam-shine {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.15) 50%, transparent 60%);
+    background: linear-gradient(135deg, transparent 40%, color-mix(in srgb, var(--color-accent) 8%, transparent) 50%, transparent 60%);
     background-size: 200% 200%;
     opacity: 0;
     transition: opacity 0.4s ease;

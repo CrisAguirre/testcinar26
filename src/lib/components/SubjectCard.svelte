@@ -1,38 +1,35 @@
 <script lang="ts">
-  import ExamCard from './ExamCard.svelte';
-
   let {
     icon,
     title,
     description,
-    links
+    href = '/'
   }: {
     icon: string;
     title: string;
     description: string;
-    links: { href: string; icon: string; label: string }[];
+    href?: string;
   } = $props();
 </script>
 
-<div class="subject-card">
+<a {href} class="subject-card">
   <div class="subject-glow"></div>
   <div class="subject-content">
     <div class="subject-icon">{icon}</div>
     <h2>{title}</h2>
     <p class="subject-desc">{description}</p>
-    <div class="subject-exams">
-      {#each links as link, i}
-        <ExamCard href={link.href} icon={link.icon} label={link.label} delay={0.1 + i * 0.08} />
-      {/each}
-    </div>
+    <span class="subject-cta">Entrar <span class="cta-arrow">→</span></span>
   </div>
-</div>
+</a>
 
 <style>
   .subject-card {
+    display: block;
     position: relative;
     perspective: 1000px;
     animation: cardRise 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    text-decoration: none;
+    color: inherit;
   }
 
   @keyframes cardRise {
@@ -78,11 +75,16 @@
       transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
       box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 4px 20px rgba(64, 117, 166, 0.3);
+    cursor: pointer;
   }
 
   .subject-card:hover .subject-content {
     transform: translateY(-4px);
     box-shadow: 0 12px 40px rgba(64, 117, 166, 0.4);
+  }
+
+  .subject-card:active .subject-content {
+    transform: translateY(-1px);
   }
 
   .subject-icon {
@@ -116,10 +118,30 @@
     margin: 0 0 1.25rem;
   }
 
-  .subject-exams {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+  .subject-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+    padding-bottom: 0.15rem;
+    transition: all 0.3s ease;
+  }
+
+  .subject-card:hover .subject-cta {
+    color: white;
+    border-bottom-color: rgba(255, 255, 255, 0.7);
+    gap: 0.6rem;
+  }
+
+  .cta-arrow {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .subject-card:hover .cta-arrow {
+    transform: translateX(4px);
   }
 
   @media (max-width: 600px) {

@@ -260,14 +260,10 @@
     {/if}
 
     <SubjectCard
-      icon="&#128218;"
+      icon="📚"
       title="Desarrollo Web 1"
-      description="Accede a tus contenidos y evaluaciones desde los siguientes accesos:"
-      links={[
-        { href: '/desarrollo-web-1/parcial-1', icon: '&#128221;', label: 'Parcial 1' },
-        { href: '/desarrollo-web-1/algoritmia', icon: '&#129302;', label: 'Algoritmia' },
-        { href: '/desarrollo-web-1/enlaces-de-consulta', icon: '&#128279;', label: 'Enlaces de Consulta' }
-      ]}
+      description="Accede a tus contenidos y evaluaciones"
+      href="/desarrollo-web-1"
     />
   </div>
 {/if}

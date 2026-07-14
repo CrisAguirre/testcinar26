@@ -1,6 +1,5 @@
 <script lang="ts">
   import { motion } from '@humanspeak/svelte-motion';
-  import { goto } from '$app/navigation';
 
   let {
     icon,
@@ -14,49 +13,36 @@
     href?: string;
   } = $props();
 
-  let tiltX = $state(0);
-  let tiltY = $state(0);
-  let cardEl: HTMLElement | undefined = $state();
-
-  function handleMouseMove(e: MouseEvent) {
-    if (!cardEl) return;
-    const rect = cardEl.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    tiltX = ((e.clientY - centerY) / rect.height) * -15;
-    tiltY = ((e.clientX - centerX) / rect.width) * 15;
-  }
-
-  function handleMouseLeave() {
-    tiltX = 0;
-    tiltY = 0;
-  }
-
-  function handleClick() {
-    goto(href);
-  }
-
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      goto(href);
+  function tilt(node: HTMLElement) {
+    function handleMouseMove(e: MouseEvent) {
+      const rect = node.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const tx = ((e.clientY - centerY) / rect.height) * -15;
+      const ty = ((e.clientX - centerX) / rect.width) * 15;
+      node.style.setProperty('--tx', `${tx}deg`);
+      node.style.setProperty('--ty', `${ty}deg`);
     }
+    function handleMouseLeave() {
+      node.style.setProperty('--tx', '0deg');
+      node.style.setProperty('--ty', '0deg');
+    }
+    node.addEventListener('mousemove', handleMouseMove);
+    node.addEventListener('mouseleave', handleMouseLeave);
+    return {
+      destroy() {
+        node.removeEventListener('mousemove', handleMouseMove);
+        node.removeEventListener('mouseleave', handleMouseLeave);
+      }
+    };
   }
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-<motion.div
+<a
+  {href}
   class="subject-card"
-  bind:this={cardEl}
-  onmousemove={handleMouseMove}
-  onmouseleave={handleMouseLeave}
-  onclick={handleClick}
-  onkeydown={handleKeydown}
-  tabindex="0"
-  role="link"
-  whileHover={{ scale: 1.02 }}
-  whileTap={{ scale: 0.98 }}
-  style="--tiltX: {tiltX}deg; --tiltY: {tiltY}deg"
+  use:tilt
 >
   <motion.div
     class="subject-glow"
@@ -102,16 +88,18 @@
       Entrar <span class="cta-arrow">→</span>
     </motion.span>
   </div>
-</motion.div>
+</a>
 
 <style>
   .subject-card {
+    display: block;
     position: relative;
     perspective: 800px;
-    cursor: pointer;
-    outline: none;
-    transform: rotateX(var(--tiltX)) rotateY(var(--tiltY));
+    text-decoration: none;
+    color: inherit;
+    transform: rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg));
     transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    outline: none;
   }
 
   .subject-card:focus-visible {
@@ -147,9 +135,8 @@
     position: relative;
     overflow: hidden;
     z-index: 1;
-    transition:
-      box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 4px 20px rgba(64, 117, 166, 0.3);
+    transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .subject-card:hover .subject-content {

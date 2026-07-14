@@ -45,7 +45,7 @@
 	--radius-lg: 12px;
 	--radius-xl: 16px;
 
-	/* Retained for backward compat */
+	/* Backward compat — still used by dashboard, algoritmia, sverdle */
 	--color-theme-1: #ff3e00;
 	--color-theme-2: #4075a6;
 	--column-width: 42rem;

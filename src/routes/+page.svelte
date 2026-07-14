@@ -32,6 +32,17 @@
     }
   });
 
+  function handleRowKeydown(e: KeyboardEvent, grade: any) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openDetail(grade);
+    }
+  }
+
+  function handleOverlayKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') showDetail = false;
+  }
+
   function parseExamData(grade: any): any | null {
     if (!grade.examData) return null;
     try {
@@ -120,7 +131,7 @@
             </thead>
             <tbody>
               {#each grades as grade}
-                <tr class="{hasExamData(grade) ? 'clickable-row' : ''}" onclick={hasExamData(grade) ? () => openDetail(grade) : undefined}>
+                <tr class="{hasExamData(grade) ? 'clickable-row' : ''}" onclick={hasExamData(grade) ? () => openDetail(grade) : undefined} onkeydown={hasExamData(grade) ? (e: KeyboardEvent) => handleRowKeydown(e, grade) : undefined} tabindex={hasExamData(grade) ? 0 : undefined} role={hasExamData(grade) ? 'button' : undefined}>
                   <td>{grade.subject}</td>
                   <td>{grade.score}</td>
                   <td>{grade.max_score}</td>
@@ -140,7 +151,8 @@
     </div>
 
     {#if showDetail && detailData}
-      <div class="modal-overlay" onclick={() => showDetail = false}>
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div class="modal-overlay" onclick={() => showDetail = false} onkeydown={handleOverlayKeydown} tabindex="-1" role="dialog" aria-modal="true">
         <div class="modal modal-wide" onclick={(e) => e.stopPropagation()}>
           <h2>{detailGrade.subject}</h2>
           <div class="detail-meta">
@@ -285,7 +297,7 @@
 
   .role-badge {
     display: inline-block;
-    background: var(--color-theme-2);
+    background: var(--color-primary);
     color: white;
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
@@ -367,7 +379,7 @@
   }
 
   .subject-card-inner {
-    background: linear-gradient(135deg, var(--color-theme-2), #2c5f8a);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
     border-radius: 16px;
     padding: 2rem;
     color: white;
@@ -434,7 +446,6 @@
     text-decoration: none;
     cursor: pointer;
     transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    backdrop-filter: blur(4px);
     position: relative;
     overflow: hidden;
   }
@@ -499,7 +510,7 @@
   .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: color-mix(in srgb, var(--color-text-primary) 40%, transparent);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -574,13 +585,13 @@
   }
 
   .detail-question {
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
     padding: 1rem;
   }
 
   .detail-question.open-q {
-    border-left: 4px solid #f59e0b;
+    border-left: 4px solid var(--color-warning);
   }
 
   .detail-q-header {
@@ -594,7 +605,7 @@
   .detail-q-num {
     font-weight: 700;
     font-size: 0.82rem;
-    color: #444;
+    color: var(--color-text-secondary);
   }
 
   .detail-q-badge {
@@ -617,7 +628,7 @@
 
   .detail-q-tema {
     font-size: 0.72rem;
-    color: #888;
+    color: var(--color-text-muted);
   }
 
   .detail-q-result {
@@ -652,17 +663,17 @@
     padding: 0.4rem 0.6rem;
     border-radius: 6px;
     font-size: 0.82rem;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--color-border);
   }
 
   .detail-option.correct {
-    background: #f0fdf4;
-    border-color: #86efac;
+    background: color-mix(in srgb, var(--color-success) 10%, transparent);
+    border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
   }
 
   .detail-option.selected:not(.correct) {
-    background: #fef2f2;
-    border-color: #fca5a5;
+    background: color-mix(in srgb, var(--color-error) 10%, transparent);
+    border-color: color-mix(in srgb, var(--color-error) 40%, transparent);
   }
 
   .detail-option-indicator {
@@ -674,7 +685,7 @@
   .detail-correct-label {
     font-size: 0.65rem;
     font-weight: 700;
-    color: #16a34a;
+    color: var(--color-success);
     margin-left: auto;
   }
 
@@ -684,14 +695,14 @@
 
   .detail-open-answer strong {
     font-size: 0.8rem;
-    color: #444;
+    color: var(--color-text-secondary);
   }
 
   .detail-student-answer {
     font-size: 0.88rem;
     line-height: 1.5;
-    color: #1f2937;
-    background: #f9fafb;
+    color: var(--color-text-primary);
+    background: var(--color-surface-alt);
     padding: 0.65rem;
     border-radius: 6px;
     margin: 0.3rem 0 0;
@@ -707,7 +718,7 @@
   }
 
   .detail-open-graded strong {
-    color: #444;
+    color: var(--color-text-secondary);
   }
 
   .grade-value {

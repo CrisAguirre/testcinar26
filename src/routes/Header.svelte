@@ -39,7 +39,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem 1.5rem;
-    background: var(--color-theme-2);
+    background: var(--color-primary);
   }
 
   .brand {

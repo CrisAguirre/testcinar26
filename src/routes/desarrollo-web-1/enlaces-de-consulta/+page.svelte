@@ -160,7 +160,7 @@
 <style>
   .links-page {
     min-height: 100vh;
-    background: #f8fafc;
+    background: var(--color-bg-1);
   }
 
   /* ── Hero ── */
@@ -292,7 +292,6 @@
     cursor: pointer;
     transition: all 0.3s ease;
     margin-bottom: 0.5rem;
-    backdrop-filter: blur(4px);
   }
   .back-btn:hover {
     background: rgba(255,255,255,0.18);
@@ -363,7 +362,6 @@
     font-size: 0.9rem;
     background: rgba(255,255,255,0.1);
     color: white;
-    backdrop-filter: blur(8px);
     outline: none;
     transition: all 0.35s ease;
     box-sizing: border-box;
@@ -466,7 +464,7 @@
     flex: 1;
     font-size: 1.08rem;
     margin: 0;
-    color: #1f2937;
+    color: var(--color-text-primary);
   }
 
   .category-count {
@@ -498,8 +496,8 @@
     gap: 1rem;
     padding: 0.85rem 1.1rem;
     background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
     text-decoration: none;
     transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
@@ -577,7 +575,7 @@
   .link-title {
     font-weight: 700;
     font-size: 0.9rem;
-    color: #1f2937;
+    color: var(--color-text-primary);
     transition: color 0.25s;
   }
 
@@ -587,13 +585,13 @@
 
   .link-desc {
     font-size: 0.78rem;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     line-height: 1.4;
     transition: color 0.25s;
   }
 
   .link-card:hover .link-desc {
-    color: #4b5563;
+    color: var(--color-text-primary);
   }
 
   .link-meta {
@@ -631,7 +629,7 @@
 
   .link-arrow {
     font-size: 1rem;
-    color: #9ca3af;
+    color: var(--color-text-muted);
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   .link-card:hover .link-arrow {
@@ -643,7 +641,7 @@
   .no-results {
     text-align: center;
     padding: 3rem 1rem;
-    color: #6b7280;
+    color: var(--color-text-muted);
     animation: fadeInUp 0.4s ease-out;
   }
   .no-results-icon {
@@ -659,7 +657,7 @@
 
   .reset-btn {
     padding: 0.5rem 1.25rem;
-    background: var(--color-theme-1, #3b82f6);
+    background: var(--color-info);
     color: white;
     border: none;
     border-radius: 8px;

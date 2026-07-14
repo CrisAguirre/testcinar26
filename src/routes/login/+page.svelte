@@ -66,8 +66,7 @@
   }
 
   .login-card {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
+    background: white;
     border-radius: 12px;
     padding: 2.5rem;
     width: 100%;
@@ -123,7 +122,7 @@
 
   input {
     padding: 0.65rem 0.85rem;
-    border: 2px solid #e5e7eb;
+    border: 2px solid var(--color-border);
     border-radius: 8px;
     font-size: 1rem;
     transition: border-color 0.2s;
@@ -132,13 +131,13 @@
 
   input:focus {
     outline: none;
-    border-color: var(--color-theme-1);
+    border-color: var(--color-accent);
   }
 
   button {
     margin-top: 0.5rem;
     padding: 0.75rem;
-    background: var(--color-theme-1);
+    background: var(--color-accent);
     color: white;
     border: none;
     border-radius: 8px;

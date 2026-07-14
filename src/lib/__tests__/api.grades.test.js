@@ -165,7 +165,8 @@ describe('Limpieza (admin)', () => {
   });
 
   it('Admin elimina el estudiante de prueba', async () => {
-    // No hay endpoint de delete user en la API, omitimos limpieza
-    console.log('⚠ No hay endpoint DELETE /users, el usuario de prueba queda en la BD');
+    const { status, body } = await api('DELETE', `/auth/users/${studentId}`, null, adminToken);
+    expect(status).toBe(200);
+    expect(body.message).toBe('Usuario eliminado exitosamente');
   });
 });

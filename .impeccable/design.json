@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-13T21:36:00.000Z",
+  "title": "Design System: Cinar Sistemas",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Steel Blue", "canonical": "#4075a6", "tonalRamp": ["#1a2f42", "#254e6e", "#306d99", "#4075a6", "#5a8fb8", "#7aa9ca", "#9fc3dc", "#c5dded", "#eaf4fb"] },
+      "accent": { "role": "accent", "displayName": "Signal Orange", "canonical": "#ff3e00", "tonalRamp": ["#661800", "#993000", "#cc3b00", "#ff3e00", "#ff5c33", "#ff7a66", "#ff9e99", "#ffc2cc", "#ffe6e6"] },
+      "success": { "role": "feedback", "displayName": "Leaf", "canonical": "#16a34a", "tonalRamp": ["#0a3d1c", "#0d662e", "#109040", "#16a34a", "#2dbd5e", "#52d47a", "#7ee89a", "#b0f4c2", "#ddfbe8"] },
+      "error": { "role": "feedback", "displayName": "Rose", "canonical": "#dc2626", "tonalRamp": ["#580f0f", "#851717", "#b31f1f", "#dc2626", "#e54a4a", "#ed7373", "#f39d9d", "#f9c7c7", "#fdeaea"] },
+      "warning": { "role": "feedback", "displayName": "Amber", "canonical": "#d97706", "tonalRamp": ["#562f02", "#804704", "#ab5f05", "#d97706", "#e88f24", "#eea84d", "#f4c27a", "#f9dcad", "#fdf5e3"] },
+      "surface": { "role": "neutral", "displayName": "White", "canonical": "#ffffff", "tonalRamp": ["#cccccc", "#d9d9d9", "#e6e6e6", "#f2f2f2", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff"] }
+    },
+    "shadows": [
+      { "name": "card-rest", "value": "0 2px 12px rgba(0,0,0,0.06)", "purpose": "Subtle card separation at rest." },
+      { "name": "card-hover", "value": "0 12px 40px rgba(64,117,166,0.4)", "purpose": "Interactive hover state for navigation cards." },
+      { "name": "modal-backdrop", "value": "rgba(0,0,0,0.4)", "purpose": "Full-screen dimmer for modals." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "600px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Close/confirm actions. Orange background with white text.",
+      "html": "<button class=\"ds-btn-primary\">Cerrar</button>",
+      "css": ".ds-btn-primary { background: #ff3e00; color: #fff; width: 100%; padding: 0.75rem; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: opacity 0.2s; } .ds-btn-primary:hover { opacity: 0.9; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "White card surface for grade data and content sections.",
+      "html": "<div class=\"ds-card\"><h2>Card Title</h2><p>Content here</p></div>",
+      "css": ".ds-card { background: #ffffff; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }"
+    },
+    {
+      "name": "Exam Card",
+      "kind": "card",
+      "refersTo": "exam-card",
+      "description": "Navigation card for exam access, rendered on gradient parent.",
+      "html": "<a href=\"/\" class=\"ds-exam-card\"><span class=\"ds-exam-icon\">📝</span><span class=\"ds-exam-label\">Parcial 1</span><span class=\"ds-exam-arrow\">→</span></a>",
+      "css": ".ds-exam-card { display: flex; align-items: center; gap: 0.75rem; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 0.85rem 1rem; color: inherit; text-decoration: none; cursor: pointer; transition: all 0.35s cubic-bezier(0.16,1,0.3,1); position: relative; overflow: hidden; } .ds-exam-card:hover { background: rgba(255,255,255,0.22); transform: translateY(-3px) scale(1.02); border-color: rgba(255,255,255,0.5); box-shadow: 0 8px 30px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.2); } .ds-exam-icon { font-size: 1.3rem; } .ds-exam-label { flex: 1; font-weight: 600; font-size: 0.95rem; } .ds-exam-arrow { font-size: 1.1rem; transition: transform 0.3s; } .ds-exam-card:hover .ds-exam-arrow { transform: translateX(4px); }"
+    },
+    {
+      "name": "Input Search",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Search input used on the Enlaces de Consulta page.",
+      "html": "<div class=\"ds-input-wrapper\"><span class=\"ds-input-icon\">🔍</span><input class=\"ds-input\" placeholder=\"Search...\" /></div>",
+      "css": ".ds-input-wrapper { position: relative; max-width: 480px; margin: 0 auto; } .ds-input-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); font-size: 1rem; pointer-events: none; z-index: 1; } .ds-input { width: 100%; padding: 0.85rem 1rem 0.85rem 2.8rem; border: 2px solid transparent; border-radius: 12px; font-size: 0.9rem; background: rgba(255,255,255,0.1); color: #fff; backdrop-filter: blur(8px); outline: none; transition: all 0.35s ease; box-sizing: border-box; } .ds-input:focus { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.35); box-shadow: 0 0 0 3px rgba(59,130,246,0.2), 0 8px 32px rgba(0,0,0,0.15); transform: scale(1.01); }"
+    },
+    {
+      "name": "Tag Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Category tag chip on link cards.",
+      "html": "<span class=\"ds-tag\">SVELTE</span>",
+      "css": ".ds-tag { padding: 0.15rem 0.55rem; border-radius: 8px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; background: #dbeafe; color: #1d4ed8; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Academic Dashboard",
+    "overview": "A functional, clear educational platform designed for students and coordinators. The aesthetic prioritizes readability, data clarity, and trust over decoration. The interface uses blue as its anchor with a restrained orange accent for primary actions.",
+    "keyCharacteristics": [
+      "Clean, data-forward layouts with clear typographic hierarchy",
+      "Color-coded feedback (green success, red error, amber warning) consistent across the system",
+      "Responsive from mobile to desktop with a single 600px breakpoint"
+    ],
+    "rules": [
+      { "name": "The Three-Color Feedback Rule", "body": "Success, error, and warning are the only semantic colors. They appear exclusively on badges, result labels, and status indicators.", "section": "colors" },
+      { "name": "The No-Webfont Rule", "body": "All text uses system fonts. Fast loading trumps typographic personality.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. Shadows appear only as a response to hover and focus states.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use the three feedback colors exclusively for semantic status.",
+      "Do keep surfaces flat at rest; use shadows only for hover/focus feedback.",
+      "Do prefer system fonts over web fonts for fast loading.",
+      "Do use semantic <a> tags for navigation and <button> for actions."
+    ],
+    "donts": [
+      "Don't use glassmorphism (backdrop-filter: blur) as a decorative default.",
+      "Don't use gradient text (background-clip: text with gradient).",
+      "Don't put numbered section markers (01 / 02 / 03) as decorative scaffolding.",
+      "Don't use the hero-metric template.",
+      "Don't hard-code colors that have a corresponding design token.",
+      "Don't use bounce or elastic easing on animations."
+    ]
+  }
+}

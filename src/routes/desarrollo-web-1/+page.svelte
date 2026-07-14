@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { motion } from '@humanspeak/svelte-motion';
   import { isAuthenticated } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
   import ExamCard from '$lib/components/ExamCard.svelte';
@@ -19,65 +18,25 @@
   <title>Desarrollo Web 1 — Cinar Sistemas</title>
 </svelte:head>
 
-<motion.div
-  class="page"
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ duration: 0.4 }}
->
-  <motion.button
-    class="back-btn"
-    onclick={() => goto('/')}
-    whileHover={{ x: -3, borderColor: 'var(--color-accent)' }}
-    whileTap={{ scale: 0.96 }}
-  >
+<div class="page">
+  <button class="back-btn" onclick={() => goto('/')}>
     <span>←</span> Volver al inicio
-  </motion.button>
+  </button>
 
-  <motion.div
-    class="header"
-    initial={{ opacity: 0, y: -20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0.1, duration: 0.5 }}
-  >
-    <motion.span
-      class="header-icon"
-      animate={{ y: [0, -10, 0] }}
-      transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-    >
-      📚
-    </motion.span>
-    <motion.h1
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2, duration: 0.4 }}
-    >
-      Desarrollo Web 1
-    </motion.h1>
-    <motion.p
-      class="header-desc"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.3, duration: 0.4 }}
-    >
+  <div class="header">
+    <span class="header-icon">📚</span>
+    <h1>Desarrollo Web 1</h1>
+    <p class="header-desc">
       Accede a tus contenidos y evaluaciones desde los siguientes accesos:
-    </motion.p>
-  </motion.div>
+    </p>
+  </div>
 
-  <motion.div
-    class="cards"
-    initial="hidden"
-    animate="visible"
-    variants={{
-      hidden: {},
-      visible: { transition: { staggerChildren: 0.12 } }
-    }}
-  >
-    {#each links as link, i}
-      <ExamCard {href} icon={link.icon} label={link.label} delay={i * 0.12} />
+  <div class="cards">
+    {#each links as link}
+      <ExamCard href={link.href} icon={link.icon} label={link.label} />
     {/each}
-  </motion.div>
-</motion.div>
+  </div>
+</div>
 
 <style>
   .page {
@@ -98,10 +57,17 @@
     font-size: 0.82rem;
     cursor: pointer;
     margin-bottom: 1.5rem;
+    transition: border-color 0.2s ease, transform 0.15s ease;
   }
 
   .back-btn:hover {
     color: var(--color-text-primary);
+    border-color: var(--color-accent);
+    transform: translateX(-3px);
+  }
+
+  .back-btn:active {
+    transform: scale(0.96);
   }
 
   .header {
@@ -113,6 +79,12 @@
     font-size: 3rem;
     display: block;
     margin-bottom: 0.5rem;
+    animation: float 3.5s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
   }
 
   h1 {

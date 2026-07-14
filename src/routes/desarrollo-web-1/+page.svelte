@@ -1,7 +1,6 @@
 <script lang="ts">
   import { isAuthenticated } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
-  import ExamCard from '$lib/components/ExamCard.svelte';
 
   $effect(() => {
     if (!$isAuthenticated) goto('/login');
@@ -32,8 +31,17 @@
   </div>
 
   <div class="cards">
-    {#each links as link}
-      <ExamCard href={link.href} icon={link.icon} label={link.label} />
+    {#each links as link, i}
+      <a
+        href={link.href}
+        class="card"
+        style="--i: {i}"
+      >
+        <span class="card-shine"></span>
+        <span class="card-bounce">{link.icon}</span>
+        <span class="card-label">{link.label}</span>
+        <span class="card-arrow">→</span>
+      </a>
     {/each}
   </div>
 </div>
@@ -103,6 +111,99 @@
     display: flex;
     flex-direction: column;
     gap: 0.85rem;
+  }
+
+  .card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 0.85rem 1rem;
+    color: var(--color-text-primary);
+    text-decoration: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition:
+      transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 0.3s ease,
+      border-color 0.25s ease;
+    animation: cardEnter 0.5s calc(var(--i, 0) * 0.12s) cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes cardEnter {
+    from {
+      opacity: 0;
+      transform: translateY(24px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .card:hover {
+    transform: translateY(-6px) scale(1.03);
+    border-color: var(--color-accent);
+    box-shadow:
+      0 8px 30px rgba(0, 0, 0, 0.1),
+      0 0 20px color-mix(in srgb, var(--color-accent) 10%, transparent);
+  }
+
+  .card:active {
+    transform: translateY(-2px) scale(0.98);
+  }
+
+  .card-shine {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      transparent 40%,
+      color-mix(in srgb, var(--color-accent) 8%, transparent) 50%,
+      transparent 60%
+    );
+    background-size: 200% 200%;
+    pointer-events: none;
+    transition: background-position 0.6s ease;
+    background-position: 100% 100%;
+  }
+
+  .card:hover .card-shine {
+    background-position: 0% 0%;
+  }
+
+  .card-bounce {
+    font-size: 1.3rem;
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .card:hover .card-bounce {
+    transform: scale(1.25);
+  }
+
+  .card-label {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.95rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card-arrow {
+    font-size: 1.1rem;
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .card:hover .card-arrow {
+    transform: translateX(6px);
   }
 
   @media (max-width: 600px) {

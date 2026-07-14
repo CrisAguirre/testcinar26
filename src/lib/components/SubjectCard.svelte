@@ -56,37 +56,44 @@
     transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
   />
   <div class="subject-content">
-    <motion.span
-      class="subject-icon"
-      animate={{ y: [0, -8, 0] }}
-      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-    >
-      {icon}
-    </motion.span>
-    <motion.h2
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.2, duration: 0.5 }}
-    >
-      {title}
-    </motion.h2>
-    <motion.p
-      class="subject-desc"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.35, duration: 0.5 }}
-    >
-      {description}
-    </motion.p>
-    <motion.span
-      class="subject-cta"
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.5, duration: 0.4 }}
-      whileHover={{ gap: '0.7rem' }}
-    >
-      Entrar <span class="cta-arrow">→</span>
-    </motion.span>
+    <div class="subject-text">
+      <motion.span
+        class="subject-icon"
+        animate={{ y: [0, -8, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        {icon}
+      </motion.span>
+      <motion.h2
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        {title}
+      </motion.h2>
+      <motion.p
+        class="subject-desc"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.35, duration: 0.5 }}
+      >
+        {description}
+      </motion.p>
+      <motion.span
+        class="subject-cta"
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.5, duration: 0.4 }}
+        whileHover={{ gap: '0.7rem' }}
+      >
+        Entrar <span class="cta-arrow">→</span>
+      </motion.span>
+    </div>
+    <img
+      class="subject-logo"
+      src="/svelte.webp"
+      alt="logo"
+    />
   </div>
 </a>
 
@@ -137,6 +144,9 @@
     z-index: 1;
     box-shadow: 0 4px 20px rgba(64, 117, 166, 0.3);
     transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    gap: 2rem;
   }
 
   .subject-card:hover .subject-content {
@@ -147,6 +157,40 @@
 
   .subject-card:active .subject-content {
     transform: translateY(-1px);
+  }
+
+  .subject-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .subject-logo {
+    width: 96px;
+    height: 96px;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 16px;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.15));
+    animation: logoFloat 4s ease-in-out infinite, logoGlow 3s ease-in-out infinite;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .subject-card:hover .subject-logo {
+    transform: scale(1.12) rotate(-4deg);
+  }
+
+  @keyframes logoFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  @keyframes logoGlow {
+    0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.15)); }
+    50% { filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.35)); }
+  }
+
+  .subject-card:hover .subject-logo {
+    animation-duration: 2s, 1.5s;
   }
 
   .subject-icon {
@@ -194,10 +238,22 @@
   @media (max-width: 600px) {
     .subject-content {
       padding: 1.5rem;
+      flex-direction: column;
+      text-align: center;
+      gap: 1rem;
+    }
+
+    .subject-logo {
+      width: 72px;
+      height: 72px;
     }
 
     h2 {
       font-size: 1.15rem;
+    }
+
+    .subject-cta {
+      justify-content: center;
     }
   }
 </style>

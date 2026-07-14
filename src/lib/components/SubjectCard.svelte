@@ -5,12 +5,14 @@
     icon,
     title,
     description,
-    href = '/'
+    href = '/',
+    boldTitle = false
   }: {
     icon: string;
     title: string;
     description: string;
     href?: string;
+    boldTitle?: boolean;
   } = $props();
 
   function tilt(node: HTMLElement) {
@@ -84,6 +86,8 @@
         {icon}
       </motion.span>
       <motion.h2
+        class="subject-title"
+        class:bold={boldTitle}
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
@@ -425,7 +429,11 @@
       gap: 1rem;
     }
 
-    .subject-logo {
+  .subject-title.bold {
+    font-weight: 700;
+  }
+
+  .subject-logo {
       width: 72px;
       height: 72px;
     }

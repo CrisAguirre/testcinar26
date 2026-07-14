@@ -22,7 +22,7 @@
     <p class="subject-desc">{description}</p>
     <div class="subject-exams">
       {#each links as link, i}
-        <ExamCard {href} {icon} {label} delay={0.1 + i * 0.08} />
+        <ExamCard href={link.href} icon={link.icon} label={link.label} delay={0.1 + i * 0.08} />
       {/each}
     </div>
   </div>
@@ -30,6 +30,7 @@
 
 <style>
   .subject-card {
+    position: relative;
     perspective: 1000px;
     animation: cardRise 0.7s cubic-bezier(0.16, 1, 0.3, 1);
   }

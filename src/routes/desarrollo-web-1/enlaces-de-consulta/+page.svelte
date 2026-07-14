@@ -61,10 +61,8 @@
   function handleMouseMove(e: MouseEvent) {
     const rect = document.querySelector('.hero')?.getBoundingClientRect();
     if (!rect) return;
-    mouseX = ((e.clientX - rect.left) / rect.width) * 100;
-    mouseY = ((e.clientY - rect.top) / rect.height) * 100;
-    heroGlowX = mouseX;
-    heroGlowY = mouseY;
+    heroGlowX = ((e.clientX - rect.left) / rect.width) * 100;
+    heroGlowY = ((e.clientY - rect.top) / rect.height) * 100;
   }
 </script>
 

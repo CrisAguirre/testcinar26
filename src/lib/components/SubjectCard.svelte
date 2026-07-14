@@ -124,6 +124,8 @@
       <span class="code-sym sym-4">&lt;!-- --&gt;</span>
       <span class="code-sym sym-5">JS</span>
       <span class="code-sym sym-6">CSS</span>
+      <span class="code-sym sym-7">☁️</span>
+      <span class="code-sym sym-8">📱</span>
     </div>
   </div>
 </div>
@@ -384,6 +386,20 @@
     right: 35%;
     font-size: 0.9rem;
     animation: codeDrift 8.5s 3s ease-in-out infinite;
+  }
+
+  .sym-7 {
+    top: 50%;
+    left: 50%;
+    font-size: 1.2rem;
+    animation: codeDrift 10s 0.3s ease-in-out infinite;
+  }
+
+  .sym-8 {
+    top: 15%;
+    right: 40%;
+    font-size: 1.1rem;
+    animation: codeDrift 9s 1.5s ease-in-out infinite;
   }
 
   @keyframes codeDrift {

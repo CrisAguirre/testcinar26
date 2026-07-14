@@ -9,7 +9,8 @@
   const links = [
     { href: '/desarrollo-web-1/parcial-1', icon: '📝', label: 'Parcial 1' },
     { href: '/desarrollo-web-1/algoritmia', icon: '🧠', label: 'Algoritmia' },
-    { href: '/desarrollo-web-1/enlaces-de-consulta', icon: '🔗', label: 'Enlaces de Consulta' }
+    { href: '/desarrollo-web-1/enlaces-de-consulta', icon: '🔗', label: 'Enlaces de Consulta' },
+    { href: null, icon: '📋', label: 'Notas', disabled: true }
   ];
 </script>
 
@@ -32,16 +33,24 @@
 
   <div class="cards">
     {#each links as link, i}
-      <a
-        href={link.href}
-        class="card"
-        style="--i: {i}"
-      >
-        <span class="card-shine"></span>
-        <span class="card-bounce">{link.icon}</span>
-        <span class="card-label">{link.label}</span>
-        <span class="card-arrow">→</span>
-      </a>
+      {#if link.disabled}
+        <div class="card card--disabled" style="--i: {i}">
+          <span class="card-bounce">{link.icon}</span>
+          <span class="card-label">{link.label}</span>
+          <span class="card-badge">Próximamente</span>
+        </div>
+      {:else}
+        <a
+          href={link.href}
+          class="card"
+          style="--i: {i}"
+        >
+          <span class="card-shine"></span>
+          <span class="card-bounce">{link.icon}</span>
+          <span class="card-label">{link.label}</span>
+          <span class="card-arrow">→</span>
+        </a>
+      {/if}
     {/each}
   </div>
 </div>
@@ -155,6 +164,25 @@
 
   .card:active {
     transform: translateY(-2px) scale(0.98);
+  }
+
+  .card--disabled {
+    opacity: 0.6;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .card-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--color-accent);
+    color: white;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    position: relative;
+    z-index: 1;
   }
 
   .card-shine {

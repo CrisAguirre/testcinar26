@@ -14,33 +14,52 @@
   } = $props();
 
   function tilt(node: HTMLElement) {
+    let rafId: number | null = null;
+    let currentTx = 0;
+    let currentTy = 0;
+    let targetTx = 0;
+    let targetTy = 0;
+
     function handleMouseMove(e: MouseEvent) {
       const rect = node.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
-      const tx = ((e.clientY - centerY) / rect.height) * -15;
-      const ty = ((e.clientX - centerX) / rect.width) * 15;
-      node.style.setProperty('--tx', `${tx}deg`);
-      node.style.setProperty('--ty', `${ty}deg`);
+      targetTx = ((e.clientY - centerY) / rect.height) * -15;
+      targetTy = ((e.clientX - centerX) / rect.width) * 15;
+      if (!rafId) rafId = requestAnimationFrame(tick);
     }
+
+    function tick() {
+      currentTx += (targetTx - currentTx) * 0.15;
+      currentTy += (targetTy - currentTy) * 0.15;
+      node.style.setProperty('--tx', `${currentTx}deg`);
+      node.style.setProperty('--ty', `${currentTy}deg`);
+      if (Math.abs(currentTx - targetTx) > 0.01 || Math.abs(currentTy - targetTy) > 0.01) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        rafId = null;
+      }
+    }
+
     function handleMouseLeave() {
-      node.style.setProperty('--tx', '0deg');
-      node.style.setProperty('--ty', '0deg');
+      targetTx = 0;
+      targetTy = 0;
+      if (!rafId) rafId = requestAnimationFrame(tick);
     }
+
     node.addEventListener('mousemove', handleMouseMove);
     node.addEventListener('mouseleave', handleMouseLeave);
     return {
       destroy() {
         node.removeEventListener('mousemove', handleMouseMove);
         node.removeEventListener('mouseleave', handleMouseLeave);
+        if (rafId) cancelAnimationFrame(rafId);
       }
     };
   }
 </script>
 
-<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-<a
-  {href}
+<div
   class="subject-card"
   use:tilt
 >
@@ -79,7 +98,8 @@
       >
         {description}
       </motion.p>
-      <motion.span
+      <motion.a
+        {href}
         class="subject-cta"
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -87,7 +107,7 @@
         whileHover={{ gap: '0.7rem' }}
       >
         Entrar <span class="cta-arrow">→</span>
-      </motion.span>
+      </motion.a>
     </div>
     <img
       class="subject-logo"
@@ -106,7 +126,7 @@
       <span class="code-sym sym-6">CSS</span>
     </div>
   </div>
-</a>
+</div>
 
 <style>
   .subject-card {
@@ -188,6 +208,7 @@
 
   .subject-card:hover .subject-logo {
     transform: scale(1.12) rotate(-4deg);
+    animation-duration: 2s, 1.5s;
   }
 
   @keyframes logoFloat {
@@ -198,10 +219,6 @@
   @keyframes logoGlow {
     0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.15)); }
     50% { filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.35)); }
-  }
-
-  .subject-card:hover .subject-logo {
-    animation-duration: 2s, 1.5s;
   }
 
   .subject-icon {
@@ -231,6 +248,7 @@
     color: rgba(255, 255, 255, 0.9);
     border-bottom: 2px solid rgba(255, 255, 255, 0.3);
     padding-bottom: 0.15rem;
+    text-decoration: none;
   }
 
   .subject-card:hover .subject-cta {
@@ -268,11 +286,11 @@
     content: '';
     position: absolute;
     top: 50%;
-    right: 100%;
+    left: 50%;
     width: 70px;
     height: 1.5px;
     background: linear-gradient(to left, rgba(255, 255, 255, 0.6), transparent);
-    transform: translateY(-50%);
+    transform: translate(-50%, -50%) rotate(135deg);
   }
 
   .s1 {
@@ -323,7 +341,7 @@
     pointer-events: none;
     user-select: none;
     font-size: 1rem;
-    transition: opacity 0.4s ease;
+    transition: color 0.4s ease;
   }
 
   .subject-card:hover .code-sym {

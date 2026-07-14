@@ -94,6 +94,17 @@
       src="/svelte.webp"
       alt="logo"
     />
+    <div class="subject-decor">
+      <span class="shooting-star s1"></span>
+      <span class="shooting-star s2"></span>
+      <span class="shooting-star s3"></span>
+      <span class="code-sym sym-1">&lt;/&gt;</span>
+      <span class="code-sym sym-2">{ }</span>
+      <span class="code-sym sym-3">//</span>
+      <span class="code-sym sym-4">&lt;!-- --&gt;</span>
+      <span class="code-sym sym-5">JS</span>
+      <span class="code-sym sym-6">CSS</span>
+    </div>
   </div>
 </a>
 
@@ -233,6 +244,147 @@
 
   .subject-card:hover .cta-arrow {
     transform: translateX(4px);
+  }
+
+  .subject-decor {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .shooting-star {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.3);
+    opacity: 0;
+  }
+
+  .shooting-star::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    width: 70px;
+    height: 1.5px;
+    background: linear-gradient(to left, rgba(255, 255, 255, 0.6), transparent);
+    transform: translateY(-50%);
+  }
+
+  .s1 {
+    top: 10%;
+    right: 5%;
+    animation: shootStar 3s 1s infinite;
+  }
+
+  .s2 {
+    top: 30%;
+    right: 30%;
+    animation: shootStar 4s 2.5s infinite;
+  }
+
+  .s3 {
+    top: 55%;
+    right: 15%;
+    animation: shootStar 3.5s 4s infinite;
+  }
+
+  @keyframes shootStar {
+    0% {
+      transform: translate(0, 0);
+      opacity: 0;
+    }
+    5% {
+      opacity: 1;
+    }
+    25% {
+      transform: translate(-200px, 200px);
+      opacity: 1;
+    }
+    30% {
+      transform: translate(-240px, 240px);
+      opacity: 0;
+    }
+    100% {
+      transform: translate(-240px, 240px);
+      opacity: 0;
+    }
+  }
+
+  .code-sym {
+    position: absolute;
+    font-family: 'Fira Mono', 'Courier New', monospace;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+    user-select: none;
+    font-size: 1rem;
+    transition: opacity 0.4s ease;
+  }
+
+  .subject-card:hover .code-sym {
+    color: rgba(255, 255, 255, 0.15);
+  }
+
+  .sym-1 {
+    top: 8%;
+    left: 8%;
+    font-size: 1.3rem;
+    animation: codeDrift 7s 0.5s ease-in-out infinite;
+  }
+
+  .sym-2 {
+    bottom: 12%;
+    left: 20%;
+    font-size: 1.1rem;
+    animation: codeDrift 8s 1.2s ease-in-out infinite;
+  }
+
+  .sym-3 {
+    top: 45%;
+    left: 5%;
+    font-size: 0.9rem;
+    animation: codeDrift 6s 2s ease-in-out infinite;
+  }
+
+  .sym-4 {
+    bottom: 20%;
+    right: 25%;
+    font-size: 0.85rem;
+    animation: codeDrift 9s 0.8s ease-in-out infinite;
+  }
+
+  .sym-5 {
+    top: 25%;
+    right: 8%;
+    font-size: 1rem;
+    animation: codeDrift 7.5s 1.8s ease-in-out infinite;
+  }
+
+  .sym-6 {
+    bottom: 8%;
+    right: 35%;
+    font-size: 0.9rem;
+    animation: codeDrift 8.5s 3s ease-in-out infinite;
+  }
+
+  @keyframes codeDrift {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    25% {
+      transform: translateY(-12px) rotate(2deg);
+    }
+    50% {
+      transform: translateY(-6px) rotate(-1deg);
+    }
+    75% {
+      transform: translateY(-16px) rotate(1deg);
+    }
   }
 
   @media (max-width: 600px) {

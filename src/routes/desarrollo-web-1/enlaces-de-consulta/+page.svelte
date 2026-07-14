@@ -71,6 +71,9 @@
 </svelte:head>
 
 <div class="links-page">
+  <button class="back-btn" onclick={() => goto('/desarrollo-web-1')}>
+    <span>←</span> Volver a Desarrollo Web 1
+  </button>
   <div class="hero" onmousemove={handleMouseMove} style="--mx: {heroGlowX}%; --my: {heroGlowY}%">
     <div class="hero-bg"></div>
     <div class="hero-orbs">
@@ -710,5 +713,32 @@
     .particle {
       display: none;
     }
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    margin-bottom: 1.5rem;
+    transition: border-color 0.2s ease, transform 0.15s ease;
+    position: relative;
+    z-index: 10;
+  }
+
+  .back-btn:hover {
+    color: var(--color-text-primary);
+    border-color: var(--color-accent);
+    transform: translateX(-3px);
+  }
+
+  .back-btn:active {
+    transform: scale(0.96);
   }
 </style>

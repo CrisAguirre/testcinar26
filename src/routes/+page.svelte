@@ -259,18 +259,24 @@
       </div>
     {/if}
 
-    <SubjectCard
-      icon="📚"
-      title="Desarrollo Web 1"
-      description="Accede a tus contenidos y evaluaciones"
-      href="/desarrollo-web-1"
-    />
+    <div class="subject-section">
+      <SubjectCard
+        icon="📚"
+        title="Desarrollo Web 1"
+        description="Accede a tus contenidos y evaluaciones"
+        href="/desarrollo-web-1"
+      />
+    </div>
   </div>
 {/if}
 
 <style>
   .dashboard {
     padding: 1rem 0;
+  }
+
+  .subject-section {
+    margin-top: 2rem;
   }
 
   h1 {

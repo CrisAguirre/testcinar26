@@ -116,7 +116,7 @@
 
 <div class="page">
   <div class="page-header">
-    <a href="/" class="back-link">← Volver al Inicio</a>
+    <a href="/desarrollo-web-1" class="back-link">← Volver a Desarrollo Web 1</a>
     <div class="title-row">
       <h1>Algoritmia</h1>
       {#if !loadingProgress}

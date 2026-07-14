@@ -1,5 +1,6 @@
 <script lang="ts">
   import { motion } from '@humanspeak/svelte-motion';
+  import { goto } from '$app/navigation';
 
   let {
     icon,
@@ -14,6 +15,13 @@
     href?: string;
     boldTitle?: boolean;
   } = $props();
+
+  const stars = $state(
+    Array.from({ length: 3 }, () => ({
+      top: `${Math.random() * 70 + 5}%`,
+      left: `${Math.random() * 70 + 5}%`
+    }))
+  );
 
   function tilt(node: HTMLElement) {
     let rafId: number | null = null;
@@ -101,8 +109,9 @@
       >
         {description}
       </motion.p>
-      <motion.a
-        {href}
+      <motion.button
+        type="button"
+        onclick={() => goto(href)}
         class="subject-cta"
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -111,7 +120,7 @@
         whileTap={{ scale: 0.97 }}
       >
         Entrar <span class="cta-arrow">→</span>
-      </motion.a>
+      </motion.button>
     </div>
     <img
       class="subject-logo"
@@ -119,9 +128,9 @@
       alt="logo"
     />
     <div class="subject-decor">
-      <span class="shooting-star s1"></span>
-      <span class="shooting-star s2"></span>
-      <span class="shooting-star s3"></span>
+      {#each stars as star, i}
+        <span class="shooting-star {`s${i + 1}`}" style="top: {star.top}; left: {star.left};"></span>
+      {/each}
       <span class="code-sym sym-1">&lt;/&gt;</span>
       <span class="code-sym sym-2">{'{\u00A0}'}</span>
       <span class="code-sym sym-3">//</span>
@@ -172,7 +181,9 @@
   }
 
   .subject-content {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+    background: linear-gradient(135deg, #5B9BD5, #1A365D, #0B0E14, #1A365D, #5B9BD5);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
     border-radius: var(--radius-xl);
     padding: 2.5rem;
     color: white;
@@ -184,6 +195,12 @@
     display: flex;
     align-items: center;
     gap: 2rem;
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
 
   .subject-card:hover .subject-content {
@@ -255,7 +272,8 @@
     background: white;
     padding: 0.5rem 1.2rem;
     border-radius: 999px;
-    text-decoration: none;
+    border: none;
+    cursor: pointer;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
@@ -293,22 +311,16 @@
   }
 
   .s1 {
-    top: 8%;
-    right: 10%;
     --star-angle: 135deg;
     animation: shootStarBL 3s 1s infinite;
   }
 
   .s2 {
-    top: 45%;
-    left: 20%;
     --star-angle: -45deg;
     animation: shootStarTR 4s 2.5s infinite;
   }
 
   .s3 {
-    top: 60%;
-    right: 25%;
     --star-angle: -135deg;
     animation: shootStarBR 3.5s 4s infinite;
   }

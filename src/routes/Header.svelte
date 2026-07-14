@@ -27,7 +27,7 @@
       </div>
     {:else}
       <ul>
-        <li><a href="/login">Iniciar Sesión</a></li>
+        <li><a href="/login">Cinar Sistemas</a></li>
       </ul>
     {/if}
   </nav>

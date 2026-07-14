@@ -252,21 +252,21 @@
         <h2>Desarrollo Web 1</h2>
         <p class="subject-desc">Accede a tus contenidos y evaluaciones desde los siguientes accesos:</p>
         <div class="subject-exams">
-          <div class="exam-card" onclick={() => window.location.href='/desarrollo-web-1/parcial-1'}>
+          <a href="/desarrollo-web-1/parcial-1" class="exam-card">
             <span class="exam-icon">&#128221;</span>
             <span class="exam-label">Parcial 1</span>
             <span class="exam-arrow">&#8594;</span>
-          </div>
-          <div class="exam-card" onclick={() => window.location.href='/desarrollo-web-1/algoritmia'}>
+          </a>
+          <a href="/desarrollo-web-1/algoritmia" class="exam-card">
             <span class="exam-icon">&#129302;</span>
             <span class="exam-label">Algoritmia</span>
             <span class="exam-arrow">&#8594;</span>
-          </div>
-          <div class="exam-card" onclick={() => window.location.href='/desarrollo-web-1/enlaces-de-consulta'}>
+          </a>
+          <a href="/desarrollo-web-1/enlaces-de-consulta" class="exam-card">
             <span class="exam-icon">&#128279;</span>
             <span class="exam-label">Enlaces de Consulta</span>
             <span class="exam-arrow">&#8594;</span>
-          </div>
+          </a>
         </div>
       </div>
     </div>
@@ -295,11 +295,10 @@
   }
 
   .card {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
-    border-radius: 12px;
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
     padding: 1.5rem;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-md);
   }
 
   .card h2 {
@@ -307,14 +306,16 @@
     margin: 0 0 1rem;
   }
 
-  .loading, .empty, .error {
+  .loading, .empty {
     text-align: center;
     padding: 2rem;
-    color: #888;
+    color: var(--color-text-muted);
   }
 
   .error {
-    color: #dc2626;
+    text-align: center;
+    padding: 2rem;
+    color: var(--color-error);
   }
 
   .table-wrapper {
@@ -330,14 +331,14 @@
   th {
     text-align: left;
     padding: 0.6rem 0.85rem;
-    border-bottom: 2px solid #e5e7eb;
+    border-bottom: 2px solid var(--color-border);
     font-weight: 700;
-    color: #555;
+    color: var(--color-text-secondary);
   }
 
   td {
     padding: 0.6rem 0.85rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-border);
   }
 
   tr:last-child td {
@@ -350,11 +351,11 @@
   }
 
   .clickable-row:hover {
-    background: #f8fafc;
+    background: var(--color-surface-hover);
   }
 
   .detail-link {
-    color: var(--color-theme-1, #3b82f6);
+    color: var(--color-accent);
     font-weight: 600;
     font-size: 0.8rem;
   }
@@ -429,6 +430,8 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
     padding: 0.85rem 1rem;
+    color: inherit;
+    text-decoration: none;
     cursor: pointer;
     transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     backdrop-filter: blur(4px);
@@ -527,10 +530,10 @@
     flex-wrap: wrap;
     gap: 1rem;
     font-size: 0.82rem;
-    color: #666;
+    color: var(--color-text-secondary);
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-border);
   }
 
   .detail-summary {
@@ -543,9 +546,9 @@
   .detail-summary-card {
     flex: 1;
     min-width: 120px;
-    background: #f8fafc;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    background: var(--color-surface-hover);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
     padding: 0.75rem;
     text-align: center;
   }
@@ -553,12 +556,12 @@
   .detail-summary-value {
     font-size: 1.3rem;
     font-weight: 800;
-    color: var(--color-theme-1, #3b82f6);
+    color: var(--color-accent);
   }
 
   .detail-summary-label {
     font-size: 0.72rem;
-    color: #888;
+    color: var(--color-text-muted);
     font-weight: 600;
     margin-top: 0.15rem;
   }
@@ -623,16 +626,16 @@
     font-weight: 700;
   }
 
-  .result-correct { color: #16a34a; }
-  .result-incorrect { color: #dc2626; }
-  .result-unanswered { color: #9ca3af; }
-  .result-graded { color: #16a34a; }
-  .result-pending { color: #d97706; }
+  .result-correct { color: var(--color-success); }
+  .result-incorrect { color: var(--color-error); }
+  .result-unanswered { color: var(--color-text-secondary); }
+  .result-graded { color: var(--color-success); }
+  .result-pending { color: var(--color-warning); }
 
   .detail-q-text {
     font-size: 0.9rem;
     line-height: 1.5;
-    color: #1f2937;
+    color: var(--color-text-primary);
     margin: 0 0 0.65rem;
   }
 
@@ -709,18 +712,18 @@
 
   .grade-value {
     font-weight: 800;
-    color: var(--color-theme-1, #3b82f6);
+    color: var(--color-accent);
     font-size: 1rem;
   }
 
   .detail-open-pending {
     margin-top: 0.5rem;
     font-size: 0.82rem;
-    color: #d97706;
+    color: var(--color-warning);
     font-weight: 600;
     padding: 0.4rem 0.65rem;
     background: #fef3c7;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     display: inline-block;
   }
 
@@ -728,10 +731,10 @@
     display: block;
     width: 100%;
     padding: 0.75rem;
-    background: var(--color-theme-1, #3b82f6);
+    background: var(--color-accent);
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-size: 0.95rem;
     font-weight: 700;
     cursor: pointer;

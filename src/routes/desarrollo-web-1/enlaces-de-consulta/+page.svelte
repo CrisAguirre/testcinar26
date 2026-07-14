@@ -204,6 +204,7 @@
     filter: blur(80px);
     opacity: 0.35;
     animation: orbFloat 10s ease-in-out infinite alternate;
+    will-change: transform, opacity;
   }
 
   .orb-1 {

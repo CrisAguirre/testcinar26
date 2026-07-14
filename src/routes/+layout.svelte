@@ -64,7 +64,7 @@
     align-items: center;
     padding: 12px;
     font-size: 0.85rem;
-    color: #888;
+    color: var(--color-text-muted);
   }
 
   @media (min-width: 480px) {

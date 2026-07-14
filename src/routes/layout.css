@@ -5,14 +5,52 @@
 		Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
 		'Open Sans', 'Helvetica Neue', sans-serif;
 	--font-mono: 'Fira Mono', monospace;
+
+	/* Brand */
+	--color-primary: #4075a6;
+	--color-primary-hover: #2c5f8a;
+	--color-accent: #ff3e00;
+
+	/* Surfaces */
+	--color-surface: #ffffff;
+	--color-surface-hover: #f8fafc;
+	--color-surface-alt: #f9fafb;
 	--color-bg-0: rgb(202, 216, 228);
 	--color-bg-1: hsl(209, 36%, 86%);
 	--color-bg-2: hsl(224, 44%, 95%);
+
+	/* Text */
+	--color-text-primary: #1f2937;
+	--color-text-secondary: #6b7280;
+	--color-text-muted: #888888;
+	--color-text: rgba(0, 0, 0, 0.7);
+
+	/* Borders */
+	--color-border: #e5e7eb;
+
+	/* Feedback */
+	--color-success: #16a34a;
+	--color-error: #dc2626;
+	--color-warning: #d97706;
+	--color-info: #3b82f6;
+
+	/* Shadows */
+	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+	--shadow-md: 0 2px 12px rgba(0, 0, 0, 0.06);
+	--shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.1);
+
+	/* Radii */
+	--radius-sm: 6px;
+	--radius-md: 8px;
+	--radius-lg: 12px;
+	--radius-xl: 16px;
+
+	/* Retained for backward compat */
 	--color-theme-1: #ff3e00;
 	--color-theme-2: #4075a6;
-	--color-text: rgba(0, 0, 0, 0.7);
 	--column-width: 42rem;
 	--column-margin-top: 4rem;
+
 	font-family: var(--font-body);
 	color: var(--color-text);
 }
@@ -39,7 +77,7 @@ p {
 }
 
 a {
-	color: var(--color-theme-1);
+	color: var(--color-accent);
 	text-decoration: none;
 }
 

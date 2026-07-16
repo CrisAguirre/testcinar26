@@ -1,10 +1,10 @@
 export const STORAGE_KEY = 'parcial1_attempts';
 export const DETAIL_KEY = 'parcial1_details';
 
-export const EXAM_DATE = new Date(2026, 6, 15);
-export const WINDOW1_END = new Date(2026, 6, 15, 18, 45);
-export const WINDOW2_START = new Date(2026, 6, 15, 18, 45);
-export const WINDOW2_END = new Date(2026, 6, 15, 20, 0);
+export const EXAM_DATE = new Date(2026, 6, 22);
+export const WINDOW1_END = new Date(2026, 6, 22, 18, 45);
+export const WINDOW2_START = new Date(2026, 6, 22, 18, 45);
+export const WINDOW2_END = new Date(2026, 6, 22, 20, 0);
 
 export const TOTAL_QUESTIONS = 20;
 export const TOTAL_TIME = 45 * 60;

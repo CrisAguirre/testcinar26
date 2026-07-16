@@ -262,7 +262,7 @@
     <div class="subject-section">
       <SubjectCard
         icon="📚"
-        title="Desarrollo Web 1"
+        title="Desarrollo Web 1 - Svelte JS"
         description="Accede a tus contenidos, evaluaciones y notas"
         href="/desarrollo-web-1"
         boldTitle

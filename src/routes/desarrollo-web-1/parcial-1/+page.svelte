@@ -340,7 +340,7 @@
             <h2>📌 Recomendaciones importantes</h2>
             <ul>
               <li>
-                <strong>⏱ Tiempo límite:</strong> Dispondrás de <strong>{formatTime(totalTime)}</strong> para completar las 20 preguntas.
+                <strong>⏱ Tiempo límite:</strong> Dispondrás de aproximadamente <strong>1 hora</strong> para completar las 20 preguntas.
                 El tiempo por pregunta es de <strong>{Math.floor(TIME_PER_MC / 60)} min</strong> para selección múltiple y <strong>{Math.floor(TIME_PER_OPEN / 60)} min</strong> para abiertas.
                 El examen se enviará automáticamente al cumplirse el tiempo.
               </li>

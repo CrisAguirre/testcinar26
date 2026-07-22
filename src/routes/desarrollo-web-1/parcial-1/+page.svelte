@@ -30,7 +30,7 @@
   let saveError = $state('');
 
   const totalQuestions = 20;
-  const totalTime = 45 * 60;
+  let totalTime = 45 * 60;
 
   function getLocalAttempts(): any[] {
     try {

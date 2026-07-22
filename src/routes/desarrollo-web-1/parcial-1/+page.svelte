@@ -4,7 +4,7 @@
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
-  import { STORAGE_KEY, DETAIL_KEY, WINDOW1_END, WINDOW2_START, WINDOW2_END, TOTAL_QUESTIONS, TOTAL_TIME, formatTime, getAttemptLabel, getAttemptType, calculateScore, buildExamData } from '$lib/exam';
+  import { STORAGE_KEY, DETAIL_KEY, WINDOW1_END, WINDOW2_START, WINDOW2_END, TOTAL_QUESTIONS, TOTAL_TIME, TIME_PER_MC, TIME_PER_OPEN, calculateTotalTime, formatTime, getAttemptLabel, getAttemptType, calculateScore, buildExamData } from '$lib/exam';
   import { preloadedMyGrades } from '$lib/stores/preloaded';
 
   let { data } = $props();
@@ -104,11 +104,13 @@
 
   function startExam() {
     questions = selectRandomQuestions(totalQuestions);
+    const dynamicTime = calculateTotalTime(questions);
+    totalTime = dynamicTime;
     started = true;
     finished = false;
     answers = {};
     currentIndex = 0;
-    timeLeft = totalTime;
+    timeLeft = dynamicTime;
     tabSwitchCount = 0;
 
     currentAttemptNumber = getAttemptCount() + 1;
@@ -338,7 +340,8 @@
             <h2>📌 Recomendaciones importantes</h2>
             <ul>
               <li>
-                <strong>⏱ Tiempo límite:</strong> Dispondrás de <strong>45 minutos</strong> para completar las 20 preguntas.
+                <strong>⏱ Tiempo límite:</strong> Dispondrás de <strong>{formatTime(totalTime)}</strong> para completar las 20 preguntas.
+                El tiempo por pregunta es de <strong>{Math.floor(TIME_PER_MC / 60)} min</strong> para selección múltiple y <strong>{Math.floor(TIME_PER_OPEN / 60)} min</strong> para abiertas.
                 El examen se enviará automáticamente al cumplirse el tiempo.
               </li>
               <li>

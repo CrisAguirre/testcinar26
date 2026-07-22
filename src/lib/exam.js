@@ -9,6 +9,15 @@ export const WINDOW2_END = new Date(2026, 6, 22, 20, 0);
 export const TOTAL_QUESTIONS = 20;
 export const TOTAL_TIME = 45 * 60;
 
+export const TIME_PER_MC = 2 * 60;
+export const TIME_PER_OPEN = 5 * 60;
+
+export function calculateTotalTime(questions) {
+  const mcCount = questions.filter(q => q.type === 'mc').length;
+  const openCount = questions.filter(q => q.type === 'open').length;
+  return mcCount * TIME_PER_MC + openCount * TIME_PER_OPEN;
+}
+
 export function getAttemptType(n) {
   return n <= 2 ? 'Preparación' : 'Evaluación';
 }

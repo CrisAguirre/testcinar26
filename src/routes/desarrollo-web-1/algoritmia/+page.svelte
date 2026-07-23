@@ -142,6 +142,17 @@
     </div>
   </section>
 
+  <section class="resource-card">
+    <div class="resource-icon">🔗</div>
+    <div class="resource-body">
+      <h3>alg0.dev — Visualizador Interactivo de Algoritmos</h3>
+      <p>Plataforma en español para explorar, visualizar y comprender algoritmos paso a paso. Incluye animaciones de ordenamiento, búsqueda, estructuras de datos y más. Ideal para reforzar los conceptos de lógica y algoritmia vistos en clase.</p>
+      <a href="https://www.alg0.dev/es/" target="_blank" rel="noopener noreferrer" class="resource-link">
+        Ir a alg0.dev →
+      </a>
+    </div>
+  </section>
+
   <section class="algorithms-section">
     <h2>Algoritmos de referencia</h2>
     <p class="section-desc">
@@ -375,10 +386,58 @@
 
   .concept-chip strong { color: white; }
 
+  .resource-card {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    background: linear-gradient(135deg, #f0f7ff, #e8f4f8);
+    border: 1px solid #bae6fd;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .resource-icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .resource-body h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    color: #0369a1;
+  }
+
+  .resource-body p {
+    margin: 0 0 0.6rem;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #475569;
+  }
+
+  .resource-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.85rem;
+    background: #0284c7;
+    color: white;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .resource-link:hover {
+    background: #0369a1;
+  }
+
   .algorithms-section h2 {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     margin: 0 0 0.5rem;
-    color: #1f2937;
+    color: var(--color-text-primary);
   }
 
   .section-desc {

@@ -43,7 +43,8 @@ export const categories: Category[] = [
       { title: 'SEO Studio Tools', url: 'https://seostudio.tools/es', desc: 'Suite de herramientas SEO para análisis y optimización web', tag: 'SEO' },
       { title: 'Coddy — Aprende Programación', url: 'https://coddy.tech/', desc: 'Plataforma interactiva para aprender a programar', tag: 'Opcional' },
       { title: 'Exercism — Trazabilidad de Componentes', url: 'https://exercism.org/', desc: 'Ejercicios prácticos de programación en múltiples lenguajes', tag: 'Práctica' },
-      { title: 'Portal de Evaluaciones', url: 'https://examscinar2026.vercel.app/', desc: 'Acceso al portal de evaluaciones y exámenes', tag: 'Herramienta' }
+      { title: 'Portal de Evaluaciones', url: 'https://examscinar2026.vercel.app/', desc: 'Acceso al portal de evaluaciones y exámenes', tag: 'Herramienta' },
+      { title: 'alg0.dev — Visualizador de Algoritmos', url: 'https://www.alg0.dev/es/', desc: 'Plataforma interactiva para aprender y visualizar algoritmos en español', tag: 'Herramienta' }
     ]
   },
   {
@@ -52,7 +53,9 @@ export const categories: Category[] = [
     color: '#dc2626',
     links: [
       { title: 'Front-end — testcinar26', url: 'https://github.com/CrisAguirre/testcinar26', desc: 'Repositorio del frontend con SvelteKit', tag: 'GitHub' },
-      { title: 'Back-end — testcinar26bknd', url: 'https://github.com/CrisAguirre/testcinar26bknd', desc: 'Repositorio del backend con Express y MongoDB', tag: 'GitHub' }
+      { title: 'Back-end — testcinar26bknd', url: 'https://github.com/CrisAguirre/testcinar26bknd', desc: 'Repositorio del backend con Express y MongoDB', tag: 'GitHub' },
+      { title: 'Deploy Front-end — Vercel', url: 'https://vercel.com/crisaguirres-projects/examscinar2026', desc: 'Despliegue del frontend en Vercel', tag: 'Herramienta' },
+      { title: 'Deploy Back-end — Render', url: 'https://dashboard.render.com/web/srv-d9a5lst8nd3s73agud80', desc: 'Despliegue del backend en Render', tag: 'Herramienta' }
     ]
   }
 ];

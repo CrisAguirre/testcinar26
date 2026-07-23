@@ -486,10 +486,12 @@
               </div>
             </div>
           </div>
+          {#if !isUnlimited}
           <div class="window-info">
             <strong>📅 Ventana 1 — Preparación (Intentos 1-2):</strong> Hasta el 22 de julio, 18:45<br>
             <strong>📅 Ventana 2 — Evaluación (Intentos 3-4):</strong> 22 de julio, 18:45 - 20:00
           </div>
+          {/if}
         </div>
 
         {#if serverGrades.length > 0}

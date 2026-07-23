@@ -431,6 +431,221 @@ Fin`,
       { type: 'process', text: 'Escribir "Suma:", suma' },
       { type: 'end', text: 'Fin' }
     ]
+  },
+  {
+    id: 11,
+    title: 'Burbuja (Bubble Sort)',
+    icon: '🫧',
+    practicePrompt: 'Escribe en pseudocódigo el algoritmo de ordenamiento burbuja que ordene una lista de números de menor a mayor. Este algoritmo compara pares adyacentes y los intercambia si están en el orden incorrecto.',
+    problem: {
+      scenario: 'El sistema de una tienda necesita ordenar los precios de sus productos de menor a mayor para mostrar las ofertas más económicas primero. Se requiere implementar el algoritmo de burbuja, que recorre la lista comparando pares adyacentes e intercambiándolos cuando están desordenados.',
+      example: 'Entrada: [5, 2, 9, 1, 7] → Salida: [1, 2, 5, 7, 9]'
+    },
+    sequence: [
+      { step: 1, desc: 'Obtener la longitud N de la lista' },
+      { step: 2, desc: 'Desde i = 0 hasta N-2, repetir (pasadas):' },
+      { step: 3, desc: '  Desde j = 0 hasta N-2-i, repetir (comparaciones):' },
+      { step: 4, desc: '    Si lista[j] > lista[j+1], intercambiar los elementos' },
+      { step: 5, desc: '  Si no hubo intercambios en esta pasada, la lista ya está ordenada (optimización)' },
+      { step: 6, desc: 'Retornar la lista ordenada' }
+    ],
+    solution: `Inicio
+  Leer lista
+  N ← longitud(lista)
+  Para i desde 0 hasta N-2:
+    intercambiado ← Falso
+    Para j desde 0 hasta N-2-i:
+      Si lista[j] > lista[j+1] Entonces
+        temp ← lista[j]
+        lista[j] ← lista[j+1]
+        lista[j+1] ← temp
+        intercambiado ← Verdadero
+      Fin Si
+    Fin Para
+    Si intercambiado = Falso Entonces
+      Salir del ciclo
+    Fin Si
+  Fin Para
+  Escribir "Lista ordenada:", lista
+Fin`,
+    conceptosClave: ['Ciclos anidados', 'Intercambio de variables', 'Optimización con bandera', 'Comparación de pares'],
+    flowchart: [
+      { type: 'start', text: 'Inicio' },
+      { type: 'process', text: 'Leer lista\nN ← long(lista)' },
+      { type: 'decision', text: '¿i < N-1?' },
+      { type: 'process', text: 'interc ← Falso\nj ← 0' },
+      { type: 'decision', text: '¿j < N-1-i?' },
+      { type: 'decision', text: '¿lista[j] >\nlista[j+1]?' },
+      { type: 'process', text: 'intercambiar\ninterc ← V' },
+      { type: 'process', text: 'j++' },
+      { type: 'decision', text: '¿interc =\nFalso?' },
+      { type: 'process', text: 'i++' },
+      { type: 'end', text: 'Fin' }
+    ]
+  },
+  {
+    id: 12,
+    title: 'Selección (Selection Sort)',
+    icon: '🎯',
+    practicePrompt: 'Escribe en pseudocódigo el algoritmo de ordenamiento por selección. Este algoritmo encuentra el elemento más pequeño en cada pasada y lo coloca en su posición correcta.',
+    problem: {
+      scenario: 'Una biblioteca digital necesita ordenar los códigos de sus libros de menor a mayor. Se implementa el algoritmo de selección, que en cada pasada busca el elemento más pequeño de la parte no ordenada y lo intercambia con el primer elemento de esa sección.',
+      example: 'Entrada: [8, 3, 6, 1, 4] → Salida: [1, 3, 4, 6, 8]'
+    },
+    sequence: [
+      { step: 1, desc: 'Obtener la longitud N de la lista' },
+      { step: 2, desc: 'Desde i = 0 hasta N-2, repetir:' },
+      { step: 3, desc: '  Asumir que el mínimo está en posición i' },
+      { step: 4, desc: '  Desde j = i+1 hasta N-1, repetir:' },
+      { step: 5, desc: '    Si lista[j] < lista[min], actualizar min = j' },
+      { step: 6, desc: '  Si min ≠ i, intercambiar lista[i] con lista[min]' },
+      { step: 7, desc: 'Retornar la lista ordenada' }
+    ],
+    solution: `Inicio
+  Leer lista
+  N ← longitud(lista)
+  Para i desde 0 hasta N-2:
+    min ← i
+    Para j desde i+1 hasta N-1:
+      Si lista[j] < lista[min] Entonces
+        min ← j
+      Fin Si
+    Fin Para
+    Si min ≠ i Entonces
+      temp ← lista[i]
+      lista[i] ← lista[min]
+      lista[min] ← temp
+    Fin Si
+  Fin Para
+  Escribir "Lista ordenada:", lista
+Fin`,
+    conceptosClave: ['Búsqueda del mínimo', 'Ciclos anidados', 'Intercambio condicional', 'Índice auxiliar'],
+    flowchart: [
+      { type: 'start', text: 'Inicio' },
+      { type: 'process', text: 'Leer lista\nN ← long(lista)' },
+      { type: 'decision', text: '¿i < N-1?' },
+      { type: 'process', text: 'min ← i\nj ← i+1' },
+      { type: 'decision', text: '¿j < N?' },
+      { type: 'decision', text: '¿lista[j] <\nlista[min]?' },
+      { type: 'process', text: 'min ← j' },
+      { type: 'process', text: 'j++' },
+      { type: 'decision', text: '¿min ≠ i?' },
+      { type: 'process', text: 'intercambiar\nlista[i] y lista[min]' },
+      { type: 'process', text: 'i++' },
+      { type: 'end', text: 'Fin' }
+    ]
+  },
+  {
+    id: 13,
+    title: 'Inserción (Insertion Sort)',
+    icon: '📌',
+    practicePrompt: 'Escribe en pseudocódigo el algoritmo de ordenamiento por inserción. Este algoritmo construye la lista ordenada de izquierda a derecha insertando cada elemento en su posición correcta.',
+    problem: {
+      scenario: 'Un organizador de archivos necesita mantener una lista de nombres ordenada alfabéticamente a medida que se agregan nuevos nombres. El algoritmo de inserción es ideal: toma cada elemento y lo inserta en la posición correcta dentro de la parte ya ordenada.',
+      example: 'Entrada: [9, 4, 7, 2, 5] → Salida: [2, 4, 5, 7, 9]'
+    },
+    sequence: [
+      { step: 1, desc: 'Obtener la longitud N de la lista' },
+      { step: 2, desc: 'Desde i = 1 hasta N-1, repetir:' },
+      { step: 3, desc: '  Guardar el elemento actual como clave' },
+      { step: 4, desc: '  Inicializar j = i - 1' },
+      { step: 5, desc: '  Mientras j ≥ 0 y lista[j] > clave, repetir:' },
+      { step: 6, desc: '    Desplazar lista[j] a la derecha: lista[j+1] ← lista[j]' },
+      { step: 7, desc: '    Decrementar j en 1' },
+      { step: 8, desc: '  Colocar clave en la posición lista[j+1]' },
+      { step: 9, desc: 'Retornar la lista ordenada' }
+    ],
+    solution: `Inicio
+  Leer lista
+  N ← longitud(lista)
+  Para i desde 1 hasta N-1:
+    clave ← lista[i]
+    j ← i - 1
+    Mientras j >= 0 Y lista[j] > clave:
+      lista[j+1] ← lista[j]
+      j ← j - 1
+    Fin Mientras
+    lista[j+1] ← clave
+  Fin Para
+  Escribir "Lista ordenada:", lista
+Fin`,
+    conceptosClave: ['Inserción ordenada', 'Desplazamiento de elementos', 'Ciclo condicional', 'Comparación hacia atrás'],
+    flowchart: [
+      { type: 'start', text: 'Inicio' },
+      { type: 'process', text: 'Leer lista\nN ← long(lista)' },
+      { type: 'decision', text: '¿i < N?' },
+      { type: 'process', text: 'clave ← lista[i]\nj ← i-1' },
+      { type: 'decision', text: '¿j >= 0 y\nlista[j] > clave?' },
+      { type: 'process', text: 'lista[j+1] ← lista[j]\nj--' },
+      { type: 'process', text: 'lista[j+1] ← clave\ni++' },
+      { type: 'end', text: 'Fin' }
+    ]
+  },
+  {
+    id: 14,
+    title: 'Cubo de Rubik — Método de capas',
+    icon: '🧩',
+    practicePrompt: 'Describe en pseudocódigo la secuencia de pasos del método de capas para resolver el cubo de Rubik 3×3. Enfócate en la primera capa (cruz blanca y esquinas).',
+    problem: {
+      scenario: 'Resolver un cubo de Rubik 3×3 es un desafío clásico de algoritmia. El método de capas (layer by layer) divide el problema en 7 etapas secuenciales, cada una con su propio conjunto de movimientos (algoritmos). La primera etapa consiste en formar una cruz blanca en la cara superior.',
+      example: 'Cubo desordenado → Cruz blanca completa → Esquinas blancas → Segunda capa → Cruz amarilla → Orientar amarilla → Permutar esquinas → Permutar aristas → Cubo resuelto'
+    },
+    sequence: [
+      { step: 1, desc: 'Cruz blanca: Colocar las 4 aristas blancas alrededor del centro blanco en la cara superior, haciendo coincidir los colores laterales con los centros de cada cara' },
+      { step: 2, desc: 'Esquinas blancas: Insertar las 4 esquinas que contienen blanco en sus posiciones correctas usando el algoritmo R U R\' U\'' },
+      { step: 3, desc: 'Segunda capa: Insertar las 4 aristas de la capa media usando los algoritmos U R U\' R\' U\' F\' U F (giro a derecha) y U\' L\' U L U F U\' F\' (giro a izquierda)' },
+      { step: 4, desc: 'Cruz amarilla: Orientar la cara amarilla hacia arriba formando una cruz con la orientación correcta. Algoritmo: F R U R\' U\' F\'' },
+      { step: 5, desc: 'Orientar amarilla: Hacer que toda la cara amarilla quede orientada hacia arriba. Algoritmo: R U R\' U R U2 R\'' },
+      { step: 6, desc: 'Permutar esquinas: Colocar cada esquina amarilla en su posición correcta. Algoritmo: R\' F R\' B2 R F\' R\' B2 R2' },
+      { step: 7, desc: 'Permutar aristas: Rotar las aristas amarillas hasta completar el cubo. Algoritmo: R U\' R U R U R U\' R\' U\' R2' }
+    ],
+    solution: `--- MÉTODO DE CAPAS (CFOP simplificado) ---
+
+ETAPA 1 - CRUZ BLANCA:
+  Buscar aristas con blanco en cualquier cara
+  Llevar cada arista a la cara blanca haciendo coincidir
+  el color lateral con su centro correspondiente
+
+ETAPA 2 - ESQUINAS BLANCAS:
+  Para cada esquina con blanco:
+    Colocar la esquina sobre su posición objetivo
+    Aplicar: R U R' U'  (repetir hasta que encaje)
+
+ETAPA 3 - SEGUNDA CAPA:
+  Para insertar arista a la derecha:
+    U R U' R' U' F' U F
+  Para insertar arista a la izquierda:
+    U' L' U L U F U' F'
+
+ETAPA 4 - CRUZ AMARILLA:
+  F R U R' U' F'
+
+ETAPA 5 - ORIENTAR AMARILLA:
+  R U R' U R U2 R'
+
+ETAPA 6 - PERMUTAR ESQUINAS:
+  Buscar dos esquinas iguales en una cara
+  Colocar esas esquinas a la izquierda
+  R' F R' B2 R F' R' B2 R2
+
+ETAPA 7 - PERMUTAR ARISTAS:
+  Si falta una arista por orientar:
+    Colocar la cara completa a la izquierda
+    R U' R U R U R U' R' U' R2
+  Si todas las aristas están desorientadas:
+    Aplicar el algoritmo dos veces`,
+    conceptosClave: ['Método por capas', 'Notación de movimientos', 'Algoritmos secuenciales', 'Resolución paso a paso', 'R U R\' U\' (algoritmo base)'],
+    flowchart: [
+      { type: 'start', text: 'Cubo\ndesordenado' },
+      { type: 'process', text: 'Cruz blanca\nCoincidir colores laterales' },
+      { type: 'process', text: 'Esquinas blancas\nR U R\' U\'' },
+      { type: 'process', text: 'Segunda capa\nU R U\' R\' U\' F\' U F' },
+      { type: 'process', text: 'Cruz amarilla\nF R U R\' U\' F\'' },
+      { type: 'process', text: 'Orientar amarilla\nR U R\' U R U2 R\'' },
+      { type: 'process', text: 'Permutar esquinas\nR\' F R\' B2 R F\' R\' B2 R2' },
+      { type: 'process', text: 'Permutar aristas\nR U\' R U R U R U\' R\' U\' R2' },
+      { type: 'end', text: '¡Cubo\nresuelto!' }
+    ]
   }
 ];
 

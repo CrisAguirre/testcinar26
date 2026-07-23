@@ -8,9 +8,10 @@
 
   const links = [
     { href: '/desarrollo-web-1/parcial-1', icon: '📝', label: 'Parcial 1' },
+    { href: null, icon: '📝', label: 'Parcial 2', disabled: true },
     { href: '/desarrollo-web-1/algoritmia', icon: '🧠', label: 'Algoritmia' },
     { href: '/desarrollo-web-1/enlaces-de-consulta', icon: '🔗', label: 'Enlaces de Consulta' },
-    { href: null, icon: '📋', label: 'Notas', disabled: true }
+    { href: '/desarrollo-web-1/notas', icon: '📊', label: 'Notas' }
   ];
 </script>
 

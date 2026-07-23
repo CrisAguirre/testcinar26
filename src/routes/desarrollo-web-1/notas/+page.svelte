@@ -1,20 +1,61 @@
 <script lang="ts">
-  import { isAuthenticated } from '$lib/stores/auth';
+  import { isAuthenticated, isAdmin, currentUser } from '$lib/stores/auth';
+  import { gradesApi } from '$lib/api';
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
 
   $effect(() => {
     if (!$isAuthenticated) goto('/login');
   });
 
-  const students = [
-    { name: 'DAVID ALEJANDRO GARCIA ENRIQUEZ', score: 48, max: 48, pct: 100.0, scale5: 5.00 },
-    { name: 'JAIRO DANIEL ZAMBRANO VALLEID', score: 39, max: 40, pct: 97.5, scale5: 4.88 },
-    { name: 'HAROLD ESTEBAN QUIROZ ALVAREZ', score: 29, max: 32, pct: 90.6, scale5: 4.53 },
-    { name: 'WILLIAM DAVID SALAS LASSO', score: 21, max: 24, pct: 87.5, scale5: 4.38 },
-    { name: 'ANDRES FELIPE MEZA LEON', score: 39, max: 44, pct: 88.6, scale5: 4.43 },
-    { name: 'DIEGO SEBASTIAN AZAIN MORAN', score: 19, max: 24, pct: 79.2, scale5: 3.96 },
-    { name: 'JEISON STIVEN MARTINEZ ZAMBRA', score: 27, max: 40, pct: 67.5, scale5: 3.38 }
-  ];
+  interface StudentRow {
+    name: string;
+    score: number | null;
+    max: number | null;
+    pct: number | null;
+    scale5: number | null;
+  }
+
+  let students = $state<StudentRow[]>([]);
+  let loading = $state(true);
+  let error = $state('');
+
+  async function loadGrades() {
+    loading = true;
+    error = '';
+    try {
+      const all = await gradesApi.getAll({});
+      const examGrades = all.filter((g: any) => g.subject === 'Desarrollo Web 1 - Parcial 1');
+
+      const byStudent: Record<string, any[]> = {};
+      for (const g of examGrades) {
+        const name = g.student?.full_name || 'Unknown';
+        if (!byStudent[name]) byStudent[name] = [];
+        byStudent[name].push(g);
+      }
+
+      const rows: StudentRow[] = [];
+      for (const [name, entries] of Object.entries(byStudent)) {
+        entries.sort((a: any, b: any) => new Date(b.created_at || b.createdAt || 0).getTime() - new Date(a.created_at || a.createdAt || 0).getTime());
+        const last = entries[0];
+        const score = last.score;
+        const max = last.max_score;
+        const pct = max > 0 ? parseFloat(((score / max) * 100).toFixed(1)) : null;
+        const scale5 = max > 0 ? parseFloat(((score / max) * 5).toFixed(2)) : null;
+        rows.push({ name, score, max, pct, scale5 });
+      }
+
+      rows.sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
+
+      students = rows;
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Error al cargar datos';
+    } finally {
+      loading = false;
+    }
+  }
+
+  onMount(loadGrades);
 
   function pctClass(pct: number | null): string {
     if (pct === null) return '';
@@ -29,6 +70,10 @@
     if (val >= 3.5) return 'scale-mid';
     return 'scale-low';
   }
+
+  let avgPct = $derived(students.length > 0 ? students.reduce((s, r) => s + (r.pct ?? 0), 0) / students.length : 0);
+  let avgScale = $derived(students.length > 0 ? students.reduce((s, r) => s + (r.scale5 ?? 0), 0) / students.length : 0);
+  let presented = $derived(students.filter(s => s.score !== null).length);
 </script>
 
 <svelte:head>
@@ -44,71 +89,82 @@
     <span class="header-icon">📊</span>
     <h1>Notas — Parcial 1</h1>
     <p class="header-desc">Resultados finales del Parcial 1 de Desarrollo Web 1</p>
+    {#if $isAdmin}
+      <button onclick={loadGrades} class="refresh-btn" disabled={loading}>
+        {loading ? 'Cargando...' : '🔄 Actualizar'}
+      </button>
+    {/if}
   </div>
 
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th class="col-num">#</th>
-          <th class="col-name">Estudiante</th>
-          <th class="col-score">Puntaje</th>
-          <th class="col-pct">Porcentaje</th>
-          <th class="col-scale">Escala 0-5</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each students as s, i}
-          <tr class="{s.score === null ? 'row-missing' : ''} {i % 2 === 0 ? 'row-even' : 'row-odd'}">
-            <td class="col-num">{i + 1}</td>
-            <td class="col-name">{s.name}</td>
-            <td class="col-score">
-              {#if s.score !== null}
-                <span class="score-value">{s.score}</span>
-                <span class="score-divider">/</span>
-                <span class="score-max">{s.max}</span>
-              {:else}
-                <span class="missing">—</span>
-              {/if}
-            </td>
-            <td class="col-pct">
-              {#if s.pct !== null}
-                <span class="pct-badge {pctClass(s.pct)}">{s.pct}%</span>
-              {:else}
-                <span class="missing">No presentó</span>
-              {/if}
-            </td>
-            <td class="col-scale">
-              {#if s.scale5 !== null}
-                <span class="scale-badge {scaleClass(s.scale5)}">{s.scale5.toFixed(2)}</span>
-              {:else}
-                <span class="missing">—</span>
-              {/if}
-            </td>
+  {#if loading}
+    <p class="loading-text">Cargando calificaciones...</p>
+  {:else if error}
+    <div class="error-msg">⚠ {error}</div>
+  {:else}
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-num">#</th>
+            <th class="col-name">Estudiante</th>
+            <th class="col-score">Puntaje</th>
+            <th class="col-pct">Porcentaje</th>
+            <th class="col-scale">Escala 0-5</th>
           </tr>
-        {/each}
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          {#each students as s, i}
+            <tr class="{s.score === null ? 'row-missing' : ''} {i % 2 === 0 ? 'row-even' : 'row-odd'}">
+              <td class="col-num">{i + 1}</td>
+              <td class="col-name">{s.name}</td>
+              <td class="col-score">
+                {#if s.score !== null}
+                  <span class="score-value">{s.score}</span>
+                  <span class="score-divider">/</span>
+                  <span class="score-max">{s.max}</span>
+                {:else}
+                  <span class="missing">—</span>
+                {/if}
+              </td>
+              <td class="col-pct">
+                {#if s.pct !== null}
+                  <span class="pct-badge {pctClass(s.pct)}">{s.pct}%</span>
+                {:else}
+                  <span class="missing">No presentó</span>
+                {/if}
+              </td>
+              <td class="col-scale">
+                {#if s.scale5 !== null}
+                  <span class="scale-badge {scaleClass(s.scale5)}">{s.scale5.toFixed(2)}</span>
+                {:else}
+                  <span class="missing">—</span>
+                {/if}
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
 
-  <div class="summary-bar">
-    <div class="summary-item">
-      <span class="summary-label">Presentaron</span>
-      <span class="summary-value">7</span>
+    <div class="summary-bar">
+      <div class="summary-item">
+        <span class="summary-label">Presentaron</span>
+        <span class="summary-value">{presented}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">No presentaron</span>
+        <span class="summary-value">{students.length - presented}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Promedio grupo</span>
+        <span class="summary-value highlight">{avgPct.toFixed(1)}%</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Promedio escala</span>
+        <span class="summary-value highlight">{avgScale.toFixed(2)}</span>
+      </div>
     </div>
-    <div class="summary-item">
-      <span class="summary-label">No presentaron</span>
-      <span class="summary-value">0</span>
-    </div>
-    <div class="summary-item">
-      <span class="summary-label">Promedio grupo</span>
-      <span class="summary-value highlight">{(100.0 + 97.5 + 90.6 + 87.5 + 88.6 + 79.2 + 67.5) / 7}%</span>
-    </div>
-    <div class="summary-item">
-      <span class="summary-label">Promedio escala</span>
-      <span class="summary-value highlight">{(5.00 + 4.88 + 4.53 + 4.38 + 4.43 + 3.96 + 3.38) / 7}</span>
-    </div>
-  </div>
+  {/if}
 </div>
 
 <style>
@@ -142,6 +198,7 @@
   .header {
     text-align: center;
     margin-bottom: 2rem;
+    position: relative;
   }
 
   .header-icon {
@@ -160,6 +217,34 @@
     font-size: 0.9rem;
     color: var(--color-text-secondary);
     margin: 0;
+  }
+
+  .refresh-btn {
+    margin-top: 0.75rem;
+    padding: 0.4rem 1rem;
+    background: var(--color-accent, #ff3e00);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .refresh-btn:hover { opacity: 0.9; }
+  .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .loading-text, .error-msg {
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.95rem;
+  }
+
+  .error-msg {
+    color: #dc2626;
+    background: #fef2f2;
+    border-radius: 8px;
   }
 
   .table-container {
@@ -196,53 +281,19 @@
     border-bottom: none;
   }
 
-  .row-even td {
-    background: #f8fafc;
-  }
+  .row-even td { background: #f8fafc; }
+  .row-odd td { background: white; }
+  .row-missing td { opacity: 0.7; }
 
-  .row-odd td {
-    background: white;
-  }
+  .col-num { width: 40px; text-align: center; color: #94a3b8; font-weight: 600; }
+  .col-name { font-weight: 600; color: #1e293b; }
+  .col-score { text-align: center; }
 
-  .row-missing td {
-    opacity: 0.7;
-  }
+  .score-value { font-weight: 800; font-size: 1.05rem; color: #1d4ed8; }
+  .score-divider { color: #94a3b8; margin: 0 2px; }
+  .score-max { color: #64748b; font-weight: 600; }
 
-  .col-num {
-    width: 40px;
-    text-align: center;
-    color: #94a3b8;
-    font-weight: 600;
-  }
-
-  .col-name {
-    font-weight: 600;
-    color: #1e293b;
-  }
-
-  .col-score {
-    text-align: center;
-  }
-
-  .score-value {
-    font-weight: 800;
-    font-size: 1.05rem;
-    color: #1d4ed8;
-  }
-
-  .score-divider {
-    color: #94a3b8;
-    margin: 0 2px;
-  }
-
-  .score-max {
-    color: #64748b;
-    font-weight: 600;
-  }
-
-  .col-pct {
-    text-align: center;
-  }
+  .col-pct { text-align: center; }
 
   .pct-badge {
     display: inline-block;
@@ -252,24 +303,11 @@
     font-size: 0.85rem;
   }
 
-  .pct-high {
-    background: #dcfce7;
-    color: #16a34a;
-  }
+  .pct-high { background: #dcfce7; color: #16a34a; }
+  .pct-mid { background: #fef3c7; color: #d97706; }
+  .pct-low { background: #fef2f2; color: #dc2626; }
 
-  .pct-mid {
-    background: #fef3c7;
-    color: #d97706;
-  }
-
-  .pct-low {
-    background: #fef2f2;
-    color: #dc2626;
-  }
-
-  .col-scale {
-    text-align: center;
-  }
+  .col-scale { text-align: center; }
 
   .scale-badge {
     display: inline-block;
@@ -279,26 +317,11 @@
     font-size: 0.85rem;
   }
 
-  .scale-high {
-    background: #dcfce7;
-    color: #16a34a;
-  }
+  .scale-high { background: #dcfce7; color: #16a34a; }
+  .scale-mid { background: #fef3c7; color: #d97706; }
+  .scale-low { background: #fef2f2; color: #dc2626; }
 
-  .scale-mid {
-    background: #fef3c7;
-    color: #d97706;
-  }
-
-  .scale-low {
-    background: #fef2f2;
-    color: #dc2626;
-  }
-
-  .missing {
-    color: #94a3b8;
-    font-style: italic;
-    font-size: 0.85rem;
-  }
+  .missing { color: #94a3b8; font-style: italic; font-size: 0.85rem; }
 
   .summary-bar {
     display: grid;
@@ -331,25 +354,12 @@
     color: #1e293b;
   }
 
-  .summary-value.highlight {
-    color: #1d4ed8;
-  }
+  .summary-value.highlight { color: #1d4ed8; }
 
   @media (max-width: 640px) {
-    table {
-      font-size: 0.78rem;
-    }
-
-    thead th, tbody td {
-      padding: 0.5rem 0.6rem;
-    }
-
-    .summary-bar {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .col-scale {
-      display: none;
-    }
+    table { font-size: 0.78rem; }
+    thead th, tbody td { padding: 0.5rem 0.6rem; }
+    .summary-bar { grid-template-columns: repeat(2, 1fr); }
+    .col-scale { display: none; }
   }
 </style>

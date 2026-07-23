@@ -38,17 +38,17 @@ describe('categories', () => {
     expect(cat?.links.length).toBe(4);
   });
 
-  it('Repositorios del Proyecto tiene 2 enlaces', () => {
+  it('Repositorios del Proyecto tiene 4 enlaces', () => {
     const cat = categories.find(c => c.title === 'Repositorios del Proyecto');
-    expect(cat?.links.length).toBe(2);
+    expect(cat?.links.length).toBe(4);
   });
 });
 
 describe('links', () => {
   const allLinks = getAllLinks(categories);
 
-  it('total de 14 enlaces', () => {
-    expect(allLinks.length).toBe(14);
+  it('total de 16 enlaces', () => {
+    expect(allLinks.length).toBe(16);
   });
 
   it('cada enlace tiene title, url, desc y tag', () => {
@@ -163,8 +163,8 @@ describe('filterCategories', () => {
 });
 
 describe('getAllLinks', () => {
-  it('retorna 14 enlaces totales', () => {
-    expect(getAllLinks(categories).length).toBe(14);
+  it('retorna 16 enlaces totales', () => {
+    expect(getAllLinks(categories).length).toBe(16);
   });
 
   it('retorna arreglo vacío para categorías sin enlaces', () => {

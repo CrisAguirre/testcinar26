@@ -37,6 +37,7 @@
 
   const totalQuestions = 20;
   let totalTime = 45 * 60;
+  let isUnlimited = $derived($currentUser?.email === 'coordinacion@cinarsistemas.edu.co');
 
   function getLocalAttempts(): any[] {
     try {
@@ -76,6 +77,10 @@
   function getAvailableSlots(): { total: number; used: number; remaining: number; windowLabel: string; enabled: boolean } {
     const now = new Date();
     const used = getAttemptCount();
+
+    if (isUnlimited) {
+      return { total: Infinity, used, remaining: Infinity, windowLabel: 'Intentos ilimitados (coordinador)', enabled: true };
+    }
 
     if (now < WINDOW1_END) {
       return { total: 2, used: Math.min(used, 2), remaining: Math.max(0, 2 - used), windowLabel: 'Antes del examen (hasta 18:45)', enabled: used < 2 };
@@ -412,13 +417,21 @@
 
         <div class="attempts-section">
           <h2>🎯 Intentos disponibles</h2>
-          <p class="attempts-info">Dispones de <strong>4 intentos</strong> en total: <strong>2 de Preparación</strong> (antes del examen) y <strong>2 de Evaluación</strong> (durante el examen).</p>
+          <p class="attempts-info">
+            {#if isUnlimited}
+              Dispones de <strong>intentos ilimitados</strong> como coordinador.
+            {:else}
+              Dispones de <strong>4 intentos</strong> en total: <strong>2 de Preparación</strong> (antes del examen) y <strong>2 de Evaluación</strong> (durante el examen).
+            {/if}
+          </p>
           <div class="attempts-grid">
-            <div class="attempt-card {slots.remaining > 0 && slots.used < 2 ? 'available' : 'used'}">
+            <div class="attempt-card {isUnlimited || (slots.remaining > 0 && slots.used < 2) ? 'available' : 'used'}">
               <div class="attempt-number">{getAttemptLabel(1)}</div>
               <div class="attempt-type-badge prep">Preparación</div>
               <div class="attempt-status">
-                {#if getAttemptCount() >= 1}
+                {#if isUnlimited}
+                  <span class="ready-badge">Disponible</span>
+                {:else if getAttemptCount() >= 1}
                   <span class="used-badge">✓ Utilizado</span>
                 {:else if slots.remaining > 0 && slots.used < 2}
                   <span class="ready-badge">Disponible</span>
@@ -427,11 +440,13 @@
                 {/if}
               </div>
             </div>
-            <div class="attempt-card {slots.remaining > 0 && slots.used < 2 ? 'available' : 'used'}">
+            <div class="attempt-card {isUnlimited || (slots.remaining > 0 && slots.used < 2) ? 'available' : 'used'}">
               <div class="attempt-number">{getAttemptLabel(2)}</div>
               <div class="attempt-type-badge prep">Preparación</div>
               <div class="attempt-status">
-                {#if getAttemptCount() >= 2}
+                {#if isUnlimited}
+                  <span class="ready-badge">Disponible</span>
+                {:else if getAttemptCount() >= 2}
                   <span class="used-badge">✓ Utilizado</span>
                 {:else if slots.remaining > 0 && slots.used < 2}
                   <span class="ready-badge">Disponible</span>
@@ -440,11 +455,13 @@
                 {/if}
               </div>
             </div>
-            <div class="attempt-card {slots.enabled && slots.used >= 2 ? 'available' : (getAttemptCount() >= 3 ? 'used' : 'blocked')}">
+            <div class="attempt-card {isUnlimited || (slots.enabled && slots.used >= 2) ? 'available' : (getAttemptCount() >= 3 ? 'used' : 'blocked')}">
               <div class="attempt-number">{getAttemptLabel(3)}</div>
               <div class="attempt-type-badge eval">Evaluación</div>
               <div class="attempt-status">
-                {#if getAttemptCount() >= 3}
+                {#if isUnlimited}
+                  <span class="ready-badge">Disponible</span>
+                {:else if getAttemptCount() >= 3}
                   <span class="used-badge">✓ Utilizado</span>
                 {:else if slots.enabled && slots.used >= 2}
                   <span class="ready-badge">Disponible</span>
@@ -453,11 +470,13 @@
                 {/if}
               </div>
             </div>
-            <div class="attempt-card {slots.enabled && slots.used >= 3 ? 'available' : (getAttemptCount() >= 4 ? 'used' : 'blocked')}">
+            <div class="attempt-card {isUnlimited || (slots.enabled && slots.used >= 3) ? 'available' : (getAttemptCount() >= 4 ? 'used' : 'blocked')}">
               <div class="attempt-number">{getAttemptLabel(4)}</div>
               <div class="attempt-type-badge eval">Evaluación</div>
               <div class="attempt-status">
-                {#if getAttemptCount() >= 4}
+                {#if isUnlimited}
+                  <span class="ready-badge">Disponible</span>
+                {:else if getAttemptCount() >= 4}
                   <span class="used-badge">✓ Utilizado</span>
                 {:else if slots.enabled && slots.used >= 3}
                   <span class="ready-badge">Disponible</span>

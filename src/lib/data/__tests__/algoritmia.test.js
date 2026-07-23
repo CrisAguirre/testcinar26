@@ -30,8 +30,8 @@ describe('ALGORITMIA_SUBJECT', () => {
 });
 
 describe('algorithms', () => {
-  it('tiene exactamente 10 algoritmos', () => {
-    expect(algorithms.length).toBe(10);
+  it('tiene exactamente 14 algoritmos', () => {
+    expect(algorithms.length).toBe(14);
   });
 
   it('cada algoritmo tiene id único', () => {

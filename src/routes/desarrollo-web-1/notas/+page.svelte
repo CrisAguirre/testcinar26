@@ -10,10 +10,10 @@
     { name: 'DAVID ALEJANDRO GARCIA ENRIQUEZ', score: 48, max: 48, pct: 100.0, scale5: 5.00 },
     { name: 'JAIRO DANIEL ZAMBRANO VALLEID', score: 39, max: 40, pct: 97.5, scale5: 4.88 },
     { name: 'HAROLD ESTEBAN QUIROZ ALVAREZ', score: 29, max: 32, pct: 90.6, scale5: 4.53 },
+    { name: 'WILLIAM DAVID SALAS LASSO', score: 21, max: 24, pct: 87.5, scale5: 4.38 },
     { name: 'ANDRES FELIPE MEZA LEON', score: 39, max: 44, pct: 88.6, scale5: 4.43 },
-    { name: 'JEISON STIVEN MARTINEZ ZAMBRA', score: 27, max: 40, pct: 67.5, scale5: 3.38 },
-    { name: 'DIEGO SEBASTIAN AZAIN MORAN', score: null, max: null, pct: null, scale5: null },
-    { name: 'WILLIAM DAVID SALAS LASSO', score: null, max: null, pct: null, scale5: null }
+    { name: 'DIEGO SEBASTIAN AZAIN MORAN', score: 19, max: 24, pct: 79.2, scale5: 3.96 },
+    { name: 'JEISON STIVEN MARTINEZ ZAMBRA', score: 27, max: 40, pct: 67.5, scale5: 3.38 }
   ];
 
   function pctClass(pct: number | null): string {
@@ -94,19 +94,19 @@
   <div class="summary-bar">
     <div class="summary-item">
       <span class="summary-label">Presentaron</span>
-      <span class="summary-value">5</span>
+      <span class="summary-value">7</span>
     </div>
     <div class="summary-item">
       <span class="summary-label">No presentaron</span>
-      <span class="summary-value">2</span>
+      <span class="summary-value">0</span>
     </div>
     <div class="summary-item">
       <span class="summary-label">Promedio grupo</span>
-      <span class="summary-value highlight">{(100.0 + 97.5 + 90.6 + 88.6 + 67.5) / 5}%</span>
+      <span class="summary-value highlight">{(100.0 + 97.5 + 90.6 + 87.5 + 88.6 + 79.2 + 67.5) / 7}%</span>
     </div>
     <div class="summary-item">
       <span class="summary-label">Promedio escala</span>
-      <span class="summary-value highlight">{(5.00 + 4.88 + 4.53 + 4.43 + 3.38) / 5}</span>
+      <span class="summary-value highlight">{(5.00 + 4.88 + 4.53 + 4.38 + 4.43 + 3.96 + 3.38) / 7}</span>
     </div>
   </div>
 </div>

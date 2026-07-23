@@ -85,6 +85,64 @@
     <span>←</span> Volver a Desarrollo Web 1
   </button>
 
+  <div class="eval-rules">
+    <div class="eval-header">
+      <span class="eval-icon">📋</span>
+      <h2>Evaluación</h2>
+    </div>
+    <p class="eval-sub">Distribución porcentual de la nota definitiva del curso</p>
+    <div class="eval-breakdown">
+      <div class="eval-block eval-block-40">
+        <div class="eval-block-inner">
+          <div class="eval-block-badge">Corte 1</div>
+          <div class="eval-block-value">
+            40<span class="eval-percent-sign">%</span>
+          </div>
+          <p class="eval-block-desc">Evaluación y taller en línea por medio de esta plataforma, sobre conceptos básicos claves de uso del framework Svelte y de ambientes reales de desarrollo de aplicaciones.</p>
+          <div class="eval-block-items">
+            <div class="eval-item">
+              <span class="eval-item-pct">20%</span>
+              <span class="eval-item-label">Parcial 1</span>
+              <span class="eval-item-sub">Evaluación individual</span>
+            </div>
+            <span class="eval-plus">+</span>
+            <div class="eval-item">
+              <span class="eval-item-pct">20%</span>
+              <span class="eval-item-label">Taller 1</span>
+              <span class="eval-item-sub">Trabajo práctico</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="eval-block eval-block-60">
+        <div class="eval-block-inner">
+          <div class="eval-block-badge">Corte 2</div>
+          <div class="eval-block-value">
+            60<span class="eval-percent-sign">%</span>
+          </div>
+          <p class="eval-block-desc">Desarrollo de proyectos y evaluaciones integradoras que demuestran la capacidad de construir aplicaciones reales con el uso del framework Svelte.</p>
+          <div class="eval-block-items">
+            <div class="eval-item">
+              <span class="eval-item-pct">40%</span>
+              <span class="eval-item-label">Proyecto final</span>
+              <span class="eval-item-sub">Desarrollo completo</span>
+            </div>
+            <span class="eval-plus">+</span>
+            <div class="eval-item">
+              <span class="eval-item-pct">20%</span>
+              <span class="eval-item-label">Parcial 2</span>
+              <span class="eval-item-sub">Evaluación individual</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="eval-footer">
+      <span class="eval-footer-icon">💡</span>
+      <span>Tu nota final será el promedio ponderado de acuerdo a estos porcentajes.</span>
+    </div>
+  </div>
+
   <div class="header">
     <span class="header-icon">📊</span>
     <h1>Notas — Parcial 1</h1>
@@ -355,6 +413,209 @@
   }
 
   .summary-value.highlight { color: #1d4ed8; }
+
+  .eval-rules {
+    background: linear-gradient(135deg, #eff6ff, #dbeafe, #eff6ff);
+    border: 2px solid #93c5fd;
+    border-radius: var(--radius-xl);
+    padding: 1.75rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 20px rgba(59, 130, 246, 0.1);
+    animation: evalFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes evalFadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .eval-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .eval-icon {
+    font-size: 1.6rem;
+  }
+
+  .eval-header h2 {
+    font-size: 1.15rem;
+    margin: 0;
+    color: #1e3a5f;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .eval-sub {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0 0 1.25rem 2.2rem;
+  }
+
+  .eval-breakdown {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .eval-block {
+    flex: 1;
+    min-width: 240px;
+    max-width: 340px;
+    border-radius: var(--radius-lg);
+    padding: 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+  }
+
+  .eval-block:hover {
+    transform: translateY(-4px);
+  }
+
+  .eval-block-40:hover {
+    box-shadow: 0 8px 28px rgba(59, 130, 246, 0.35);
+  }
+
+  .eval-block-60:hover {
+    box-shadow: 0 8px 28px rgba(139, 92, 246, 0.35);
+  }
+
+  .eval-block-inner {
+    padding: 1.5rem 1.25rem 1.25rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .eval-block::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.08;
+    background: radial-gradient(ellipse at center, white 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .eval-block-40 {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.25);
+  }
+
+  .eval-block-60 {
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    color: white;
+    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.25);
+  }
+
+  .eval-block-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: rgba(255, 255, 255, 0.18);
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    margin-bottom: 0.75rem;
+    backdrop-filter: blur(4px);
+  }
+
+  .eval-block-value {
+    font-size: 2.6rem;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .eval-percent-sign {
+    font-size: 1.4rem;
+    font-weight: 600;
+    opacity: 0.7;
+    vertical-align: super;
+    margin-left: 0.05rem;
+  }
+
+  .eval-block-desc {
+    font-size: 0.78rem;
+    line-height: 1.5;
+    opacity: 0.85;
+    margin: 0 0 1rem;
+    max-width: 260px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .eval-block-items {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .eval-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+  }
+
+  .eval-item-pct {
+    font-size: 1.1rem;
+    font-weight: 800;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.15rem 0.7rem;
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
+  }
+
+  .eval-item-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.95;
+  }
+
+  .eval-item-sub {
+    font-size: 0.62rem;
+    font-weight: 500;
+    opacity: 0.6;
+    text-transform: lowercase;
+  }
+
+  .eval-plus {
+    font-size: 1.4rem;
+    font-weight: 700;
+    opacity: 0.7;
+    padding: 0 0.2rem;
+  }
+
+  .eval-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+    font-size: 0.82rem;
+    color: #475569;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 1rem;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(147, 197, 253, 0.3);
+  }
+
+  .eval-footer-icon {
+    font-size: 1.1rem;
+  }
 
   @media (max-width: 640px) {
     table { font-size: 0.78rem; }

@@ -70,7 +70,6 @@
       serverAttempts = getLocalAttempts().length;
     } finally {
       loadingServer = false;
-      slots = getAvailableSlots();
     }
   }
 
@@ -92,7 +91,7 @@
     }
   }
 
-  let slots = $state(getAvailableSlots());
+  let slots = $derived.by(() => getAvailableSlots());
 
   $effect(() => {
     if (timeLeft <= 0 && started && !finished) {
@@ -391,7 +390,6 @@
     if (gradeId) await loadServerAttempts();
 
     clearSavedAnswers();
-    slots = getAvailableSlots();
   }
 
   onDestroy(() => {

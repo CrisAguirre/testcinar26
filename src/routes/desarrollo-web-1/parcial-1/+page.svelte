@@ -1,11 +1,11 @@
 <script lang="ts">
   import { selectRandomQuestions } from '$lib/data/parcial1';
-  import { gradesApi } from '$lib/api';
+  import { gradesApi, authApi, API_URL } from '$lib/api';
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
-  import { STORAGE_KEY, DETAIL_KEY, WINDOW1_END, WINDOW2_START, WINDOW2_END, TOTAL_QUESTIONS, TOTAL_TIME, TIME_PER_MC, TIME_PER_OPEN, calculateTotalTime, formatTime, getAttemptLabel, getAttemptType, calculateScore, buildExamData } from '$lib/exam';
-  import { preloadedMyGrades } from '$lib/stores/preloaded';
+  import { STORAGE_KEY, DETAIL_KEY, WINDOW1_END, WINDOW2_START, WINDOW2_END, TOTAL_QUESTIONS, TOTAL_TIME, TIME_PER_MC, TIME_PER_OPEN, calculateTotalTime, formatTime, getAttemptLabel, getAttemptType, calculateScore, buildExamData, SYNC_QUEUE_KEY, getSyncQueue, addToSyncQueue, removeFromSyncQueue, setHealthCheckOk, isHealthCheckRecent, SAVED_ANSWERS_KEY, saveAnswersSnapshot, clearSavedAnswers } from '$lib/exam';
+  import { preloadedMyGrades, preloadingStatus, wakeUpStatus } from '$lib/stores/preloaded';
 
   let { data } = $props();
 
@@ -28,6 +28,12 @@
   let serverGrades = $state<any[]>(data.serverGrades || []);
   let loadingServer = $state(!data.serverGrades);
   let saveError = $state('');
+  let saveSuccess = $state(false);
+  let isSaving = $state(false);
+  let serverCheckOk = $state(false);
+  let checkingServer = $state(false);
+  let pendingSyncCount = $state(0);
+  let syncingInProgress = $state(false);
 
   const totalQuestions = 20;
   let totalTime = 45 * 60;
@@ -102,7 +108,39 @@
     return (answered / totalQuestions) * 100;
   }
 
-  function startExam() {
+  async function startExam() {
+    const healthy = await checkBackendHealth();
+    if (!healthy) {
+      const proceed = confirm('El servidor no responde. Puedes comenzar, pero las respuestas se guardarán localmente y se sincronizarán después. ¿Deseas continuar?');
+      if (!proceed) return;
+    }
+
+    const saved = (() => {
+      try {
+        const raw = localStorage.getItem(SAVED_ANSWERS_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch { return null; }
+    })();
+
+    if (saved && saved.questions && saved.answers && Object.keys(saved.answers).length > 0) {
+      const resume = confirm(`Tienes un examen en progreso guardado (${Object.keys(saved.answers).length} preguntas respondidas). ¿Deseas continuar?`);
+      if (resume) {
+        questions = saved.questions;
+        answers = saved.answers;
+        currentIndex = saved.currentIndex || 0;
+        timeLeft = saved.timeLeft || calculateTotalTime(saved.questions);
+        tabSwitchCount = saved.tabSwitchCount || 0;
+        totalTime = timeLeft;
+        started = true;
+        finished = false;
+        currentAttemptNumber = getAttemptCount() + 1;
+        timerInterval = setInterval(() => { timeLeft--; }, 1000);
+        document.addEventListener('visibilitychange', handleVisibility);
+        return;
+      }
+    }
+    clearSavedAnswers();
+
     questions = selectRandomQuestions(totalQuestions);
     const dynamicTime = calculateTotalTime(questions);
     totalTime = dynamicTime;
@@ -137,10 +175,132 @@
 
   function handleAnswer(value: any) {
     answers[questions[currentIndex].id] = value;
+    autoSaveAnswers();
   }
 
   function isQuestionAnswered(qId: number): boolean {
     return answers[qId] !== undefined && answers[qId] !== '';
+  }
+
+  function autoSaveAnswers() {
+    if (!started || finished) return;
+    saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount);
+  }
+
+  async function checkBackendHealth(): Promise<boolean> {
+    if (isHealthCheckRecent()) return true;
+    checkingServer = true;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      const baseUrl = API_URL.replace('/api', '');
+      await fetch(baseUrl, { signal: controller.signal, mode: 'cors' });
+      clearTimeout(timeout);
+      setHealthCheckOk();
+      serverCheckOk = true;
+      return true;
+    } catch {
+      serverCheckOk = false;
+      return false;
+    } finally {
+      checkingServer = false;
+    }
+  }
+
+  async function processSyncQueue() {
+    if (syncingInProgress) return;
+    const queue = getSyncQueue();
+    if (queue.length === 0) return;
+    syncingInProgress = true;
+    pendingSyncCount = queue.length;
+
+    for (const entry of queue) {
+      if (!$currentUser?.id) break;
+      try {
+        const res = await gradesApi.submitMine({
+          subject: 'Desarrollo Web 1 - Parcial 1',
+          score: entry.score,
+          max_score: entry.maxScore,
+          period: '2026-1',
+          comments: entry.comments
+        });
+        const grade = res.grade || res;
+        if (grade && grade._id && entry.examData) {
+          await gradesApi.updateMine(grade._id, { examData: entry.examData });
+        }
+        removeFromSyncQueue(entry.createdAt);
+        pendingSyncCount--;
+      } catch {
+        break;
+      }
+    }
+    syncingInProgress = false;
+    pendingSyncCount = getSyncQueue().length;
+    if (pendingSyncCount > 0) loadServerAttempts();
+  }
+
+  async function attemptSubmitWithRetry(maxRetries = 3): Promise<{ success: boolean; gradeId?: string; error?: string }> {
+    const attemptNumLocal = getAttemptCount() + 1;
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const res = await gradesApi.submitMine({
+          subject: 'Desarrollo Web 1 - Parcial 1',
+          score: mcScore,
+          max_score: mcTotal,
+          period: '2026-1',
+          comments: `${getAttemptLabel(attemptNumLocal)} | MC: ${mcScore}/${mcTotal} | Abiertas: ${pendingOpen} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`
+        });
+        const grade = res.grade || res;
+        if (grade && grade._id) {
+          try {
+            const examDataForServer = {
+              attemptNumber: attemptNumLocal,
+              tabSwitches: tabSwitchCount,
+              timeUsed: totalTime - timeLeft,
+              mcScore, mcTotal,
+              questions: questions.map(q => ({
+                id: q.id, tema: q.tema, type: q.type, question: q.question,
+                options: q.type === 'mc' ? q.options : undefined,
+                correctAnswer: q.type === 'mc' ? q.answer : undefined,
+                studentAnswer: answers[q.id],
+                isCorrect: q.type === 'mc' ? answers[q.id] === q.answer : undefined,
+                openScore: null, openMaxScore: q.type === 'open' ? 5 : undefined
+              }))
+            };
+            await gradesApi.updateMine(grade._id, { examData: JSON.stringify(examDataForServer) });
+          } catch {}
+          return { success: true, gradeId: grade._id };
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Error de conexión';
+        if (i < maxRetries - 1) {
+          await new Promise(r => setTimeout(r, 3000 * (i + 1)));
+        } else {
+          return { success: false, error: msg };
+        }
+      }
+    }
+    return { success: false, error: 'No se pudo conectar después de varios intentos' };
+  }
+
+  async function retrySave() {
+    saveError = '';
+    saveSuccess = false;
+    isSaving = true;
+    const result = await attemptSubmitWithRetry(3);
+    isSaving = false;
+    if (result.success) {
+      saveSuccess = true;
+      const localList = getLocalAttempts();
+      if (localList.length > 0) {
+        localList[localList.length - 1].gradeId = result.gradeId;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
+      }
+      await loadServerAttempts();
+    } else {
+      saveError = result.error || 'Error al guardar';
+    }
   }
 
   async function handleSubmit() {
@@ -198,27 +358,20 @@
 
     let gradeId: string | undefined;
     if ($currentUser?.id) {
-      try {
-        const res = await gradesApi.submitMine({
-          subject: 'Desarrollo Web 1 - Parcial 1',
-          score,
-          max_score: totalMc,
-          period: '2026-1',
-          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${totalMc} | Abiertas: ${openCount} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`
+      isSaving = true;
+      const result = await attemptSubmitWithRetry(3);
+      isSaving = false;
+      if (result.success) {
+        gradeId = result.gradeId;
+        localRecord.gradeId = result.gradeId;
+        saveSuccess = true;
+      } else {
+        saveError = `No se pudo guardar en el servidor: ${result.error}. Las respuestas están guardadas localmente. Se reintentará automáticamente.`;
+        addToSyncQueue({
+          score, maxScore: totalMc, openCount,
+          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${totalMc} | Abiertas: ${openCount} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`,
+          examData: JSON.stringify(examData)
         });
-        const grade = res.grade || res;
-        if (grade && grade._id) {
-          gradeId = grade._id;
-          localRecord.gradeId = grade._id;
-          try {
-            await gradesApi.updateMine(grade._id, { examData: JSON.stringify(examData) });
-          } catch {
-            console.warn('examData no se pudo adjuntar, pero la nota está guardada');
-          }
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Error de conexión';
-        saveError = `No se pudo guardar en el servidor: ${msg}. Las respuestas están guardadas localmente.`;
       }
     }
 
@@ -227,6 +380,7 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
     if (gradeId) await loadServerAttempts();
 
+    clearSavedAnswers();
     slots = getAvailableSlots();
   }
 
@@ -367,11 +521,30 @@
               <li>
                 <strong>📊 Progreso:</strong> Revisa la barra de progreso para saber cuántas preguntas has respondido.
               </li>
+              <li>
+                <strong>💾 Auto-guardado:</strong> Tus respuestas se guardan automáticamente al responder cada pregunta.
+                Si cierras el examen sin terminar, podrás retomarlo.
+              </li>
             </ul>
           </div>
 
-          <button onclick={startExam} class="start-btn">
-            {getAttemptCount() === 0 ? 'Comenzar Examen' : `Iniciar ${getAttemptLabel(getAttemptCount() + 1)}`}
+          {#if checkingServer}
+            <p class="server-check">Verificando conexión con el servidor...</p>
+          {:else if !serverCheckOk && getAttemptCount() === 0}
+            <p class="server-warning">⚠ No se pudo verificar el servidor. Si continúas, las respuestas se guardarán localmente.</p>
+          {/if}
+
+          {#if pendingSyncCount > 0}
+            <div class="sync-notice">
+              ⏳ Tienes <strong>{pendingSyncCount} intento(s)</strong> pendiente(s) por sincronizar.
+              <button onclick={processSyncQueue} disabled={syncingInProgress} class="sync-btn">
+                {syncingInProgress ? 'Sincronizando...' : 'Sincronizar ahora'}
+              </button>
+            </div>
+          {/if}
+
+          <button onclick={startExam} class="start-btn" disabled={checkingServer}>
+            {checkingServer ? 'Verificando...' : (getAttemptCount() === 0 ? 'Comenzar Examen' : `Iniciar ${getAttemptLabel(getAttemptCount() + 1)}`)}
           </button>
         {:else}
           <div class="no-attempts">
@@ -407,8 +580,14 @@
           </div>
         </div>
 
+        {#if saveSuccess}
+          <div class="save-success">✅ Calificación guardada exitosamente en el servidor.</div>
+        {/if}
         {#if saveError}
           <div class="save-error">⚠ {saveError}</div>
+          <button onclick={retrySave} disabled={isSaving} class="retry-btn">
+            {isSaving ? 'Guardando...' : '🔄 Reintentar guardado'}
+          </button>
         {/if}
 
         <div class="summary">
@@ -1323,4 +1502,75 @@
   .back-btn:active {
     transform: scale(0.96);
   }
+
+  .server-check, .server-warning {
+    text-align: center;
+    padding: 0.6rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  .server-check { background: #eff6ff; color: #1d4ed8; }
+  .server-warning { background: #fef3c7; color: #92400e; }
+
+  .sync-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: #fefce8;
+    border: 1px solid #fde68a;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .sync-btn {
+    padding: 0.4rem 0.85rem;
+    background: #1d4ed8;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .sync-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .save-success {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #16a34a;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .retry-btn {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    transition: opacity 0.2s;
+  }
+
+  .retry-btn:hover { opacity: 0.9; }
+  .retry-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>

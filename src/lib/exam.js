@@ -27,6 +27,7 @@ export function getAttemptLabel(n) {
 }
 
 export function formatTime(seconds) {
+  if (!seconds && seconds !== 0) return '—';
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
@@ -92,4 +93,58 @@ export function buildExamData(questions, answers) {
 export function isMcCorrect(question, answer) {
   if (question.type !== 'mc') return undefined;
   return answer === question.answer;
+}
+
+export const SYNC_QUEUE_KEY = 'parcial1_sync_queue';
+
+export function getSyncQueue() {
+  try {
+    const data = localStorage.getItem(SYNC_QUEUE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch { return []; }
+}
+
+export function addToSyncQueue(entry) {
+  const queue = getSyncQueue();
+  queue.push({ ...entry, createdAt: Date.now() });
+  localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+}
+
+export function removeFromSyncQueue(createdAt) {
+  const queue = getSyncQueue().filter(e => e.createdAt !== createdAt);
+  localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+}
+
+export function clearSyncQueue() {
+  localStorage.removeItem(SYNC_QUEUE_KEY);
+}
+
+export const CHECK_BEFORE_START_KEY = 'parcial1_last_health_check';
+export function setHealthCheckOk() {
+  try { localStorage.setItem(CHECK_BEFORE_START_KEY, Date.now().toString()); } catch {}
+}
+export function isHealthCheckRecent() {
+  try {
+    const last = localStorage.getItem(CHECK_BEFORE_START_KEY);
+    if (!last) return false;
+    return Date.now() - Number(last) < 60000;
+  } catch { return false; }
+}
+
+export const SAVED_ANSWERS_KEY = 'parcial1_saved_answers';
+export function saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount) {
+  try {
+    const snapshot = {
+      questions,
+      answers,
+      timeLeft,
+      currentIndex,
+      tabSwitchCount,
+      savedAt: Date.now()
+    };
+    localStorage.setItem(SAVED_ANSWERS_KEY, JSON.stringify(snapshot));
+  } catch {}
+}
+export function clearSavedAnswers() {
+  try { localStorage.removeItem(SAVED_ANSWERS_KEY); } catch {}
 }

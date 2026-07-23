@@ -24,23 +24,30 @@ const wakePromise = new Promise<void>((resolve) => {
 
 export { wakePromise };
 
-export async function wakeBackend(): Promise<void> {
+export async function wakeBackend(maxAttempts = 3): Promise<void> {
   if (wakeInProgress) return wakePromise;
   wakeInProgress = true;
   wakeUpStatus.set('waking');
 
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
-    await fetch(BASE_URL, { signal: controller.signal, mode: 'cors' });
-    clearTimeout(timeout);
-    wakeUpStatus.set('warm');
-  } catch {
-    wakeUpStatus.set('warm');
-  } finally {
-    wakeInProgress = false;
-    if (resolveWake) resolveWake();
+  let success = false;
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
+      await fetch(BASE_URL, { signal: controller.signal, mode: 'cors' });
+      clearTimeout(timeout);
+      success = true;
+      break;
+    } catch {
+      if (i < maxAttempts - 1) {
+        await new Promise(r => setTimeout(r, 3000));
+      }
+    }
   }
+
+  wakeUpStatus.set(success ? 'warm' : 'warm');
+  wakeInProgress = false;
+  if (resolveWake) resolveWake();
 }
 
 export async function preloadAll(): Promise<void> {

@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import { gradesApi } from '$lib/api';
   import { preloadedGrades } from '$lib/stores/preloaded';
+  import { SYNC_QUEUE_KEY, STORAGE_KEY, getSyncQueue, formatTime } from '$lib/exam';
 
   let { data } = $props();
 
@@ -20,6 +21,21 @@
   let openScores = $state<Record<number, number>>({});
   let savingReview = $state(false);
   let resetting = $state(false);
+
+  let unsyncedCount = $state(0);
+  let localAttemptsCount = $state(0);
+
+  function checkUnsynced() {
+    unsyncedCount = getSyncQueue().length;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      localAttemptsCount = raw ? JSON.parse(raw).length : 0;
+    } catch { localAttemptsCount = 0; }
+  }
+
+  onMount(() => {
+    checkUnsynced();
+  });
 
   onMount(async () => {
     if (!$isAuthenticated) return;
@@ -180,13 +196,6 @@
     }
   }
 
-  function formatTime(seconds: number): string {
-    if (!seconds) return '—';
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  }
-
   async function resetAttempts() {
     const examGrades = grades.filter(
       (g: any) => g.subject === 'Desarrollo Web 1 - Parcial 1' && g.student?._id !== $currentUser?.id
@@ -234,6 +243,18 @@
       {/if}
     </div>
   </div>
+
+  {#if $isAdmin && (unsyncedCount > 0 || localAttemptsCount > 0)}
+    <div class="sync-status-banner">
+      {#if unsyncedCount > 0}
+        <span>⚠ <strong>{unsyncedCount} intento(s)</strong> pendiente(s) de sincronizar en el servidor.</span>
+      {/if}
+      {#if localAttemptsCount > 0}
+        <span>📦 <strong>{localAttemptsCount} intento(s)</strong> en localStorage de estudiantes.</span>
+      {/if}
+      <button onclick={checkUnsynced} class="btn-sm">Actualizar</button>
+    </div>
+  {/if}
 
   {#if error}
     <div class="error">{error}</div>
@@ -501,6 +522,19 @@
   }
 
   .btn-sm:hover { background: #f9fafb; }
+
+  .sync-status-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #fefce8;
+    border: 1px solid #fde68a;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
   .btn-danger { color: #dc2626; border-color: #fca5a5; }
   .btn-danger:hover { background: #fef2f2; }
   .btn-review { color: #1d4ed8; border-color: #93c5fd; }

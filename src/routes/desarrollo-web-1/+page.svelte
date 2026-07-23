@@ -20,19 +20,34 @@
   <title>Desarrollo Web 1 — Cinar Sistemas</title>
 </svelte:head>
 
-<div class="page">
-  <button class="back-btn" onclick={() => goto('/')}>
-    <span>←</span> Volver al inicio
-  </button>
-
-  <div class="header">
-    <span class="header-icon">📚</span>
-    <h1>Desarrollo Web 1</h1>
-    <p class="header-desc">
-      Accede a tus contenidos, evaluaciones y notas desde los siguientes accesos:
-    </p>
+<div class="banner">
+  <div class="banner-bg"></div>
+  <div class="banner-inner">
+    <button class="back-btn" onclick={() => goto('/')}>
+      <span>←</span> Volver al inicio
+    </button>
+    <div class="banner-content">
+      <img class="banner-logo" src="/svelte.webp" alt="logo" />
+      <div class="banner-text">
+        <span class="banner-icon">📚</span>
+        <h1 style="font-weight: 700; font-size: 1.55rem;">Desarrollo Web 1</h1>
+        <p class="banner-desc">Accede a tus contenidos, evaluaciones y notas desde los siguientes accesos:</p>
+      </div>
+    </div>
+    <div class="banner-decor">
+      <span class="code-sym sym-1">&lt;/&gt;</span>
+      <span class="code-sym sym-2">{'{\u00A0}'}</span>
+      <span class="code-sym sym-3">//</span>
+      <span class="code-sym sym-4">&lt;!-- --&gt;</span>
+      <span class="code-sym sym-5">JS</span>
+      <span class="code-sym sym-6">CSS</span>
+      <span class="code-sym sym-7">☁️</span>
+      <span class="code-sym sym-8">📱</span>
+    </div>
   </div>
+</div>
 
+<div class="page">
   <div class="cards">
     {#each links as link, i}
       {#if link.disabled}
@@ -58,30 +73,142 @@
 </div>
 
 <style>
-  .page {
-    max-width: 640px;
+  .banner {
+    position: relative;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    overflow: hidden;
+  }
+
+  .banner-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #0066FF, #003399, #001a4d, #003399, #0066FF);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+    z-index: 0;
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .banner-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
     margin: 0 auto;
-    width: 100%;
+    padding: 1.5rem 1rem 2rem;
+  }
+
+  .banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    text-align: left;
+  }
+
+  .banner-logo {
+    width: 96px;
+    height: 96px;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 16px;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.15));
+    animation: logoFloat 4s ease-in-out infinite, logoGlow 3s ease-in-out infinite;
+  }
+
+  @keyframes logoFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  @keyframes logoGlow {
+    0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.15)); }
+    50% { filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.35)); }
+  }
+
+  .banner-text {
+    flex: 1;
+    color: white;
+  }
+
+  .banner-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.35rem;
+    animation: bannerIconFloat 3s ease-in-out infinite, bannerIconGlow 2.5s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.2));
+  }
+
+  @keyframes bannerIconFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-8px) scale(1.1); }
+  }
+
+  @keyframes bannerIconGlow {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.2)); }
+    50% { filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.5)); }
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    margin: 0 0 0.35rem;
+    color: white;
+    background: linear-gradient(135deg, #fff, #93c5fd, #c4b5fd, #fff);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: bannerTitleGrad 5s ease infinite, bannerTitleSlide 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    letter-spacing: -0.02em;
+    filter: drop-shadow(0 0 12px rgba(147, 197, 253, 0.3));
+  }
+
+  @keyframes bannerTitleGrad {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  @keyframes bannerTitleSlide {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .banner-desc {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.75);
+    margin: 0;
+    animation: descFadeIn 1s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes descFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .back-btn {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-secondary);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
     padding: 0.4rem 1rem;
     border-radius: 20px;
     font-size: 0.82rem;
     cursor: pointer;
-    margin-bottom: 1.5rem;
-    transition: border-color 0.2s ease, transform 0.15s ease;
+    margin-bottom: 1.25rem;
+    transition: border-color 0.2s ease, transform 0.15s ease, background 0.2s ease;
   }
 
   .back-btn:hover {
-    color: var(--color-text-primary);
-    border-color: var(--color-accent);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.15);
     transform: translateX(-3px);
   }
 
@@ -89,33 +216,44 @@
     transform: scale(0.96);
   }
 
-  .header {
-    text-align: center;
-    margin-bottom: 2rem;
+  .banner-decor {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
   }
 
-  .header-icon {
-    font-size: 3rem;
-    display: block;
-    margin-bottom: 0.5rem;
-    animation: float 3.5s ease-in-out infinite;
+  .code-sym {
+    position: absolute;
+    font-family: 'Fira Mono', 'Courier New', monospace;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+    user-select: none;
+    font-size: 1rem;
   }
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+  .sym-1 { top: 8%; left: 8%; font-size: 1.3rem; animation: codeDrift 7s 0.5s ease-in-out infinite; }
+  .sym-2 { bottom: 12%; left: 20%; font-size: 1.1rem; animation: codeDrift 8s 1.2s ease-in-out infinite; }
+  .sym-3 { top: 45%; left: 5%; font-size: 0.9rem; animation: codeDrift 6s 2s ease-in-out infinite; }
+  .sym-4 { bottom: 20%; right: 25%; font-size: 0.85rem; animation: codeDrift 9s 0.8s ease-in-out infinite; }
+  .sym-5 { top: 25%; right: 8%; font-size: 1rem; animation: codeDrift 7.5s 1.8s ease-in-out infinite; }
+  .sym-6 { bottom: 8%; right: 35%; font-size: 0.9rem; animation: codeDrift 8.5s 3s ease-in-out infinite; }
+  .sym-7 { top: 50%; left: 50%; font-size: 1.2rem; animation: codeDrift 10s 0.3s ease-in-out infinite; }
+  .sym-8 { top: 15%; right: 40%; font-size: 1.1rem; animation: codeDrift 9s 1.5s ease-in-out infinite; }
+
+  @keyframes codeDrift {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-12px) rotate(2deg); }
+    50% { transform: translateY(-6px) rotate(-1deg); }
+    75% { transform: translateY(-16px) rotate(1deg); }
   }
 
-  h1 {
-    font-size: 1.5rem;
-    margin: 0 0 0.5rem;
-    color: var(--color-text-primary);
-  }
-
-  .header-desc {
-    font-size: 0.9rem;
-    color: var(--color-text-secondary);
-    margin: 0;
+  .page {
+    max-width: 640px;
+    margin: 2rem auto;
+    width: 100%;
   }
 
   .cards {
@@ -237,11 +375,31 @@
   }
 
   @media (max-width: 600px) {
+    .banner-inner {
+      padding: 1rem 0.75rem 1.5rem;
+    }
+
+    .banner-content {
+      flex-direction: column;
+      text-align: center;
+      gap: 1rem;
+    }
+
+    .banner-logo {
+      width: 72px;
+      height: 72px;
+    }
+
+    .banner-icon {
+      font-size: 1.6rem;
+    }
+
     h1 {
       font-size: 1.25rem;
     }
-    .header-icon {
-      font-size: 2.5rem;
+
+    .page {
+      margin: 1.5rem auto;
     }
   }
 </style>

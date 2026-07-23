@@ -195,16 +195,21 @@
   async function checkBackendHealth(): Promise<boolean> {
     if (isHealthCheckRecent()) return true;
     checkingServer = true;
+    const baseUrl = API_URL.replace('/api', '');
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
-      const baseUrl = API_URL.replace('/api', '');
-      await fetch(baseUrl, { signal: controller.signal, mode: 'cors' });
-      clearTimeout(timeout);
-      setHealthCheckOk();
-      serverCheckOk = true;
-      return true;
-    } catch {
+      for (let i = 0; i < 3; i++) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 25000);
+          await fetch(baseUrl, { signal: controller.signal, mode: 'cors' });
+          clearTimeout(timeout);
+          setHealthCheckOk();
+          serverCheckOk = true;
+          return true;
+        } catch {
+          if (i < 2) await new Promise(r => setTimeout(r, 3000));
+        }
+      }
       serverCheckOk = false;
       return false;
     } finally {
@@ -551,7 +556,7 @@
 
           {#if checkingServer}
             <p class="server-check">Verificando conexión con el servidor...</p>
-          {:else if !serverCheckOk && getAttemptCount() === 0}
+          {:else if !isUnlimited && !serverCheckOk && getAttemptCount() === 0}
             <p class="server-warning">⚠ No se pudo verificar el servidor. Si continúas, las respuestas se guardarán localmente.</p>
           {/if}
 

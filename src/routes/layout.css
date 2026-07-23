@@ -7,9 +7,9 @@
 	--font-mono: 'Fira Mono', monospace;
 
 	/* Brand */
-	--color-primary: #4075a6;
-	--color-primary-hover: #2c5f8a;
-	--color-accent: #ff3e00;
+	--color-primary: #0066FF;
+	--color-primary-hover: #0052CC;
+	--color-accent: #0066FF;
 
 	/* Surfaces */
 	--color-surface: #ffffff;
@@ -46,8 +46,8 @@
 	--radius-xl: 16px;
 
 	/* Backward compat — still used by dashboard, algoritmia, sverdle */
-	--color-theme-1: #ff3e00;
-	--color-theme-2: #4075a6;
+	--color-theme-1: #0066FF;
+	--color-theme-2: #0044CC;
 	--column-width: 42rem;
 	--column-margin-top: 4rem;
 

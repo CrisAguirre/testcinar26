@@ -266,6 +266,7 @@
         description="Accede a tus contenidos, evaluaciones y notas"
         href="/desarrollo-web-1"
         boldTitle
+        noButton
       />
     </div>
   </div>
@@ -283,17 +284,31 @@
   h1 {
     font-size: 1.5rem;
     margin: 0 0 0.35rem;
+    color: var(--color-text-primary);
+    animation: titleSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes titleSlideIn {
+    from { opacity: 0; transform: translateY(-16px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
   .role-badge {
     display: inline-block;
-    background: var(--color-primary);
+    background: linear-gradient(135deg, var(--color-primary), #7c3aed);
     color: white;
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 600;
     margin: 0 0 1.5rem;
+    animation: badgePulse 3s ease-in-out infinite;
+    box-shadow: 0 0 12px color-mix(in srgb, var(--color-primary) 30%, transparent);
+  }
+
+  @keyframes badgePulse {
+    0%, 100% { box-shadow: 0 0 12px color-mix(in srgb, var(--color-primary) 30%, transparent); transform: scale(1); }
+    50% { box-shadow: 0 0 24px color-mix(in srgb, var(--color-primary) 50%, transparent); transform: scale(1.03); }
   }
 
   .card {
@@ -306,6 +321,26 @@
   .card h2 {
     font-size: 1.15rem;
     margin: 0 0 1rem;
+    position: relative;
+    display: inline-block;
+  }
+
+  .card h2::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-accent), transparent);
+    border-radius: 2px;
+    animation: h2Underline 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: left;
+  }
+
+  @keyframes h2Underline {
+    from { transform: scaleX(0); opacity: 0; }
+    to { transform: scaleX(1); opacity: 1; }
   }
 
   .loading, .empty {

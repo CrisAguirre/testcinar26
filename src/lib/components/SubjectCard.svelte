@@ -7,13 +7,15 @@
     title,
     description,
     href = '/',
-    boldTitle = false
+    boldTitle = false,
+    noButton = false
   }: {
     icon: string;
     title: string;
     description: string;
     href?: string;
     boldTitle?: boolean;
+    noButton?: boolean;
   } = $props();
 
   const stars = $state(
@@ -71,7 +73,12 @@
 
 <div
   class="subject-card"
+  class:clickable={noButton}
   use:tilt
+  onclick={noButton ? () => goto(href) : undefined}
+  onkeydown={noButton ? (e: KeyboardEvent) => { if (e.key === 'Enter') goto(href); } : undefined}
+  tabindex={noButton ? 0 : undefined}
+  role={noButton ? 'button' : undefined}
 >
   <motion.div
     class="subject-glow"
@@ -95,6 +102,7 @@
       </motion.span>
       <motion.h2
         class="subject-title {boldTitle ? 'bold' : ''}"
+        style="font-weight: 700; font-size: 1.55rem;"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
@@ -109,6 +117,7 @@
       >
         {description}
       </motion.p>
+      {#if !noButton}
       <motion.button
         type="button"
         onclick={() => goto(href)}
@@ -121,6 +130,7 @@
       >
         Entrar <span class="cta-arrow">→</span>
       </motion.button>
+      {/if}
     </div>
     <img
       class="subject-logo"
@@ -155,6 +165,10 @@
     outline: none;
   }
 
+  .clickable {
+    cursor: pointer;
+  }
+
   .subject-card:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
@@ -181,7 +195,7 @@
   }
 
   .subject-content {
-    background: linear-gradient(135deg, #5B9BD5, #1A365D, #0B0E14, #1A365D, #5B9BD5);
+    background: linear-gradient(135deg, #0066FF, #003399, #001a4d, #003399, #0066FF);
     background-size: 400% 400%;
     animation: gradientShift 15s ease infinite;
     border-radius: var(--radius-xl);
@@ -190,7 +204,7 @@
     position: relative;
     overflow: hidden;
     z-index: 1;
-    box-shadow: 0 4px 20px rgba(64, 117, 166, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 102, 255, 0.3);
     transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     align-items: center;
@@ -205,8 +219,8 @@
 
   .subject-card:hover .subject-content {
     box-shadow:
-      0 12px 40px rgba(64, 117, 166, 0.4),
-      0 0 30px rgba(59, 130, 246, 0.15);
+      0 12px 40px rgba(0, 102, 255, 0.4),
+      0 0 30px rgba(0, 102, 255, 0.15);
   }
 
   .subject-card:active .subject-content {
@@ -250,16 +264,36 @@
     display: inline-block;
   }
 
-  h2 {
-    font-size: 1.4rem;
+  .subject-title {
+    font-size: 1.55rem;
     margin: 0 0 0.35rem;
+    font-weight: 700;
     color: white;
+    background: linear-gradient(135deg, #fff, #93c5fd, #c4b5fd, #fff);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: subjectTitleGrad 5s ease infinite;
+    letter-spacing: -0.02em;
+    filter: drop-shadow(0 0 12px rgba(147, 197, 253, 0.25));
+  }
+
+  @keyframes subjectTitleGrad {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
   }
 
   .subject-desc {
     font-size: 0.85rem;
     color: rgba(255, 255, 255, 0.75);
     margin: 0 0 1.25rem;
+    animation: subjectDescIn 0.8s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes subjectDescIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .subject-cta {
@@ -444,10 +478,6 @@
       text-align: center;
       gap: 1rem;
     }
-
-  .subject-title.bold {
-    font-weight: 700;
-  }
 
   .subject-logo {
       width: 72px;

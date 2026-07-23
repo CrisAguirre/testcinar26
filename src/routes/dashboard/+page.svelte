@@ -456,16 +456,25 @@
   .btn-back {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    font-size: 0.85rem;
+    gap: 0.4rem;
+    background: rgba(0, 102, 255, 0.08);
+    border: 1px solid rgba(0, 102, 255, 0.2);
     color: var(--color-primary);
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
     font-weight: 600;
+    cursor: pointer;
+    width: fit-content;
     text-decoration: none;
-    transition: opacity 0.2s;
+    transition: border-color 0.2s ease, transform 0.15s ease, background 0.2s ease;
   }
 
   .btn-back:hover {
-    opacity: 0.75;
+    color: var(--color-primary);
+    border-color: rgba(0, 102, 255, 0.5);
+    background: rgba(0, 102, 255, 0.12);
+    transform: translateX(-3px);
   }
 
   .btn-reset {

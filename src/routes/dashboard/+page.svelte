@@ -233,6 +233,9 @@
 
 <div class="page">
   <div class="header">
+    <a href="/" class="btn-back" aria-label="Volver al inicio">
+      ← Volver al inicio
+    </a>
     <h1>Gestión de Calificaciones</h1>
     <div class="header-actions">
       {#if $isAdmin}

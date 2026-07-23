@@ -34,6 +34,7 @@
   <div class="login-bg"></div>
   <div class="login-container">
     <div class="login-card">
+      <h3 class="login-brand">Cinar Sistemas</h3>
       <img src={Logo} alt="Cinar Sistemas" class="login-logo" />
       <h1>Plataforma Educativa</h1>
       <h2>Iniciar Sesión</h2>
@@ -123,6 +124,15 @@
     margin: 0 auto 1rem;
     max-width: 120px;
     height: auto;
+  }
+
+  .login-brand {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: white;
+    text-align: center;
+    margin: 0 0 0.5rem;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.15);
   }
 
   h1 {

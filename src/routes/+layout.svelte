@@ -35,6 +35,7 @@
   </main>
 
   <footer>
+    <img src="/logo.png" alt="Cinar" class="footer-shield" />
     <p>Cinar Sistemas 2026 - Todos los derechos reservados</p>
   </footer>
 </div>
@@ -59,12 +60,19 @@
 
   footer {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     justify-content: center;
     align-items: center;
+    gap: 0.5rem;
     padding: 12px;
     font-size: 0.85rem;
     color: var(--color-text-muted);
+  }
+
+  .footer-shield {
+    width: 18px;
+    height: 18px;
+    opacity: 0.5;
   }
 
   @media (min-width: 480px) {

@@ -43,7 +43,6 @@ export const categories: Category[] = [
       { title: 'SEO Studio Tools', url: 'https://seostudio.tools/es', desc: 'Suite de herramientas SEO para análisis y optimización web', tag: 'SEO' },
       { title: 'Coddy — Aprende Programación', url: 'https://coddy.tech/', desc: 'Plataforma interactiva para aprender a programar', tag: 'Opcional' },
       { title: 'Exercism — Trazabilidad de Componentes', url: 'https://exercism.org/', desc: 'Ejercicios prácticos de programación en múltiples lenguajes', tag: 'Práctica' },
-      { title: 'Portal de Evaluaciones', url: 'https://examscinar2026.vercel.app/', desc: 'Acceso al portal de evaluaciones y exámenes', tag: 'Herramienta' },
       { title: 'alg0.dev — Visualizador de Algoritmos', url: 'https://www.alg0.dev/es/', desc: 'Plataforma interactiva para aprender y visualizar algoritmos en español', tag: 'Herramienta' }
     ]
   },

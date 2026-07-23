@@ -11,7 +11,8 @@
     { href: null, icon: '📝', label: 'Parcial 2', disabled: true },
     { href: '/desarrollo-web-1/algoritmia', icon: '🧠', label: 'Algoritmia' },
     { href: '/desarrollo-web-1/enlaces-de-consulta', icon: '🔗', label: 'Enlaces de Consulta' },
-    { href: '/desarrollo-web-1/notas', icon: '📊', label: 'Notas' }
+    { href: '/desarrollo-web-1/notas', icon: '📊', label: 'Notas' },
+    { href: '/desarrollo-web-1/actividad-de-la-semana', icon: '📺', label: 'Actividad de la semana' }
   ];
 </script>
 

@@ -130,6 +130,29 @@ button:focus:not(:focus-visible) {
 	}
 }
 
+[data-theme="dark"] {
+	--color-surface: #1e293b;
+	--color-surface-hover: #334155;
+	--color-surface-alt: #1a2234;
+	--color-bg-0: #0f172a;
+	--color-bg-1: #1e293b;
+	--color-bg-2: #334155;
+	--color-text-primary: #f1f5f9;
+	--color-text-secondary: #94a3b8;
+	--color-text-muted: #64748b;
+	--color-text: rgba(241, 245, 249, 0.85);
+	--color-border: #334155;
+	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+	--shadow-md: 0 2px 12px rgba(0, 0, 0, 0.4);
+	--shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] body {
+	background-image:
+		radial-gradient(50% 50% at 50% 50%, rgba(30, 41, 59, 0.75) 0%, rgba(0, 0, 0, 0) 100%),
+		linear-gradient(180deg, #0f172a 0%, #1e293b 15%, #0f172a 50%);
+}
+
 .visually-hidden {
 	border: 0;
 	clip: rect(0 0 0 0);

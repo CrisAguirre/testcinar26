@@ -236,14 +236,16 @@
     <a href="/" class="btn-back" aria-label="Volver al inicio">
       ← Volver al inicio
     </a>
-    <h1>Gestión de Calificaciones</h1>
-    <div class="header-actions">
-      {#if $isAdmin}
-        <button onclick={resetAttempts} disabled={resetting} class="btn-reset">
-          {resetting ? 'Reiniciando...' : '🔄 Reiniciar Intentos Parcial 1'}
-        </button>
-        <button onclick={openCreate} class="btn-primary">+ Nueva Calificación</button>
-      {/if}
+    <div class="header-top">
+      <h1>Gestión de Calificaciones</h1>
+      <div class="header-actions">
+        {#if $isAdmin}
+          <button onclick={resetAttempts} disabled={resetting} class="btn-reset">
+            {resetting ? 'Reiniciando...' : '🔄 Reiniciar Intentos Parcial 1'}
+          </button>
+          <button onclick={openCreate} class="btn-primary">+ Nueva Calificación</button>
+        {/if}
+      </div>
     </div>
   </div>
 
@@ -427,11 +429,9 @@
 
   .header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
     margin-bottom: 1.5rem;
-    flex-wrap: wrap;
   }
 
   .header h1 {
@@ -439,10 +439,33 @@
     margin: 0;
   }
 
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
   .header-actions {
     display: flex;
     gap: 0.6rem;
     flex-wrap: wrap;
+  }
+
+  .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .btn-back:hover {
+    opacity: 0.75;
   }
 
   .btn-reset {
@@ -834,8 +857,12 @@
     }
 
     .header {
-      flex-direction: column;
       gap: 0.75rem;
+    }
+
+    .header-top {
+      flex-direction: column;
+      gap: 0.5rem;
     }
 
     .header h1 {

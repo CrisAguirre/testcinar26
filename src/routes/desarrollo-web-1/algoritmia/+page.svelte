@@ -20,6 +20,8 @@
   let submitMsg = $state<Record<number, string>>({});
   let completedAlgos = $state<Set<number>>(new Set());
   let loadingProgress = $state(true);
+  let tallerScore = $state<number | null>(null);
+  let tallerMaxScore = $state<number>(5);
 
   function toggle(id: number) {
     expanded[id] = !expanded[id];
@@ -89,6 +91,11 @@
       const grades = all && all.length > 0 ? all : await gradesApi.getMine();
       preloadedMyGrades.set(grades);
       const algoGrades = grades.filter((g: any) => g.subject === ALGORITMIA_SUBJECT);
+      const tallerGrades = grades.filter((g: any) => g.subject === 'Desarrollo Web 1 - Taller Algoritmia');
+      if (tallerGrades.length > 0) {
+        tallerScore = tallerGrades[0].score;
+        tallerMaxScore = tallerGrades[0].max_score || 5;
+      }
       const done = new Set<number>();
       for (const g of algoGrades) {
         if (g.examData) {
@@ -151,6 +158,21 @@
         Ir a alg0.dev →
       </a>
     </div>
+  </section>
+
+  <section class="taller-card">
+    <div class="taller-info">
+      <h3>Taller de Algoritmia</h3>
+      <p>Pon a prueba tus conocimientos de algoritmia y bloques lógicos en este taller evaluativo.</p>
+      {#if tallerScore !== null}
+        <div class="taller-score">
+          Calificación: <strong>{tallerScore}</strong> / {tallerMaxScore}
+        </div>
+      {/if}
+    </div>
+    <a href="/desarrollo-web-1/algoritmia/taller" class="btn-primary">
+      {tallerScore !== null ? 'Volver a presentar' : 'Presentar Taller'}
+    </a>
   </section>
 
   <section class="algorithms-section">
@@ -432,6 +454,49 @@
 
   .resource-link:hover {
     background: #0369a1;
+  }
+
+  .taller-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    border: 2px solid var(--color-theme-1, #3b82f6);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  }
+
+  .taller-info h3 {
+    margin: 0 0 0.5rem;
+    color: #1f2937;
+    font-size: 1.2rem;
+  }
+
+  .taller-info p {
+    margin: 0;
+    color: #4b5563;
+    font-size: 0.95rem;
+  }
+
+  .taller-score {
+    margin-top: 0.5rem;
+    display: inline-block;
+    background: #fef3c7;
+    color: #92400e;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 600px) {
+    .taller-card {
+      flex-direction: column;
+      text-align: center;
+      gap: 1rem;
+    }
   }
 
   .algorithms-section h2 {

@@ -2,12 +2,24 @@
   import { login as authLogin, currentUser } from '$lib/stores/auth';
   import { authApi } from '$lib/api';
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+  import { wakeBackend } from '$lib/loaders/preloader';
+  import { wakeUpStatus } from '$lib/stores/preloaded';
   import Logo from '../../logo.png';
 
   let username = $state('admin');
   let password = $state('');
   let error = $state('');
   let loading = $state(false);
+  let backendReady = $state<'checking' | 'ready' | 'error'>('checking');
+
+  onMount(() => {
+    wakeBackend().then(() => {
+      backendReady = 'ready';
+    }).catch(() => {
+      backendReady = 'error';
+    });
+  });
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
@@ -39,6 +51,18 @@
       <h1>Plataforma Educativa</h1>
       <h2>Iniciar Sesión</h2>
       <div class="login-divider"></div>
+
+      {#if $wakeUpStatus === 'waking'}
+        <div class="wake-banner">
+          <span class="wake-spinner"></span>
+          Conectando con el servidor...
+        </div>
+      {:else if backendReady === 'ready'}
+        <div class="wake-banner wake-ready">
+          <span class="wake-check">✓</span>
+          Servidor listo
+        </div>
+      {/if}
 
       {#if error}
         <div class="error">{error}</div>
@@ -172,6 +196,50 @@
     text-align: center;
   }
 
+  .wake-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    margin-bottom: 0.75rem;
+    background: rgba(30, 64, 175, 0.15);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-radius: 8px;
+    font-size: 0.78rem;
+    color: #dbeafe;
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .wake-ready {
+    background: rgba(22, 163, 74, 0.15);
+    color: #bbf7d0;
+  }
+
+  .wake-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #93c5fd;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  .wake-check {
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   form {
     display: flex;
     flex-direction: column;
@@ -224,35 +292,13 @@
   }
 
   @media (max-width: 600px) {
-    .login-container {
-      padding: 1rem;
-    }
-
-    .login-card {
-      padding: 1.5rem;
-    }
-
-    .login-logo {
-      max-width: 80px;
-    }
-
-    h1 {
-      font-size: 1rem;
-    }
-
-    h2 {
-      font-size: 1.2rem;
-    }
-
-    input {
-      padding: 0.55rem 0.75rem;
-      font-size: 0.95rem;
-    }
-
-    button {
-      padding: 0.65rem;
-      font-size: 0.95rem;
-    }
+    .login-container { padding: 1rem; }
+    .login-card { padding: 1.5rem; }
+    .login-logo { max-width: 80px; }
+    h1 { font-size: 1rem; }
+    h2 { font-size: 1.2rem; }
+    input { padding: 0.55rem 0.75rem; font-size: 0.95rem; }
+    button { padding: 0.65rem; font-size: 0.95rem; }
   }
 
   .login-footer {

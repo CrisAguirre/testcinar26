@@ -21,7 +21,7 @@
   let completedAlgos = $state<Set<number>>(new Set());
   let loadingProgress = $state(true);
   let tallerScore = $state<number | null>(null);
-  let tallerMaxScore = $state<number>(5);
+  let tallerMaxScore = $state<number>(10);
 
   function toggle(id: number) {
     expanded[id] = !expanded[id];
@@ -94,7 +94,7 @@
       const tallerGrades = grades.filter((g: any) => g.subject === 'Desarrollo Web 1 - Taller Algoritmia');
       if (tallerGrades.length > 0) {
         tallerScore = tallerGrades[0].score;
-        tallerMaxScore = tallerGrades[0].max_score || 5;
+        tallerMaxScore = tallerGrades[0].max_score || 10;
       }
       const done = new Set<number>();
       for (const g of algoGrades) {

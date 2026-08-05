@@ -101,6 +101,7 @@
 
   onMount(() => {
     loadServerAttempts();
+    checkBackendHealth();
   });
 
   $effect(() => {

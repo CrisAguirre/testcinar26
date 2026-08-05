@@ -70,6 +70,7 @@
   onMount(() => {
     loadServerAttempts();
     pendingSyncCount = getTallerSyncQueue().length;
+    checkBackendHealth();
   });
 
   $effect(() => {

@@ -6,9 +6,9 @@
     if (!$isAuthenticated) goto('/login');
   });
 
-  const links = [
+  const links: { href: string | null; icon: string; label: string; disabled?: boolean }[] = [
     { href: '/desarrollo-web-1/parcial-1', icon: '📝', label: 'Parcial 1' },
-    { href: null, icon: '📝', label: 'Parcial 2', disabled: true },
+    { href: '/desarrollo-web-1/parcial-2', icon: '📝', label: 'Parcial 2' },
     { href: '/desarrollo-web-1/algoritmia', icon: '🧠', label: 'Algoritmia' },
     { href: '/desarrollo-web-1/algoritmia/taller', icon: '⚙️', label: 'Taller de Algoritmia' },
     { href: '/desarrollo-web-1/enlaces-de-consulta', icon: '🔗', label: 'Enlaces de Consulta' },

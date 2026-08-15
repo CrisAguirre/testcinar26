@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tallerQuestions } from '$lib/data/tallerAlgoritmia';
-  import { gradesApi, API_URL } from '$lib/api';
+  import { gradesApi, API_URL, scheduleApi } from '$lib/api';
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
@@ -41,6 +41,25 @@
 
   let isUnlimited = $derived($currentUser?.email === 'coordinacion@cinarsistemas.edu.co');
 
+  let tallerDeadline = $state<number | null>(null);
+  let tallerMaxAttempts = $state<number | null>(null);
+  let serverTimeOffset = $state(0);
+
+  function getNow(): Date {
+    return new Date(Date.now() + serverTimeOffset);
+  }
+
+  async function loadServerSchedule() {
+    try {
+      const sched = await scheduleApi.get();
+      if (sched?.serverNow) serverTimeOffset = sched.serverNow - Date.now();
+      if (sched?.taller?.deadline) {
+        tallerDeadline = sched.taller.deadline;
+        tallerMaxAttempts = sched.taller.maxAttempts ?? 2;
+      }
+    } catch {}
+  }
+
   async function loadServerAttempts() {
     if (!$currentUser?.id) { loadingServer = false; return; }
     try {
@@ -59,7 +78,20 @@
     }
   }
 
-  let slots = $derived.by(() => getTallerAvailableSlots(new Date(), getTallerAttemptCount(serverAttempts, getTallerLocalAttempts().length, loadingServer)));
+  function getSlots() {
+    const now = getNow();
+    const used = getTallerAttemptCount(serverAttempts, getTallerLocalAttempts().length, loadingServer);
+    if (tallerDeadline !== null) {
+      const max = tallerMaxAttempts ?? 2;
+      if (now.getTime() <= tallerDeadline) {
+        return { total: max, used: Math.min(used, max), remaining: Math.max(0, max - used), windowLabel: 'Taller habilitado (hasta el miércoles 19 de agosto, 4:00 PM)', enabled: used < max };
+      }
+      return { total: max, used, remaining: 0, windowLabel: 'El plazo del taller ha vencido', enabled: false };
+    }
+    return getTallerAvailableSlots(now, used);
+  }
+
+  let slots = $derived.by(() => getSlots());
 
   $effect(() => {
     if (timeLeft <= 0 && started && !finished) {
@@ -69,6 +101,7 @@
 
   onMount(() => {
     loadServerAttempts();
+    loadServerSchedule();
     pendingSyncCount = getTallerSyncQueue().length;
     checkBackendHealth();
   });
@@ -193,7 +226,8 @@
           score: entry.score,
           max_score: entry.maxScore,
           period: '2026-1',
-          comments: entry.comments
+          comments: entry.comments,
+          submittedAt: entry.createdAt || Date.now()
         });
         const grade = res.grade || res;
         if (grade && grade._id && entry.examData) {
@@ -220,7 +254,8 @@
           score: finalScore,
           max_score: TALLER_TOTAL_QUESTIONS,
           period: '2026-1',
-          comments: `${getTallerAttemptLabel(attemptNumLocal)} | Score: ${finalScore}/${TALLER_TOTAL_QUESTIONS} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTallerTime(TALLER_TOTAL_TIME - timeLeft)}`
+          comments: `${getTallerAttemptLabel(attemptNumLocal)} | Score: ${finalScore}/${TALLER_TOTAL_QUESTIONS} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTallerTime(TALLER_TOTAL_TIME - timeLeft)}`,
+          submittedAt: Date.now()
         });
         const grade = res.grade || res;
         if (grade && grade._id) {
@@ -374,6 +409,8 @@
           <p class="attempts-info">
             {#if isUnlimited}
               Dispones de <strong>intentos ilimitados</strong> como coordinador.
+            {:else if tallerDeadline !== null}
+              Dispones de <strong>{tallerMaxAttempts ?? 2} intentos</strong> para presentar el taller (plazo extendido).
             {:else}
               Dispones de <strong>2 intentos</strong> en total: <strong>1 de Preparación</strong> (hasta las 18:00 H) y <strong>1 de Evaluación</strong> (18:45 H a 20:00 H).
             {/if}
@@ -410,7 +447,11 @@
               </div>
             </div>
           </div>
-          {#if !isUnlimited}
+          {#if tallerDeadline !== null}
+          <div class="window-info">
+            <strong>📅 Plazo extendido:</strong> Tienes hasta el <strong>miércoles 19 de agosto a las 4:00 PM</strong> (hora Colombia) para presentar el taller.
+          </div>
+          {:else if !isUnlimited}
           <div class="window-info">
             <strong>📅 Ventana 1 — Preparación:</strong> Hoy hasta las 18:00 H<br>
             <strong>📅 Ventana 2 — Evaluación:</strong> Hoy de 18:45 H a 20:00 H

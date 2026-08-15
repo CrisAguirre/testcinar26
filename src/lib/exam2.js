@@ -1,0 +1,170 @@
+export const STORAGE_KEY = 'parcial2_attempts';
+export const DETAIL_KEY = 'parcial2_details';
+
+export const SIMULACRO_END = new Date(2026, 7, 19, 18, 45);
+export const EVAL_START = new Date(2026, 7, 19, 18, 45);
+export const EVAL_END = new Date(2026, 7, 19, 20, 0);
+
+export const TOTAL_QUESTIONS = 20;
+export const TOTAL_TIME = 45 * 60;
+
+export const TIME_PER_MC = 2 * 60;
+export const TIME_PER_OPEN = 5 * 60;
+
+export const MAX_SIMULACROS = 3;
+export const MAX_EVALUACIONES = 1;
+
+export function calculateTotalTime(questions) {
+  const mcCount = questions.filter(q => q.type === 'mc').length;
+  const openCount = questions.filter(q => q.type === 'open').length;
+  return mcCount * TIME_PER_MC + openCount * TIME_PER_OPEN;
+}
+
+export function getAttemptType(n) {
+  return n <= MAX_SIMULACROS ? 'Simulacro' : 'Evaluación';
+}
+
+export function getAttemptLabel(n) {
+  return `Intento ${n} (${getAttemptType(n)})`;
+}
+
+export function formatTime(seconds) {
+  if (!seconds && seconds !== 0) return '—';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+export function getProgressPercent(answered, total = TOTAL_QUESTIONS) {
+  return (answered / total) * 100;
+}
+
+export function getAttemptCount(serverAttempts, localAttempts, loadingServer) {
+  if (loadingServer) return localAttempts;
+  return Math.max(serverAttempts, localAttempts);
+}
+
+export function getAvailableSlots(now, used) {
+  if (now < SIMULACRO_END) {
+    return {
+      total: MAX_SIMULACROS,
+      used: Math.min(used, MAX_SIMULACROS),
+      remaining: Math.max(0, MAX_SIMULACROS - used),
+      windowLabel: 'Simulacros (hasta 18:45)',
+      enabled: used < MAX_SIMULACROS
+    };
+  } else if (now >= EVAL_START && now < EVAL_END) {
+    const usedInEval = Math.max(0, used - MAX_SIMULACROS);
+    return {
+      total: MAX_EVALUACIONES,
+      used: usedInEval,
+      remaining: Math.max(0, MAX_EVALUACIONES - usedInEval),
+      windowLabel: 'Evaluación (18:45 - 20:00)',
+      enabled: used < MAX_SIMULACROS + MAX_EVALUACIONES
+    };
+  } else {
+    return {
+      total: MAX_SIMULACROS + MAX_EVALUACIONES,
+      used,
+      remaining: 0,
+      windowLabel: 'Fuera de la ventana de examen',
+      enabled: false
+    };
+  }
+}
+
+export function calculateScore(questions, answers) {
+  const mcQuestions = questions.filter(q => q.type === 'mc');
+  let correct = 0;
+  for (const q of mcQuestions) {
+    if (answers[q.id] !== undefined && answers[q.id] === q.answer) {
+      correct++;
+    }
+  }
+  return {
+    score: correct,
+    total: mcQuestions.length,
+    openCount: questions.filter(q => q.type === 'open').length
+  };
+}
+
+export function getLocalAttempts(storageKey = STORAGE_KEY) {
+  try {
+    const data = localStorage.getItem(storageKey);
+    return data ? JSON.parse(data) : [];
+  } catch { return []; }
+}
+
+export function buildExamData(questions, answers) {
+  return questions.map(q => ({
+    id: q.id,
+    tema: q.tema,
+    type: q.type,
+    question: q.question,
+    options: q.type === 'mc' ? q.options : undefined,
+    correctAnswer: q.type === 'mc' ? q.answer : undefined,
+    studentAnswer: answers[q.id],
+    isCorrect: q.type === 'mc' ? answers[q.id] === q.answer : undefined,
+    openScore: null,
+    openMaxScore: q.type === 'open' ? 5 : undefined
+  }));
+}
+
+export function isMcCorrect(question, answer) {
+  if (question.type !== 'mc') return undefined;
+  return answer === question.answer;
+}
+
+export const SYNC_QUEUE_KEY = 'parcial2_sync_queue';
+
+export function getSyncQueue() {
+  try {
+    const data = localStorage.getItem(SYNC_QUEUE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch { return []; }
+}
+
+export function addToSyncQueue(entry) {
+  const queue = getSyncQueue();
+  queue.push({ ...entry, createdAt: Date.now() });
+  localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+}
+
+export function removeFromSyncQueue(createdAt) {
+  const queue = getSyncQueue().filter(e => e.createdAt !== createdAt);
+  localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+}
+
+export function clearSyncQueue() {
+  localStorage.removeItem(SYNC_QUEUE_KEY);
+}
+
+export const CHECK_BEFORE_START_KEY = 'parcial2_last_health_check';
+export function setHealthCheckOk() {
+  try { localStorage.setItem(CHECK_BEFORE_START_KEY, Date.now().toString()); } catch {}
+}
+export function isHealthCheckRecent() {
+  try {
+    const last = localStorage.getItem(CHECK_BEFORE_START_KEY);
+    if (!last) return false;
+    return Date.now() - Number(last) < 60000;
+  } catch { return false; }
+}
+
+export const SAVED_ANSWERS_KEY = 'parcial2_saved_answers';
+export function saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount) {
+  try {
+    const snapshot = {
+      questions,
+      answers,
+      timeLeft,
+      currentIndex,
+      tabSwitchCount,
+      savedAt: Date.now()
+    };
+    localStorage.setItem(SAVED_ANSWERS_KEY, JSON.stringify(snapshot));
+  } catch {}
+}
+export function clearSavedAnswers() {
+  try { localStorage.removeItem(SAVED_ANSWERS_KEY); } catch {}
+}

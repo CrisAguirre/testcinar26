@@ -44,3 +44,7 @@ export const gradesApi = {
   update: (id, data) => api('PUT', `/grades/${id}`, data),
   delete: (id) => api('DELETE', `/grades/${id}`)
 };
+
+export const scheduleApi = {
+  get: () => api('GET', '/schedule')
+};

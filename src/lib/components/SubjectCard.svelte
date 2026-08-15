@@ -240,7 +240,7 @@
     border-radius: 16px;
     filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.15));
     animation: logoFloat 4s ease-in-out infinite, logoGlow 3s ease-in-out infinite;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .subject-card:hover .subject-logo {
@@ -269,19 +269,8 @@
     margin: 0 0 0.35rem;
     font-weight: 700;
     color: white;
-    background: linear-gradient(135deg, #fff, #93c5fd, #c4b5fd, #fff);
-    background-size: 300% 300%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: subjectTitleGrad 5s ease infinite;
     letter-spacing: -0.02em;
     filter: drop-shadow(0 0 12px rgba(147, 197, 253, 0.25));
-  }
-
-  @keyframes subjectTitleGrad {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
   }
 
   .subject-desc {
@@ -314,7 +303,7 @@
   }
 
   .cta-arrow {
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .subject-decor {

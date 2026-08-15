@@ -447,17 +447,16 @@
 
   .category-icon {
     font-size: 1.4rem;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .category.visible .category-icon {
-    animation: iconBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation: iconPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
     animation-delay: calc(var(--cat-delay) + 0.3s);
   }
 
-  @keyframes iconBounce {
+  @keyframes iconPop {
     0%   { transform: scale(0); }
-    50%  { transform: scale(1.25); }
     100% { transform: scale(1); }
   }
 
@@ -631,7 +630,7 @@
   .link-arrow {
     font-size: 1rem;
     color: var(--color-text-muted);
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .link-card:hover .link-arrow {
     transform: translate(3px, -3px) scale(1.15);

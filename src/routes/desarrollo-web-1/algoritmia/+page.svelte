@@ -599,7 +599,7 @@
 
   .algo-example {
     background: #f0f7ff;
-    border-left: 3px solid var(--color-theme-1, #3b82f6);
+    border-left: 1px solid var(--color-theme-1, #3b82f6);
     padding: 0.6rem 0.85rem;
     border-radius: 6px;
     font-size: 0.85rem;

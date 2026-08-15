@@ -532,6 +532,27 @@
         {#if loadingServer}
           <p class="loading-text">Cargando datos del servidor...</p>
         {:else if slots.remaining > 0}
+          <div class="downloads-section">
+            <p class="downloads-desc">📚 Antes de comenzar, descarga el material de apoyo del Parcial 2: la guía de estudio de SvelteKit y el banco de preguntas con respuestas, para que entiendas cómo funciona la plataforma y repases los conceptos del curso.</p>
+            <div class="downloads-grid">
+              <a href="/material-estudio-parcial2.pdf" download class="download-card">
+                <span class="download-icon">📘</span>
+                <span class="download-body">
+                  <span class="download-label">Material de estudio</span>
+                  <span class="download-sub">Guía de estudio SvelteKit</span>
+                </span>
+                <span class="download-arrow">⬇</span>
+              </a>
+              <a href="/banco-preguntas-parcial2.pdf" download class="download-card">
+                <span class="download-icon">📝</span>
+                <span class="download-body">
+                  <span class="download-label">Banco de preguntas</span>
+                  <span class="download-sub">40 preguntas con respuestas</span>
+                </span>
+                <span class="download-arrow">⬇</span>
+              </a>
+            </div>
+          </div>
           <div class="recommendations">
             <h2>📌 Recomendaciones importantes</h2>
             <ul>
@@ -699,7 +720,7 @@
       </div>
 
       <div class="progress-bar-container">
-        <div class="progress-bar" style="width: {getProgressPercent()}%"></div>
+        <div class="progress-bar" style="transform: scaleX({getProgressPercent() / 100})"></div>
       </div>
 
       <div class="exam-body">
@@ -951,12 +972,111 @@
     margin-bottom: 1rem;
   }
 
+  .downloads-section {
+    background: linear-gradient(135deg, #ffffff, #f0f7ff);
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .downloads-desc {
+    font-size: 0.9rem;
+    color: #475569;
+    margin: 0 0 1rem;
+    line-height: 1.5;
+  }
+
+  .downloads-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .download-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    text-decoration: none;
+    color: var(--color-text-primary);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.25s ease;
+  }
+
+  .download-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 40%, rgba(59, 130, 246, 0.08) 50%, transparent 60%);
+    background-size: 200% 200%;
+    background-position: 100% 100%;
+    transition: background-position 0.6s ease;
+    pointer-events: none;
+  }
+
+  .download-card:hover {
+    transform: translateY(-3px) scale(1.01);
+    border-color: var(--color-theme-1, #3b82f6);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.18);
+  }
+
+  .download-card:hover::before {
+    background-position: 0% 0%;
+  }
+
+  .download-icon {
+    font-size: 1.5rem;
+    position: relative;
+    z-index: 1;
+    animation: downloadIconFloat 3s ease-in-out infinite;
+  }
+
+  @keyframes downloadIconFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  .download-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+  }
+
+  .download-label {
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  .download-sub {
+    font-size: 0.78rem;
+    color: var(--color-text-secondary);
+  }
+
+  .download-arrow {
+    font-size: 1.1rem;
+    color: var(--color-theme-1, #3b82f6);
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .download-card:hover .download-arrow {
+    transform: translateY(3px);
+  }
+
   .recommendations {
     background: #f0f7ff;
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    border-left: 4px solid var(--color-theme-1, #3b82f6);
+    border-left: 1px solid var(--color-theme-1, #3b82f6);
   }
 
   .recommendations h2 {
@@ -1078,9 +1198,11 @@
 
   .progress-bar {
     height: 100%;
+    width: 100%;
     background: var(--color-theme-1, #3b82f6);
     border-radius: 3px;
-    transition: width 0.3s ease;
+    transform-origin: left;
+    transition: transform 0.3s ease;
   }
 
   .exam-body {

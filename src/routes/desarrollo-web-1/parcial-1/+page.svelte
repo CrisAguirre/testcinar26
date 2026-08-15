@@ -682,7 +682,7 @@
       </div>
 
       <div class="progress-bar-container">
-        <div class="progress-bar" style="width: {getProgressPercent()}%"></div>
+        <div class="progress-bar" style="transform: scaleX({getProgressPercent() / 100})"></div>
       </div>
 
       <div class="exam-body">
@@ -939,7 +939,7 @@
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    border-left: 4px solid var(--color-theme-1, #3b82f6);
+    border-left: 1px solid var(--color-theme-1, #3b82f6);
   }
 
   .recommendations h2 {
@@ -1061,9 +1061,11 @@
 
   .progress-bar {
     height: 100%;
+    width: 100%;
     background: var(--color-theme-1, #3b82f6);
     border-radius: 3px;
-    transition: width 0.3s ease;
+    transform-origin: left;
+    transition: transform 0.3s ease;
   }
 
   .exam-body {

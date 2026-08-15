@@ -604,7 +604,7 @@
       </div>
 
       <div class="progress-bar-container">
-        <div class="progress-bar" style="width: {getTallerProgressPercent(Object.keys(answers).length)}%"></div>
+        <div class="progress-bar" style="transform: scaleX({getTallerProgressPercent(Object.keys(answers).length) / 100})"></div>
       </div>
 
       <div class="exam-body">
@@ -869,8 +869,10 @@
   }
   .progress-bar {
     height: 100%;
+    width: 100%;
     background: var(--color-theme-1, #3b82f6);
-    transition: width 0.3s ease;
+    transform-origin: left;
+    transition: transform 0.3s ease;
   }
 
   .question-card {

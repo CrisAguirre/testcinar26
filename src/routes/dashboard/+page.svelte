@@ -716,7 +716,7 @@
   }
 
   .review-question.open-review {
-    border-left: 4px solid #f59e0b;
+    border-left: 1px solid #f59e0b;
   }
 
   .review-q-header {

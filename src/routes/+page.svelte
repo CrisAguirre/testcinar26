@@ -481,7 +481,7 @@
   }
 
   .detail-question.open-q {
-    border-left: 4px solid var(--color-warning);
+    border-left: 1px solid var(--color-warning);
   }
 
   .detail-q-header {

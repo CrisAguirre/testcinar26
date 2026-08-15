@@ -472,7 +472,7 @@
     text-align: center;
     position: relative;
     overflow: hidden;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
   }
 
   .eval-block:hover {

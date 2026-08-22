@@ -39,6 +39,9 @@
   let totalTime = 45 * 60;
   let isUnlimited = $derived($currentUser?.email === 'coordinacion@cinarsistemas.edu.co');
   let serverTimeOffset = $state(0);
+  let srvEvalStart = $state<number | null>(null);
+  let srvEvalEnd = $state<number | null>(null);
+  let hasParcial2Override = $state(false);
 
   function getNow(): Date {
     return new Date(Date.now() + serverTimeOffset);
@@ -49,6 +52,12 @@
       const sched = await scheduleApi.get();
       if (sched?.serverNow) {
         serverTimeOffset = sched.serverNow - Date.now();
+      }
+      const w = sched?.parcial2?.window;
+      if (w?.evalStart && w?.evalEnd) {
+        srvEvalStart = w.evalStart;
+        srvEvalEnd = w.evalEnd;
+        hasParcial2Override = !!sched.parcial2.override;
       }
     } catch {}
   }
@@ -95,11 +104,15 @@
       return { total: Infinity, used, remaining: Infinity, windowLabel: 'Intentos ilimitados (coordinador)', enabled: true };
     }
 
-    if (now < SIMULACRO_END) {
+    const simEndMs = srvEvalStart ?? SIMULACRO_END.getTime();
+    const evalStartMs = srvEvalStart ?? EVAL_START.getTime();
+    const evalEndMs = srvEvalEnd ?? EVAL_END.getTime();
+
+    if (now.getTime() < simEndMs) {
       return { total: MAX_SIMULACROS, used: Math.min(used, MAX_SIMULACROS), remaining: Math.max(0, MAX_SIMULACROS - used), windowLabel: 'Simulacros (hasta 18:45)', enabled: used < MAX_SIMULACROS };
-    } else if (now >= EVAL_START && now < EVAL_END) {
+    } else if (now.getTime() >= evalStartMs && now.getTime() < evalEndMs) {
       const usedInEval = Math.max(0, used - MAX_SIMULACROS);
-      return { total: MAX_EVALUACIONES, used: usedInEval, remaining: Math.max(0, MAX_EVALUACIONES - usedInEval), windowLabel: 'Evaluación (18:45 - 20:00)', enabled: used < MAX_SIMULACROS + MAX_EVALUACIONES };
+      return { total: MAX_EVALUACIONES, used: usedInEval, remaining: Math.max(0, MAX_EVALUACIONES - usedInEval), windowLabel: hasParcial2Override ? 'Habilitación especial activa' : 'Evaluación (18:45 - 20:00)', enabled: used < MAX_SIMULACROS + MAX_EVALUACIONES };
     } else {
       return { total: MAX_SIMULACROS + MAX_EVALUACIONES, used, remaining: 0, windowLabel: 'Fuera de la ventana de examen', enabled: false };
     }
@@ -509,8 +522,12 @@
           </div>
           {#if !isUnlimited}
           <div class="window-info">
-            <strong>📅 Simulacros (Intentos 1-3):</strong> Hasta el 19 de agosto, 18:45<br>
-            <strong>📅 Evaluación (Intento 4):</strong> 19 de agosto, 18:45 - 20:00
+            {#if hasParcial2Override}
+              <strong>📅 Habilitación especial:</strong> El Parcial 2 está abierto para ti hasta el jueves 27 de agosto de 2026, 11:59 p.m. (hora Colombia).
+            {:else}
+              <strong>📅 Simulacros (Intentos 1-3):</strong> Hasta el 19 de agosto, 18:45<br>
+              <strong>📅 Evaluación (Intento 4):</strong> 19 de agosto, 18:45 - 20:00
+            {/if}
           </div>
           {/if}
         </div>

@@ -77,17 +77,78 @@
   }
 </script>
 
+{#if noButton && !disabled}
+<a
+  href={href}
+  class="subject-card clickable"
+  class:red={color === 'red'}
+  class:green={color === 'green'}
+>
+  <motion.div
+    class="subject-glow"
+    initial={{ opacity: 0 }}
+    whileHover={{ opacity: 1 }}
+    transition={{ duration: 0.6 }}
+  />
+  <motion.div
+    class="subject-glow-border"
+    animate={{ opacity: [0.3, 0.6, 0.3] }}
+    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+  />
+  <div class="subject-content">
+    <div class="subject-text">
+      <motion.span
+        class="subject-icon"
+        animate={{ y: [0, -8, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        {icon}
+      </motion.span>
+      <motion.h2
+        class="subject-title {boldTitle ? 'bold' : ''}"
+        style="font-weight: 700; font-size: 1.55rem;"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        {title}
+      </motion.h2>
+      <motion.p
+        class="subject-desc"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.35, duration: 0.5 }}
+      >
+        {description}
+      </motion.p>
+    </div>
+    <img
+      class="subject-logo"
+      src={customLogo || '/svelte.webp'}
+      alt="logo"
+    />
+    <div class="subject-decor">
+      {#each stars as star, i}
+        <span class="shooting-star {`s${i + 1}`}" style="top: {star.top}; left: {star.left};"></span>
+      {/each}
+      <span class="code-sym sym-1">&lt;/&gt;</span>
+      <span class="code-sym sym-2">{'{\u00A0}'}</span>
+      <span class="code-sym sym-3">//</span>
+      <span class="code-sym sym-4">&lt;!-- --&gt;</span>
+      <span class="code-sym sym-5">JS</span>
+      <span class="code-sym sym-6">CSS</span>
+      <span class="code-sym sym-7">☁️</span>
+      <span class="code-sym sym-8">📱</span>
+    </div>
+  </div>
+</a>
+{:else}
 <div
   class="subject-card"
-  class:clickable={noButton && !disabled}
   class:red={color === 'red'}
   class:green={color === 'green'}
   class:disabled
   use:tilt
-  onclick={noButton && !disabled ? () => goto(href) : undefined}
-  onkeydown={noButton && !disabled ? (e: KeyboardEvent) => { if (e.key === 'Enter') goto(href); } : undefined}
-  tabindex={noButton && !disabled ? 0 : undefined}
-  role={noButton && !disabled ? 'button' : undefined}
 >
   <motion.div
     class="subject-glow"
@@ -161,6 +222,7 @@
     </div>
   </div>
 </div>
+{/if}
 
 <style>
   .subject-card {

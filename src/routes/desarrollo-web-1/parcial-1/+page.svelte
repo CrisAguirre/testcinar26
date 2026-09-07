@@ -1,7 +1,7 @@
 <script lang="ts">
   import { selectRandomQuestions } from '$lib/data/parcial1';
   import { gradesApi, authApi, API_URL } from '$lib/api';
-  import { currentUser } from '$lib/stores/auth';
+  import { currentUser, isAdmin } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
   import { STORAGE_KEY, DETAIL_KEY, WINDOW1_END, WINDOW2_START, WINDOW2_END, TOTAL_QUESTIONS, TOTAL_TIME, TIME_PER_MC, TIME_PER_OPEN, calculateTotalTime, formatTime, getAttemptLabel, getAttemptType, calculateScore, buildExamData, SYNC_QUEUE_KEY, getSyncQueue, addToSyncQueue, removeFromSyncQueue, setHealthCheckOk, isHealthCheckRecent, SAVED_ANSWERS_KEY, saveAnswersSnapshot, clearSavedAnswers } from '$lib/exam';
@@ -37,7 +37,8 @@
 
   const totalQuestions = 20;
   let totalTime = 45 * 60;
-  let isUnlimited = $derived($currentUser?.email === 'coordinacion@cinarsistemas.edu.co');
+  let isUnlimited = $derived($isAdmin);
+  let courseFinalized = $derived(!isUnlimited);
 
   function getLocalAttempts(): any[] {
     try {
@@ -419,6 +420,14 @@
         <h1>Parcial 1 - Desarrollo Web 1</h1>
         <p class="welcome-subtitle">Evaluación de conocimientos</p>
 
+        {#if courseFinalized}
+          <div class="finalized-notice">
+            <div class="finalized-icon">🔒</div>
+            <h2>Curso Finalizado</h2>
+            <p>Este examen ya no está disponible para estudiantes. El curso de Desarrollo Web 1 ha concludedo.</p>
+            <p class="finalized-note">Si necesitas acceso, contacta a coordinación.</p>
+          </div>
+        {:else}
         <div class="attempts-section">
           <h2>🎯 Intentos disponibles</h2>
           <p class="attempts-info">
@@ -576,6 +585,7 @@
             <p>No tienes intentos disponibles en este momento.</p>
           </div>
           <a href="/" class="back-btn">Volver al Inicio</a>
+        {/if}
         {/if}
       </div>
     </div>
@@ -922,6 +932,40 @@
 
   .attempt-meta {
     color: #888;
+  }
+
+  .finalized-notice {
+    text-align: center;
+    padding: 2.5rem 2rem;
+    margin: 1.5rem 0;
+    background: linear-gradient(135deg, #fef2f2, #fecaca);
+    border-radius: 16px;
+    border: 1px solid #fca5a5;
+  }
+
+  .finalized-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .finalized-notice h2 {
+    font-size: 1.5rem;
+    color: #991b1b;
+    margin: 0 0 0.75rem;
+  }
+
+  .finalized-notice p {
+    color: #7f1d1d;
+    font-size: 1rem;
+    margin: 0 0 0.5rem;
+    line-height: 1.5;
+  }
+
+  .finalized-note {
+    font-size: 0.9rem;
+    color: #b91c1c;
+    font-style: italic;
+    margin-top: 1rem;
   }
 
   .no-attempts {

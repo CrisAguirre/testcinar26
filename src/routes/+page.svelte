@@ -263,11 +263,11 @@
       <SubjectCard
         icon="📚"
         title="Desarrollo Web 1 - Svelte JS"
-        description="Curso no disponible. Período académico trimestre B de 2026 finalizado."
+        description="Curso de fundamentos de Svelte JS - Accede a tus contenidos, evaluaciones y notas."
         href="/desarrollo-web-1"
         boldTitle
         noButton
-        disabled
+        color="blue"
       />
       <SubjectCard
         icon="🌐"

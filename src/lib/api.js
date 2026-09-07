@@ -48,3 +48,10 @@ export const gradesApi = {
 export const scheduleApi = {
   get: () => api('GET', '/schedule')
 };
+
+export const enrollmentApi = {
+  getMine: () => api('GET', '/enrollments/mine'),
+  enroll: (data) => api('POST', '/enrollments', data),
+  getCourseEnrollments: (course) => api('GET', `/enrollments/course/${course}`),
+  unenroll: (userId, course) => api('DELETE', `/enrollments/${userId}/${course}`)
+};

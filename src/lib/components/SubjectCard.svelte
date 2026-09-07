@@ -8,7 +8,10 @@
     description,
     href = '/',
     boldTitle = false,
-    noButton = false
+    noButton = false,
+    color = 'blue',
+    customLogo = null,
+    disabled = false
   }: {
     icon: string;
     title: string;
@@ -16,6 +19,9 @@
     href?: string;
     boldTitle?: boolean;
     noButton?: boolean;
+    color?: 'blue' | 'red' | 'green';
+    customLogo?: string | null;
+    disabled?: boolean;
   } = $props();
 
   const stars = $state(
@@ -73,12 +79,15 @@
 
 <div
   class="subject-card"
-  class:clickable={noButton}
+  class:clickable={noButton && !disabled}
+  class:red={color === 'red'}
+  class:green={color === 'green'}
+  class:disabled
   use:tilt
-  onclick={noButton ? () => goto(href) : undefined}
-  onkeydown={noButton ? (e: KeyboardEvent) => { if (e.key === 'Enter') goto(href); } : undefined}
-  tabindex={noButton ? 0 : undefined}
-  role={noButton ? 'button' : undefined}
+  onclick={noButton && !disabled ? () => goto(href) : undefined}
+  onkeydown={noButton && !disabled ? (e: KeyboardEvent) => { if (e.key === 'Enter') goto(href); } : undefined}
+  tabindex={noButton && !disabled ? 0 : undefined}
+  role={noButton && !disabled ? 'button' : undefined}
 >
   <motion.div
     class="subject-glow"
@@ -134,7 +143,7 @@
     </div>
     <img
       class="subject-logo"
-      src="/svelte.webp"
+      src={customLogo || '/svelte.webp'}
       alt="logo"
     />
     <div class="subject-decor">
@@ -155,6 +164,12 @@
 
 <style>
   .subject-card {
+    --glow-color: rgba(59,130,246,0.25);
+    --border-color: rgba(59,130,246,0.15);
+    --gradient-bg: linear-gradient(135deg, #0066FF, #003399, #001a4d, #003399, #0066FF);
+    --shadow-color: 0 4px 20px rgba(0, 102, 255, 0.3);
+    --shadow-hover-1: 0 12px 40px rgba(0, 102, 255, 0.4);
+    --shadow-hover-2: 0 0 30px rgba(0, 102, 255, 0.15);
     display: block;
     position: relative;
     perspective: 800px;
@@ -163,6 +178,30 @@
     transform: rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg));
     transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
     outline: none;
+  }
+
+  .subject-card.red {
+    --glow-color: rgba(220,38,38,0.25);
+    --border-color: rgba(220,38,38,0.15);
+    --gradient-bg: linear-gradient(135deg, #DC2626, #991B1B, #450A0A, #991B1B, #DC2626);
+    --shadow-color: 0 4px 20px rgba(220, 38, 38, 0.3);
+    --shadow-hover-1: 0 12px 40px rgba(220, 38, 38, 0.4);
+    --shadow-hover-2: 0 0 30px rgba(220, 38, 38, 0.15);
+  }
+
+  .subject-card.green {
+    --glow-color: rgba(16,185,129,0.25);
+    --border-color: rgba(16,185,129,0.15);
+    --gradient-bg: linear-gradient(135deg, #10B981, #047857, #064E3B, #047857, #10B981);
+    --shadow-color: 0 4px 20px rgba(16, 185, 129, 0.3);
+    --shadow-hover-1: 0 12px 40px rgba(16, 185, 129, 0.4);
+    --shadow-hover-2: 0 0 30px rgba(16, 185, 129, 0.15);
+  }
+
+  .subject-card.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+    filter: grayscale(0.5);
   }
 
   .clickable {
@@ -179,7 +218,7 @@
     position: absolute;
     inset: -4px;
     border-radius: 20px;
-    background: radial-gradient(ellipse at 50% 50%, rgba(59,130,246,0.25) 0%, transparent 70%);
+    background: radial-gradient(ellipse at 50% 50%, var(--glow-color) 0%, transparent 70%);
     pointer-events: none;
     z-index: 0;
     filter: blur(8px);
@@ -189,13 +228,13 @@
     position: absolute;
     inset: -2px;
     border-radius: 18px;
-    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 40%, rgba(59,130,246,0.15) 60%, transparent 100%);
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 40%, var(--border-color) 60%, transparent 100%);
     pointer-events: none;
     z-index: 0;
   }
 
   .subject-content {
-    background: linear-gradient(135deg, #0066FF, #003399, #001a4d, #003399, #0066FF);
+    background: var(--gradient-bg);
     background-size: 400% 400%;
     animation: gradientShift 15s ease infinite;
     border-radius: var(--radius-xl);
@@ -204,7 +243,7 @@
     position: relative;
     overflow: hidden;
     z-index: 1;
-    box-shadow: 0 4px 20px rgba(0, 102, 255, 0.3);
+    box-shadow: var(--shadow-color);
     transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     align-items: center;
@@ -219,8 +258,8 @@
 
   .subject-card:hover .subject-content {
     box-shadow:
-      0 12px 40px rgba(0, 102, 255, 0.4),
-      0 0 30px rgba(0, 102, 255, 0.15);
+      var(--shadow-hover-1),
+      var(--shadow-hover-2);
   }
 
   .subject-card:active .subject-content {

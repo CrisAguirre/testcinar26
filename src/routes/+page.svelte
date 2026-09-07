@@ -263,10 +263,30 @@
       <SubjectCard
         icon="📚"
         title="Desarrollo Web 1 - Svelte JS"
-        description="Accede a tus contenidos, evaluaciones y notas"
+        description="Curso no disponible. Período académico trimestre B de 2026 finalizado."
         href="/desarrollo-web-1"
         boldTitle
         noButton
+        disabled
+      />
+      <SubjectCard
+        icon="🌐"
+        title="Desarrollo Web 2"
+        description="Segundo nivel de Svelte JS. Incluye práctica profesional sobre arquitectura de software y despliegue en la nube de sistemas full stack."
+        href="/desarrollo-web-2"
+        boldTitle
+        noButton
+        color="red"
+      />
+      <SubjectCard
+        icon="🧮"
+        title="Algoritmos"
+        description="Problemas de lógica, Métodos de búsqueda y ordenamiento, Mejores prácticas y proyecto final."
+        href="/algoritmos"
+        boldTitle
+        noButton
+        color="green"
+        customLogo="/algo.png"
       />
     </div>
   </div>
@@ -279,6 +299,9 @@
 
   .subject-section {
     margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
   }
 
   h1 {

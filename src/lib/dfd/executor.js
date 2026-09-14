@@ -3,7 +3,8 @@
  * Evaluates DFD AST nodes step-by-step.
  */
 
-import { Parser } from 'expr-eval';
+import exprEval from 'expr-eval';
+const { Parser } = exprEval;
 
 export class DfdExecutor {
   constructor(ast, onInput, onOutput) {

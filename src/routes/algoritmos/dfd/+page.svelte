@@ -83,26 +83,26 @@
     isExecuting = true;
     consoleOutput = ['--- Iniciando Ejecución ---'];
     
-    const executor = new DfdExecutor(
-      ast, 
-      async (promptText) => {
-        promptMessage = promptText;
-        promptValue = '';
-        promptVisible = true;
-        // Wait for the user to submit the custom modal
-        return new Promise<string>((resolve) => {
-          resolvePrompt = resolve;
-        });
-      },
-      async (text) => {
-        consoleOutput = [...consoleOutput, text];
-      }
-    );
-    
     try {
+      const executor = new DfdExecutor(
+        ast, 
+        async (promptText) => {
+          promptMessage = promptText;
+          promptValue = '';
+          promptVisible = true;
+          return new Promise<string>((resolve) => {
+            resolvePrompt = resolve;
+          });
+        },
+        async (text) => {
+          consoleOutput = [...consoleOutput, text];
+        }
+      );
+      
       await executor.execute();
     } catch (e) {
-      consoleOutput = [...consoleOutput, `[Error]: ${e.message}`];
+      console.error(e);
+      consoleOutput = [...consoleOutput, `[Error de Motor]: ${e.message || e}`];
     } finally {
       isExecuting = false;
     }

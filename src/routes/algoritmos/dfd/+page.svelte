@@ -18,6 +18,12 @@
   let consoleOutput = $state<string[]>([]);
   let isExecuting = $state(false);
   
+  // Custom Prompt State
+  let promptVisible = $state(false);
+  let promptMessage = $state('');
+  let promptValue = $state('');
+  let resolvePrompt = $state<((value: string) => void) | null>(null);
+
   // Drag and drop / Canvas interaction states
   let isDragging = $state(false);
   
@@ -80,8 +86,13 @@
     const executor = new DfdExecutor(
       ast, 
       async (promptText) => {
-        // Simple window.prompt for now, could be a custom modal
-        return window.prompt(promptText) || '';
+        promptMessage = promptText;
+        promptValue = '';
+        promptVisible = true;
+        // Wait for the user to submit the custom modal
+        return new Promise<string>((resolve) => {
+          resolvePrompt = resolve;
+        });
       },
       async (text) => {
         consoleOutput = [...consoleOutput, text];
@@ -135,6 +146,14 @@
             L ${link.sourceX} ${midY}
             L ${link.targetX} ${midY}
             L ${link.targetX} ${link.targetY - 3}`;
+  }
+
+  function submitPrompt() {
+    if (resolvePrompt) {
+      resolvePrompt(promptValue);
+      resolvePrompt = null;
+    }
+    promptVisible = false;
   }
 </script>
 
@@ -236,6 +255,24 @@
     </div>
   </div>
 </div>
+
+{#if promptVisible}
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <h4>Entrada requerida</h4>
+      <p>{promptMessage}</p>
+      <!-- svelte-ignore a11y_autofocus -->
+      <input 
+        type="text" 
+        class="modal-input" 
+        bind:value={promptValue} 
+        onkeydown={(e) => e.key === 'Enter' && submitPrompt()}
+        autofocus 
+      />
+      <button class="btn btn-primary modal-btn" onclick={submitPrompt}>Continuar</button>
+    </div>
+  </div>
+{/if}
 
 <style>
   .page {
@@ -473,5 +510,63 @@
   .console-placeholder {
     color: #475569;
     font-style: italic;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal-content {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    width: 320px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    animation: popIn 0.2s ease-out;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .modal-content h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #0f172a;
+  }
+
+  .modal-content p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #475569;
+  }
+
+  .modal-input {
+    padding: 0.5rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .modal-input:focus {
+    border-color: #3b82f6;
+  }
+
+  .modal-btn {
+    align-self: flex-end;
+    margin-top: 0.5rem;
   }
 </style>

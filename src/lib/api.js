@@ -53,5 +53,6 @@ export const enrollmentApi = {
   getMine: () => api('GET', '/enrollments/mine'),
   enroll: (data) => api('POST', '/enrollments', data),
   getCourseEnrollments: (course) => api('GET', `/enrollments/course/${course}`),
-  unenroll: (userId, course) => api('DELETE', `/enrollments/${userId}/${course}`)
+  unenroll: (userId, course) => api('DELETE', `/enrollments/${userId}/${course}`),
+  saveProjectIdea: (data) => api('POST', '/enrollments/project-idea', data)
 };

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { isAuthenticated } from '$lib/stores/auth';
-  import { authApi } from '$lib/api';
+  import { enrollmentApi } from '$lib/api';
   import { goto } from '$app/navigation';
 
   $effect(() => {
@@ -23,7 +23,7 @@
     saveSuccess = false;
 
     try {
-      await authApi.post('/api/enrollments/project-idea', {
+      await enrollmentApi.saveProjectIdea({
         course: 'algoritmos',
         projectIdea: projectIdea.trim()
       });

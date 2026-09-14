@@ -174,7 +174,7 @@
         <input type="file" accept=".dfd,.txt" onchange={handleFileUpload} style="display: none;" />
       </label>
       <button class="btn btn-secondary" onclick={handleSave}>💾 Guardar</button>
-      <button class="btn btn-primary run-btn" onclick={handleRun} disabled={isExecuting || !ast}>
+      <button class="btn btn-primary run-btn" onclick={handleRun} disabled={!ast}>
         {isExecuting ? '⏳ Ejecutando...' : '▶ Ejecutar'}
       </button>
     </div>

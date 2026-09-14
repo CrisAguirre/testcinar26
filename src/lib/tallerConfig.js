@@ -6,9 +6,9 @@ const d = today.getDate();
 export const TALLER_STORAGE_KEY = 'taller_algoritmia_attempts';
 export const TALLER_DETAIL_KEY = 'taller_algoritmia_details';
 
-export const TALLER_WINDOW1_END = new Date(y, m, d, 18, 0);
-export const TALLER_WINDOW2_START = new Date(y, m, d, 18, 45);
-export const TALLER_WINDOW2_END = new Date(y, m, d, 20, 0);
+export const TALLER_WINDOW1_END = new Date(2027, 0, 1, 0, 0);
+export const TALLER_WINDOW2_START = new Date(2027, 0, 1, 0, 0);
+export const TALLER_WINDOW2_END = new Date(2027, 0, 1, 0, 0);
 
 export const TALLER_TOTAL_QUESTIONS = 10;
 export const TALLER_TOTAL_TIME = 30 * 60; // 30 minutos

@@ -512,7 +512,7 @@
           </button>
         {:else}
           <div class="no-attempts">
-            <p>No tienes intentos disponibles en este momento.</p>
+            <p>Una vez se asigne la fecha del taller o parcial en cuestión, ya se anunciará y se habilitará el acceso.</p>
           </div>
           <a href="/desarrollo-web-2" class="back-btn" style="text-decoration:none">Volver al Menú Principal</a>
         {/if}

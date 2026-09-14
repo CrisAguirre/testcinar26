@@ -101,13 +101,13 @@
           <p class="eval-block-desc">Evaluación y taller en línea por medio de esta plataforma, sobre conceptos básicos claves de uso del framework Svelte y de ambientes reales de desarrollo de aplicaciones.</p>
           <div class="eval-block-items">
             <div class="eval-item">
-              <span class="eval-item-pct">20%</span>
+              <span class="eval-item-pct">25%</span>
               <span class="eval-item-label">Parcial 1</span>
               <span class="eval-item-sub">Evaluación individual</span>
             </div>
             <span class="eval-plus">+</span>
             <div class="eval-item">
-              <span class="eval-item-pct">20%</span>
+              <span class="eval-item-pct">15%</span>
               <span class="eval-item-label">Taller 1</span>
               <span class="eval-item-sub">Trabajo práctico</span>
             </div>
@@ -123,13 +123,13 @@
           <p class="eval-block-desc">Desarrollo de proyectos y evaluaciones integradoras que demuestran la capacidad de construir aplicaciones reales con el uso del framework Svelte.</p>
           <div class="eval-block-items">
             <div class="eval-item">
-              <span class="eval-item-pct">40%</span>
+              <span class="eval-item-pct">35%</span>
               <span class="eval-item-label">Proyecto final</span>
               <span class="eval-item-sub">Desarrollo completo</span>
             </div>
             <span class="eval-plus">+</span>
             <div class="eval-item">
-              <span class="eval-item-pct">20%</span>
+              <span class="eval-item-pct">25%</span>
               <span class="eval-item-label">Parcial 2</span>
               <span class="eval-item-sub">Evaluación individual</span>
             </div>

@@ -10,6 +10,8 @@
     { href: '/algoritmos/parcial-1', icon: '📝', label: 'Parcial 1' },
     { href: '/algoritmos/parcial-2', icon: '📝', label: 'Parcial 2' },
     { href: '/algoritmos/taller', icon: '⚙️', label: 'Taller Práctico' },
+    { href: '/algoritmos/dfd', icon: '💻', label: 'Editor DFD' },
+    { href: '/algoritmos/videos', icon: '🎬', label: 'Videos' },
     { href: '/algoritmos/enlaces-de-consulta', icon: '🔗', label: 'Enlaces de Consulta' },
     { href: '/algoritmos/notas', icon: '📊', label: 'Notas' },
     { href: '/algoritmos/actividad-de-la-semana', icon: '📺', label: 'Actividad de la semana' }

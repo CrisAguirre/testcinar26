@@ -9,7 +9,7 @@
   let heroGlowX = $state(50);
   let heroGlowY = $state(50);
 
-  const categories = importedCategories;
+  const categories = importedCategories.filter(c => c.title !== 'Documentación y Tutoriales' && c.title !== 'Repositorios del Proyecto');
 
   $effect(() => {
     if (!$isAuthenticated) goto('/login');

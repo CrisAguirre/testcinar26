@@ -12,9 +12,27 @@
   let dfdContent = $state('');
   let currentFileName = $state('ejercicio.dfd');
   
-  let ast = $state(null);
-  let renderData = $state(null);
-  
+  let ast = $derived.by(() => {
+    if (!dfdContent) return null;
+    try {
+      const parsed = parseDfd(dfdContent);
+      return parsed.error ? null : parsed;
+    } catch (err) {
+      console.error("Parse error", err);
+      return null;
+    }
+  });
+
+  let renderData = $derived.by(() => {
+    if (!ast) return null;
+    try {
+      return buildRenderData(ast);
+    } catch (err) {
+      console.error("Render error", err);
+      return null;
+    }
+  });
+
   let consoleOutput = $state<string[]>([]);
   let isExecuting = $state(false);
   
@@ -22,27 +40,10 @@
   let promptVisible = $state(false);
   let promptMessage = $state('');
   let promptValue = $state('');
-  let resolvePrompt = $state<((value: string) => void) | null>(null);
+  let resolvePrompt: ((value: string) => void) | null = null;
 
   // Drag and drop / Canvas interaction states
   let isDragging = $state(false);
-  
-  $effect(() => {
-    if (dfdContent) {
-      try {
-        const parsed = parseDfd(dfdContent);
-        if (!parsed.error) {
-          ast = parsed;
-          renderData = buildRenderData(ast);
-        }
-      } catch (err) {
-        console.error("Parse error", err);
-      }
-    } else {
-      ast = null;
-      renderData = null;
-    }
-  });
 
   function handleFileUpload(event: Event) {
     const input = event.target as HTMLInputElement;

@@ -3,6 +3,8 @@
  * Evaluates DFD AST nodes step-by-step.
  */
 
+import { Parser } from 'expr-eval';
+
 export class DfdExecutor {
   constructor(ast, onInput, onOutput) {
     this.ast = ast;
@@ -17,38 +19,33 @@ export class DfdExecutor {
         this.variables[v.name] = isNaN(val) ? v.initValue : val;
       }
     }
+    
+    this.parser = new Parser();
   }
 
-  // Basic JS expression evaluator with custom functions
+  // Safe JS expression evaluator without using eval()
   evaluateExpression(expr) {
-    // Replace DFD-specific syntax
-    let jsExpr = expr
-      .replace(/random\((\d+)\)/gi, 'Math.floor(Math.random() * $1)')
-      .replace(/=/g, '===') // DFD uses = for equality in conditions sometimes
-      .replace(/!=====/g, '!==') // Fix if user wrote !=
-      .replace(/>===/g, '>=')
-      .replace(/<===/g, '<=');
+    // Replace DFD-specific syntax to standard math syntax
+    let safeExpr = expr
+      .replace(/random\((\d+)\)/gi, 'floor(random() * $1)') // expr-eval has random()
+      .replace(/=/g, '==')       // DFD uses = for equality, expr-eval uses ==
+      .replace(/!====/g, '!=')   // Fix if they wrote !=
+      .replace(/>==/g, '>=')
+      .replace(/<==/g, '<=');
+      
+    // expr-eval requires 'and' / 'or' instead of && / ||, but DFD rarely uses them.
+    safeExpr = safeExpr.replace(/&&/g, ' and ').replace(/\|\|/g, ' or ');
 
-    // Create a safe evaluation context using the variables
-    const keys = Object.keys(this.variables);
-    const values = keys.map(k => this.variables[k]);
-    
     try {
-      // eslint-disable-next-line no-new-func
-      const func = new Function(...keys, `return ${jsExpr};`);
-      return func(...values);
+      return this.parser.evaluate(safeExpr, this.variables);
     } catch (e) {
       console.warn('Error evaluating expression:', expr, e);
-      // Fallback simple string eval
-      try {
-        let safeStr = expr.replace(/'/g, "");
-        for (const k of keys) {
-           safeStr = safeStr.replace(new RegExp(`\\b${k}\\b`, 'g'), this.variables[k]);
-        }
-        return safeStr;
-      } catch (err) {
-         return expr;
+      // Fallback simple string replacement for non-math cases
+      let safeStr = expr.replace(/'/g, "");
+      for (const k of Object.keys(this.variables)) {
+         safeStr = safeStr.replace(new RegExp(`\\b${k}\\b`, 'g'), this.variables[k]);
       }
+      return safeStr;
     }
   }
 

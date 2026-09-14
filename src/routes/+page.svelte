@@ -1,18 +1,18 @@
 <script lang="ts">
   import { isAuthenticated, currentUser, isAdmin } from '$lib/stores/auth';
   import { onMount } from 'svelte';
-  import { gradesApi } from '$lib/api';
+  import { gradesApi, enrollmentApi } from '$lib/api';
   import { goto } from '$app/navigation';
   import { preloadedMyGrades, preloadedMyEnrollments } from '$lib/stores/preloaded';
   import SubjectCard from '$lib/components/SubjectCard.svelte';
 
-  function canAccessCourse(course: string): boolean {
-    const role = $currentUser?.role;
-    if (role === 'admin' || role === 'coordinator' || role === 'teacher') return true;
-    const enrollments = $preloadedMyEnrollments;
-    if (!enrollments) return false;
-    return enrollments.some((e: any) => e.course === course);
-  }
+  let isAdminOrTeacher = $derived(
+    $currentUser?.role === 'admin' || 
+    $currentUser?.role === 'coordinator' || 
+    $currentUser?.role === 'teacher'
+  );
+  
+  let myCourses = $derived($preloadedMyEnrollments?.map((e: any) => e.course) || []);
 
   let { data } = $props();
 
@@ -31,6 +31,11 @@
     }
     if (grades.length > 0) { loading = false; return; }
     try {
+      if (!$preloadedMyEnrollments) {
+        const enrollments = await enrollmentApi.getMine();
+        preloadedMyEnrollments.set(enrollments);
+      }
+      
       const result = await gradesApi.getMine();
       grades = result;
       preloadedMyGrades.set(result);
@@ -268,7 +273,7 @@
     {/if}
 
     <div class="subject-section">
-      {#if canAccessCourse('desarrollo-web-1')}
+      {#if isAdminOrTeacher || myCourses.includes('desarrollo-web-1')}
       <SubjectCard
         icon="📚"
         title="Desarrollo Web 1 - Svelte JS"
@@ -279,7 +284,7 @@
         color="blue"
       />
       {/if}
-      {#if canAccessCourse('desarrollo-web-2')}
+      {#if isAdminOrTeacher || myCourses.includes('desarrollo-web-2')}
       <SubjectCard
         icon="🌐"
         title="Desarrollo Web 2"
@@ -290,7 +295,7 @@
         color="red"
       />
       {/if}
-      {#if canAccessCourse('algoritmos')}
+      {#if isAdminOrTeacher || myCourses.includes('algoritmos')}
       <SubjectCard
         icon="🧮"
         title="Algoritmos"

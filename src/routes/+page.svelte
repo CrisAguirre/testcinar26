@@ -3,8 +3,16 @@
   import { onMount } from 'svelte';
   import { gradesApi } from '$lib/api';
   import { goto } from '$app/navigation';
-  import { preloadedMyGrades } from '$lib/stores/preloaded';
+  import { preloadedMyGrades, preloadedMyEnrollments } from '$lib/stores/preloaded';
   import SubjectCard from '$lib/components/SubjectCard.svelte';
+
+  function canAccessCourse(course: string): boolean {
+    const role = $currentUser?.role;
+    if (role === 'admin' || role === 'coordinator' || role === 'teacher') return true;
+    const enrollments = $preloadedMyEnrollments;
+    if (!enrollments) return false;
+    return enrollments.some((e: any) => e.course === course);
+  }
 
   let { data } = $props();
 
@@ -260,6 +268,7 @@
     {/if}
 
     <div class="subject-section">
+      {#if canAccessCourse('desarrollo-web-1')}
       <SubjectCard
         icon="📚"
         title="Desarrollo Web 1 - Svelte JS"
@@ -269,6 +278,8 @@
         noButton
         color="blue"
       />
+      {/if}
+      {#if canAccessCourse('desarrollo-web-2')}
       <SubjectCard
         icon="🌐"
         title="Desarrollo Web 2"
@@ -278,6 +289,8 @@
         noButton
         color="red"
       />
+      {/if}
+      {#if canAccessCourse('algoritmos')}
       <SubjectCard
         icon="🧮"
         title="Algoritmos"
@@ -288,6 +301,7 @@
         color="green"
         customLogo="/algo.png"
       />
+      {/if}
     </div>
   </div>
 {/if}

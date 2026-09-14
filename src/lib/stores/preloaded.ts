@@ -7,3 +7,4 @@ export const wakeUpStatus = writable<'idle' | 'waking' | 'warm'>('idle');
 export const preloadedProfile = writable<any | null>(null);
 export const preloadedGrades = writable<any[] | null>(null);
 export const preloadedMyGrades = writable<any[] | null>(null);
+export const preloadedMyEnrollments = writable<any[] | null>(null);

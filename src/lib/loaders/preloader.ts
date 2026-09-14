@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 import { API_URL, getToken } from '$lib/api';
-import { gradesApi, authApi } from '$lib/api';
+import { gradesApi, authApi, enrollmentApi } from '$lib/api';
 import { currentUser } from '$lib/stores/auth';
 import { get } from 'svelte/store';
 import {
@@ -8,7 +8,8 @@ import {
   wakeUpStatus,
   preloadedProfile,
   preloadedGrades,
-  preloadedMyGrades
+  preloadedMyGrades,
+  preloadedMyEnrollments
 } from '$lib/stores/preloaded';
 
 const BASE_URL = API_URL.replace('/api', '');
@@ -67,12 +68,14 @@ export async function preloadAll(): Promise<void> {
   try {
     const profilePromise = authApi.profile().catch(() => null);
     const myGradesPromise = gradesApi.getMine().catch(() => null);
+    const myEnrollmentsPromise = enrollmentApi.getMine().catch(() => null);
     const allGradesPromise = tryPreloadAllGrades();
 
-    const [profile, myGrades] = await Promise.all([profilePromise, myGradesPromise]);
+    const [profile, myGrades, myEnrollments] = await Promise.all([profilePromise, myGradesPromise, myEnrollmentsPromise]);
 
     if (profile) preloadedProfile.set(profile);
     if (myGrades) preloadedMyGrades.set(myGrades);
+    if (myEnrollments) preloadedMyEnrollments.set(myEnrollments);
 
     const allGrades = await allGradesPromise;
     if (allGrades) preloadedGrades.set(allGrades);

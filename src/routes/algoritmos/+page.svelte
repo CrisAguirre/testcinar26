@@ -1,9 +1,16 @@
 <script lang="ts">
-  import { isAuthenticated } from '$lib/stores/auth';
+  import { isAuthenticated, currentUser } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
+  import { preloadedMyEnrollments } from '$lib/stores/preloaded';
 
   $effect(() => {
-    if (!$isAuthenticated) goto('/login');
+    if (!$isAuthenticated) { goto('/login'); return; }
+    const role = $currentUser?.role;
+    if (role === 'admin' || role === 'coordinator' || role === 'teacher') return;
+    const enrollments = $preloadedMyEnrollments;
+    if (enrollments && !enrollments.some((e: any) => e.course === 'algoritmos')) {
+      goto('/');
+    }
   });
 
   const links: { href: string | null; icon: string; label: string; disabled?: boolean }[] = [

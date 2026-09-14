@@ -156,6 +156,36 @@
     }
     promptVisible = false;
   }
+
+  function handleDragStart(e, type) {
+    isDragging = true;
+    if (e.dataTransfer) {
+      e.dataTransfer.setData('dfd-type', type);
+      e.dataTransfer.effectAllowed = 'copy';
+    }
+  }
+
+  function handleDragEnd() {
+    isDragging = false;
+  }
+
+  function handleDrop(e, zone) {
+    e.preventDefault();
+    isDragging = false;
+    const type = e.dataTransfer?.getData('dfd-type');
+    if (!type) return;
+
+    let newNode = null;
+    if (type === 'output') newNode = { type: 'output', text: "'Nuevo Mensaje'" };
+    if (type === 'input') newNode = { type: 'input', variables: ['var1'] };
+    if (type === 'process') newNode = { type: 'assignment', assignments: [{variable: 'x', expression: '0'}] };
+    if (type === 'decision') newNode = { type: 'decision', condition: 'x > 0', trueBranch: [], falseBranch: [], flag: 0 };
+
+    if (newNode) {
+      zone.targetList.splice(zone.index, 0, newNode);
+      dfdContent = serializeDfd(ast);
+    }
+  }
 </script>
 
 <svelte:head>
@@ -188,10 +218,10 @@
       <p class="sidebar-help">Próximamente: Arrastra elementos para crear algoritmos</p>
       <div class="palette">
         <div class="palette-item"><div class="palette-shape start"></div> Inicio/Fin</div>
-        <div class="palette-item"><div class="palette-shape input"></div> Lectura</div>
-        <div class="palette-item"><div class="palette-shape output"></div> Salida</div>
-        <div class="palette-item"><div class="palette-shape process"></div> Asignación</div>
-        <div class="palette-item"><div class="palette-shape decision"></div> Decisión</div>
+        <div class="palette-item" draggable="true" ondragstart={(e) => handleDragStart(e, 'input')} ondragend={handleDragEnd}><div class="palette-shape input"></div> Lectura</div>
+        <div class="palette-item" draggable="true" ondragstart={(e) => handleDragStart(e, 'output')} ondragend={handleDragEnd}><div class="palette-shape output"></div> Salida</div>
+        <div class="palette-item" draggable="true" ondragstart={(e) => handleDragStart(e, 'process')} ondragend={handleDragEnd}><div class="palette-shape process"></div> Asignación</div>
+        <div class="palette-item" draggable="true" ondragstart={(e) => handleDragStart(e, 'decision')} ondragend={handleDragEnd}><div class="palette-shape decision"></div> Decisión</div>
       </div>
       
       <h3 style="margin-top: 2rem;">Código Fuente (.dfd)</h3>
@@ -235,6 +265,19 @@
           {#each renderData.shapes as shape}
             {@html renderShape(shape)}
           {/each}
+          
+          <!-- Drop Zones -->
+          {#if isDragging}
+            {#each renderData.dropZones as zone}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <rect x={zone.cx - 30} y={zone.cy - 15} width="60" height="30" fill="rgba(59, 130, 246, 0.2)" 
+                    stroke="#3b82f6" stroke-width="2" stroke-dasharray="4" rx="6"
+                    class="drop-zone-rect"
+                    ondragover={(e) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; }}
+                    ondrop={(e) => handleDrop(e, zone)}
+              />
+            {/each}
+          {/if}
         </svg>
       {:else}
         <div class="empty-state">

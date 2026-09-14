@@ -73,11 +73,16 @@ function measureNodes(nodes) {
 
 let _id = 0;
 
-function placeNodes(nodes, cx, startY, shapes, links, parentId) {
+function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId) {
   let y = startY;
   let prevId = parentId;
 
-  for (const node of nodes) {
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    
+    // Create a drop zone immediately before this node
+    dropZones.push({ targetList: nodes, index: i, cx, cy: y - V_GAP / 2 });
+
     if (node.type === 'end' || node.type === 'return') break;
 
     const id = `n${_id++}`;
@@ -103,7 +108,7 @@ function placeNodes(nodes, cx, startY, shapes, links, parentId) {
       let trueLastId = null;
       let trueEndY = branchY;
       if (node.trueBranch && node.trueBranch.length > 0 && node.trueBranch[0].type !== 'end') {
-        const res = placeNodes(node.trueBranch, trueCx, branchY, shapes, links, null);
+        const res = placeNodes(node.trueBranch, trueCx, branchY, shapes, links, dropZones, null);
         trueLastId = res.lastId;
         trueEndY = res.endY;
         // link decision → first true node
@@ -118,7 +123,7 @@ function placeNodes(nodes, cx, startY, shapes, links, parentId) {
       let falseLastId = null;
       let falseEndY = branchY;
       if (node.falseBranch && node.falseBranch.length > 0 && node.falseBranch[0].type !== 'end') {
-        const res = placeNodes(node.falseBranch, falseCx, branchY, shapes, links, null);
+        const res = placeNodes(node.falseBranch, falseCx, branchY, shapes, links, dropZones, null);
         falseLastId = res.lastId;
         falseEndY = res.endY;
         links.push(makeSideLink(id, res.firstId, shapes, 'No', 'right'));
@@ -157,7 +162,7 @@ function placeNodes(nodes, cx, startY, shapes, links, parentId) {
 
       const bodyY = y + h + V_GAP;
       if (node.body && node.body.length > 0 && node.body[0].type !== 'end') {
-        const res = placeNodes(node.body, cx, bodyY, shapes, links, id);
+        const res = placeNodes(node.body, cx, bodyY, shapes, links, dropZones, id);
         // loop-back arrow from last body node back to while
         if (res.lastId) {
           links.push(makeLoopBack(res.lastId, id, shapes, cx, w));
@@ -185,6 +190,11 @@ function placeNodes(nodes, cx, startY, shapes, links, parentId) {
       y += NODE_H + V_GAP;
       prevId = id;
     }
+  }
+
+  // If the branch doesn't end with a terminal, add a drop zone at the very end of the list
+  if (nodes.length === 0 || (nodes[nodes.length - 1].type !== 'end' && nodes[nodes.length - 1].type !== 'return')) {
+    dropZones.push({ targetList: nodes, index: nodes.length, cx, cy: y - V_GAP / 2 });
   }
 
   // Return tracking info
@@ -274,6 +284,7 @@ export function buildRenderData(ast) {
   _id = 0;
   const shapes = [];
   const links = [];
+  const dropZones = [];
 
   // Measure total width
   const m = measureNodes(ast.nodes);
@@ -283,7 +294,7 @@ export function buildRenderData(ast) {
   // Start terminal
   shapes.push({ id: 'start', type: 'terminal', text: 'Inicio', x: centerX, y: 30, width: MIN_NODE_W, height: NODE_H });
 
-  const result = placeNodes(ast.nodes, centerX, 30 + NODE_H + V_GAP, shapes, links, 'start');
+  const result = placeNodes(ast.nodes, centerX, 30 + NODE_H + V_GAP, shapes, links, dropZones, 'start');
 
   // End terminal
   const endY = result.endY + V_GAP / 2;
@@ -293,5 +304,5 @@ export function buildRenderData(ast) {
   }
 
   const canvasH = endY + NODE_H + 40;
-  return { shapes, links, width: canvasW, height: canvasH };
+  return { shapes, links, dropZones, width: canvasW, height: canvasH };
 }

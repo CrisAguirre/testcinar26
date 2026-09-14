@@ -145,8 +145,8 @@ function parseFlowNodes(state) {
         state.pos++; // skip 1
         state.pos++; // skip width
         const condition = state.pos < state.lines.length ? state.lines[state.pos++] : '';
-        const trueBranch = parseFlowNodes(state);  // until 13
         const falseBranch = parseFlowNodes(state); // until 13
+        const trueBranch = parseFlowNodes(state);  // until 13
         nodes.push({ type: 'decision', condition, trueBranch, falseBranch, flag });
         break;
       }
@@ -244,9 +244,9 @@ function serializeNodes(nodes, lines) {
         break;
       case 'decision':
         lines.push('7', String(node.flag || 0), '1', String(node.condition.length), node.condition);
-        serializeNodes(node.trueBranch, lines);
-        lines.push('13');
         serializeNodes(node.falseBranch, lines);
+        lines.push('13');
+        serializeNodes(node.trueBranch, lines);
         lines.push('13');
         break;
       case 'while':

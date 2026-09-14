@@ -105,6 +105,10 @@ export class DfdExecutor {
 
   async runNodes(nodes) {
     for (const node of nodes) {
+      // Liberar el hilo principal del navegador cada vez que se procesa un nodo
+      // para evitar bloqueos de UI (INP Issues de Vercel/Chrome)
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
       if (node.type === 'end' || node.type === 'return') break;
       await this.runNode(node);
     }

@@ -28,7 +28,6 @@
 		"vitest": "^4.1.10"
 	},
 	"dependencies": {
-		"@humanspeak/svelte-motion": "^0.7.19",
-		"expr-eval": "^2.0.2"
+		"@humanspeak/svelte-motion": "^0.7.19"
 	}
 }

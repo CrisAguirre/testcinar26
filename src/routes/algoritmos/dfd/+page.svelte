@@ -168,10 +168,10 @@
     </button>
     <div class="file-controls">
       <span class="file-icon">📄</span>
-      <input type="text" bind:value={currentFileName} class="filename-input" />
+      <input type="text" id="dfd-filename" name="dfd-filename" bind:value={currentFileName} class="filename-input" />
       <label class="btn btn-secondary">
         📂 Abrir
-        <input type="file" accept=".dfd,.txt" onchange={handleFileUpload} style="display: none;" />
+        <input type="file" id="dfd-file-upload" name="dfd-file-upload" accept=".dfd,.txt" onchange={handleFileUpload} style="display: none;" />
       </label>
       <button class="btn btn-secondary" onclick={handleSave}>💾 Guardar</button>
       <button class="btn btn-primary run-btn" onclick={handleRun} disabled={!ast}>
@@ -195,6 +195,8 @@
       
       <h3 style="margin-top: 2rem;">Código Fuente (.dfd)</h3>
       <textarea 
+        id="dfd-source-code"
+        name="dfd-source-code"
         class="code-editor" 
         bind:value={dfdContent} 
         placeholder="Código DFD..."
@@ -264,6 +266,8 @@
       <!-- svelte-ignore a11y_autofocus -->
       <input 
         type="text" 
+        id="dfd-prompt-input"
+        name="dfd-prompt-input"
         class="modal-input" 
         bind:value={promptValue} 
         onkeydown={(e) => e.key === 'Enter' && submitPrompt()}

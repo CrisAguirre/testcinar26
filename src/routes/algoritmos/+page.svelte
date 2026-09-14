@@ -41,7 +41,7 @@
       <span>←</span> Volver al inicio
     </button>
     <div class="banner-content">
-      <img class="banner-logo" src="/svelte.webp" alt="logo" />
+      <img class="banner-logo" src="/algo.png" alt="Algoritmos" />
       <div class="banner-text">
         <span class="banner-icon">📚</span>
         <h1 style="font-weight: 700; font-size: 1.55rem;">Algoritmos</h1>

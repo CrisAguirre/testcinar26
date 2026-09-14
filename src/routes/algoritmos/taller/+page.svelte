@@ -10,7 +10,7 @@
     getAttemptCount, SYNC_QUEUE_KEY, getSyncQueue,
     addToSyncQueue, removeFromSyncQueue, setHealthCheckOk,
     isHealthCheckRecent, SAVED_ANSWERS_KEY, saveAnswersSnapshot,
-    clearSavedAnswers, calculateScore, buildExamData
+    clearSavedAnswers, calculateScore, buildExamData, getLocalAttempts
   } from '$lib/exam_taller_algo';
   import { preloadedMyGrades } from '$lib/stores/preloaded';
 

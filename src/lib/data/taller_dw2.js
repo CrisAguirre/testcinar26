@@ -93,3 +93,15 @@ export const examConfig = {
     6: 2  // 2 preguntas Inputs
   }
 };
+
+export function selectRandomQuestions(count = 6) {
+  let selected = [];
+  const distribution = examConfig.questionsToSelect;
+  for (const tema in distribution) {
+    const num = distribution[tema];
+    const pool = questionBank.filter(q => q.tema === parseInt(tema));
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    selected = selected.concat(shuffled.slice(0, num));
+  }
+  return selected.sort(() => Math.random() - 0.5);
+}

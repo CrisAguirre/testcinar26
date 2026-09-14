@@ -47,3 +47,15 @@ export const examConfig = {
     6: 3 // 3 preguntas tema juegos
   }
 };
+
+export function selectRandomQuestions(count = 3) {
+  let selected = [];
+  const distribution = examConfig.questionsToSelect;
+  for (const tema in distribution) {
+    const num = distribution[tema];
+    const pool = questionBank.filter(q => q.tema === parseInt(tema));
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    selected = selected.concat(shuffled.slice(0, num));
+  }
+  return selected.sort(() => Math.random() - 0.5);
+}

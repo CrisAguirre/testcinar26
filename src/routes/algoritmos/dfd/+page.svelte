@@ -115,6 +115,27 @@
       </g>
     `;
   }
+  
+  function generatePath(link) {
+    if (link.isLoop) {
+      const off = link.loopOffsetX || 100;
+      return `M ${link.sourceX} ${link.sourceY} 
+              L ${link.sourceX + off} ${link.sourceY}
+              L ${link.sourceX + off} ${link.targetY - 20}
+              L ${link.targetX} ${link.targetY - 20}
+              L ${link.targetX} ${link.targetY - 5}`; // -5 to make arrowhead look good
+    }
+    
+    if (Math.abs(link.sourceX - link.targetX) < 5) {
+      return `M ${link.sourceX} ${link.sourceY} L ${link.targetX} ${link.targetY - 3}`;
+    }
+    
+    const midY = link.sourceY + Math.max(15, (link.targetY - link.sourceY) / 2);
+    return `M ${link.sourceX} ${link.sourceY} 
+            L ${link.sourceX} ${midY}
+            L ${link.targetX} ${midY}
+            L ${link.targetX} ${link.targetY - 3}`;
+  }
 </script>
 
 <svelte:head>
@@ -175,17 +196,16 @@
           <!-- Links -->
           {#each renderData.links as link}
             <path 
-              d="M {link.sourceX} {link.sourceY} 
-                 C {link.sourceX} {link.sourceY + 20}, 
-                   {link.targetX} {link.targetY - 20}, 
-                   {link.targetX} {link.targetY}"
+              d={generatePath(link)}
               fill="none" 
               stroke="#64748b" 
               stroke-width="2" 
               marker-end="url(#arrowhead)" 
+              stroke-linejoin="round"
             />
             {#if link.label}
-              <text x="{(link.sourceX + link.targetX)/2 + 10}" y="{(link.sourceY + link.targetY)/2}" class="link-label">{link.label}</text>
+              <rect x="{(link.sourceX + link.targetX)/2 - 12}" y="{(link.sourceY + link.targetY)/2 - 10}" width="24" height="16" fill="#f8fafc" rx="4" />
+              <text x="{(link.sourceX + link.targetX)/2}" y="{(link.sourceY + link.targetY)/2 + 3}" class="link-label" text-anchor="middle">{link.label}</text>
             {/if}
           {/each}
 
@@ -446,6 +466,8 @@
   .console-line {
     margin-bottom: 0.25rem;
     line-height: 1.4;
+    word-break: break-word;
+    white-space: pre-wrap;
   }
 
   .console-placeholder {

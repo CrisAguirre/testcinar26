@@ -2,15 +2,27 @@
   import { isAuthenticated } from '$lib/stores/auth';
   import { enrollmentApi } from '$lib/api';
   import { goto } from '$app/navigation';
-
-  $effect(() => {
-    if (!$isAuthenticated) goto('/login');
-  });
+  import { preloadedMyEnrollments } from '$lib/stores/preloaded';
 
   let projectIdea = $state('');
   let isSaving = $state(false);
   let saveSuccess = $state(false);
   let saveError = $state('');
+  let isEditing = $state(true);
+  let initialLoaded = $state(false);
+
+  $effect(() => {
+    if (!$isAuthenticated) { goto('/login'); return; }
+    
+    if (!initialLoaded && $preloadedMyEnrollments) {
+      const myAlgo = $preloadedMyEnrollments.find((e: any) => e.course === 'algoritmos');
+      if (myAlgo && myAlgo.projectIdea) {
+        projectIdea = myAlgo.projectIdea;
+        isEditing = false;
+      }
+      initialLoaded = true;
+    }
+  });
 
   async function handleSave() {
     if (!projectIdea.trim()) {
@@ -28,6 +40,15 @@
         projectIdea: projectIdea.trim()
       });
       saveSuccess = true;
+      isEditing = false;
+      
+      preloadedMyEnrollments.update(enrollments => {
+        if (!enrollments) return enrollments;
+        return enrollments.map((e: any) => {
+          if (e.course === 'algoritmos') return { ...e, projectIdea: projectIdea.trim() };
+          return e;
+        });
+      });
     } catch (error) {
       console.error(error);
       saveError = 'Ocurrió un error al guardar. Por favor, inténtalo de nuevo.';
@@ -63,30 +84,40 @@
       aún no tienes todos los detalles técnicos resueltos, ¡lo importante es la idea principal!
     </p>
 
-    <div class="textarea-wrapper">
-      <textarea 
-        bind:value={projectIdea} 
-        placeholder="Ejemplo: Una plataforma para adoptar mascotas donde los usuarios puedan buscar por ciudad y tamaño..."
-        rows="6"
-        disabled={isSaving}
-      ></textarea>
-    </div>
-
-    {#if saveSuccess}
-      <div class="alert success">
-        ✅ Tu idea ha sido guardada exitosamente en la base de datos.
+    {#if isEditing}
+      <div class="textarea-wrapper">
+        <textarea 
+          bind:value={projectIdea} 
+          placeholder="Ejemplo: Una plataforma para adoptar mascotas donde los usuarios puedan buscar por ciudad y tamaño..."
+          rows="6"
+          disabled={isSaving}
+        ></textarea>
       </div>
-    {/if}
 
-    {#if saveError}
-      <div class="alert error">
-        ⚠ {saveError}
+      {#if saveError}
+        <div class="alert error">
+          ⚠ {saveError}
+        </div>
+      {/if}
+
+      <button class="save-btn" onclick={handleSave} disabled={isSaving}>
+        {isSaving ? 'Guardando...' : 'Guardar Idea'}
+      </button>
+    {:else}
+      <div class="saved-idea-box">
+        <p class="saved-text">{projectIdea}</p>
       </div>
-    {/if}
+      
+      {#if saveSuccess}
+        <div class="alert success" style="margin-top: 1.5rem">
+          ✅ Tu idea ha sido guardada exitosamente en la base de datos.
+        </div>
+      {/if}
 
-    <button class="save-btn" onclick={handleSave} disabled={isSaving}>
-      {isSaving ? 'Guardando...' : 'Guardar Idea'}
-    </button>
+      <button class="edit-btn" onclick={() => { isEditing = true; saveSuccess = false; }}>
+        Editar Idea
+      </button>
+    {/if}
   </div>
 </div>
 
@@ -242,6 +273,43 @@
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+  }
+
+  .saved-idea-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .saved-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #1e293b;
+    margin: 0;
+    white-space: pre-wrap;
+  }
+
+  .edit-btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 0.85rem;
+    background: white;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+  }
+
+  .edit-btn:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
   }
 
   .alert {

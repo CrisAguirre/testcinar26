@@ -231,8 +231,8 @@
     align-items: center;
     padding: 0.75rem 1.5rem;
     background: white;
-    border-bottom: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     z-index: 10;
   }
 
@@ -243,39 +243,57 @@
   }
 
   .filename-input {
-    border: 1px solid #cbd5e1;
-    border-radius: 4px;
+    border: 1px solid transparent;
+    border-radius: 6px;
     padding: 0.35rem 0.5rem;
     font-size: 0.9rem;
     width: 180px;
+    background: #f8fafc;
+    transition: all 0.2s;
+  }
+  
+  .filename-input:focus, .filename-input:hover {
+    border-color: #cbd5e1;
+    background: white;
+    outline: none;
   }
 
   .btn {
-    padding: 0.4rem 0.85rem;
+    padding: 0.4rem 1rem;
     border-radius: 6px;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
     border: none;
-    transition: all 0.2s;
+    transition: all 0.15s ease-in-out;
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.4rem;
+    font-family: inherit;
   }
 
   .btn-secondary {
-    background: #e2e8f0;
-    color: #334155;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid transparent;
   }
 
-  .btn-secondary:hover { background: #cbd5e1; }
+  .btn-secondary:hover { 
+    background: #e2e8f0; 
+    color: #1e293b;
+  }
 
   .btn-primary {
-    background: #3b82f6;
+    background: #0f172a;
     color: white;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
   }
 
-  .btn-primary:hover:not(:disabled) { background: #2563eb; }
+  .btn-primary:hover:not(:disabled) { 
+    background: #1e293b;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+  }
   .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
   .layout {
@@ -287,7 +305,7 @@
   .sidebar {
     width: 280px;
     background: white;
-    border-right: 1px solid #e2e8f0;
+    border-right: 1px solid rgba(0,0,0,0.06);
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
@@ -295,37 +313,46 @@
   }
 
   .sidebar h3 {
-    font-size: 0.9rem;
-    color: #475569;
+    font-size: 0.75rem;
+    color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    font-weight: 600;
     margin: 0 0 1rem 0;
   }
 
   .sidebar-help {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: #94a3b8;
-    margin-bottom: 1rem;
-    font-style: italic;
+    margin-bottom: 1.5rem;
+    line-height: 1.4;
   }
 
   .palette {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 
   .palette-item {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.5rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
     font-size: 0.85rem;
+    font-weight: 500;
     color: #334155;
     cursor: grab;
     background: #f8fafc;
+    transition: all 0.2s;
+  }
+  
+  .palette-item:hover {
+    background: white;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
   }
 
   .palette-shape {
@@ -335,29 +362,37 @@
     border: 1px solid #38bdf8;
   }
 
-  .palette-shape.start { border-radius: 10px; background: #bbf7d0; border-color: #22c55e; }
-  .palette-shape.decision { transform: rotate(45deg); width: 14px; height: 14px; background: #fef08a; border-color: #eab308; margin-left: 4px; }
-  .palette-shape.input { transform: skewX(-15deg); background: #e9d5ff; border-color: #a855f7; }
+  .palette-shape.start { border-radius: 12px; background: #dcfce7; border-color: #4ade80; }
+  .palette-shape.decision { transform: rotate(45deg); width: 14px; height: 14px; background: #fef08a; border-color: #facc15; margin-left: 4px; }
+  .palette-shape.input { transform: skewX(-15deg); background: #f3e8ff; border-color: #c084fc; }
 
   .code-editor {
     flex: 1;
     min-height: 200px;
     border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 0.75rem;
-    font-family: monospace;
-    font-size: 12px;
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13px;
     resize: none;
     background: #f8fafc;
     color: #334155;
+    transition: border-color 0.2s;
+  }
+  
+  .code-editor:focus {
+    outline: none;
+    border-color: #94a3b8;
+    background: white;
   }
 
   .canvas-container {
     flex: 1;
     position: relative;
     overflow: auto;
-    background: radial-gradient(#e2e8f0 1px, transparent 1px);
-    background-size: 20px 20px;
+    background: #f8fafc;
+    background-image: radial-gradient(#cbd5e1 1px, transparent 0);
+    background-size: 24px 24px;
   }
 
   .dfd-canvas {

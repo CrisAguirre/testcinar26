@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { selectRandomQuestions } from '$lib/data/parcial2';
+  import { selectRandomQuestions } from '$lib/data/parcial2_algo';
   import { gradesApi, authApi, API_URL, scheduleApi } from '$lib/api';
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';

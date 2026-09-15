@@ -125,3 +125,52 @@ export const examConfig = {
     3: 3  // 3 preguntas nivel 3
   }
 };
+
+export function selectRandomQuestions(count = 9) {
+  const distribution = [
+    { tema: 1, count: 3 },
+    { tema: 2, count: 3 },
+    { tema: 3, count: 3 }
+  ];
+
+  const totalBase = distribution.reduce((s, d) => s + d.count, 0);
+  let finalDist = distribution;
+
+  if (count !== totalBase) {
+    const factor = count / totalBase;
+    finalDist = distribution.map(d => ({
+      tema: d.tema,
+      count: Math.max(1, Math.round(d.count * factor))
+    }));
+    let diff = count - finalDist.reduce((s, d) => s + d.count, 0);
+    let i = 0;
+    while (diff !== 0) {
+      const idx = i % finalDist.length;
+      if (diff > 0) {
+        const pool = questionBank.filter(q => q.tema === finalDist[idx].tema);
+        if (finalDist[idx].count < pool.length) {
+          finalDist[idx].count++;
+          diff--;
+        }
+      } else {
+        if (finalDist[idx].count > 1) {
+          finalDist[idx].count--;
+          diff++;
+        }
+      }
+      i++;
+    }
+  }
+
+  const selected = [];
+  for (const dist of finalDist) {
+    const pool = questionBank.filter(q => q.tema === dist.tema);
+    if (pool.length < dist.count) {
+      throw new Error(`No hay suficientes preguntas para tema ${dist.tema}: se requieren ${dist.count}, hay ${pool.length}`);
+    }
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    selected.push(...shuffled.slice(0, dist.count));
+  }
+
+  return selected.sort(() => Math.random() - 0.5);
+}

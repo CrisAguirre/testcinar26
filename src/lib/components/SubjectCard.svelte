@@ -19,7 +19,7 @@
     href?: string;
     boldTitle?: boolean;
     noButton?: boolean;
-    color?: 'blue' | 'red' | 'green';
+    color?: 'blue' | 'red' | 'green' | 'purple';
     customLogo?: string | null;
     disabled?: boolean;
   } = $props();
@@ -83,6 +83,7 @@
   class="subject-card clickable"
   class:red={color === 'red'}
   class:green={color === 'green'}
+  class:purple={color === 'purple'}
 >
   <motion.div
     class="subject-glow"
@@ -258,6 +259,15 @@
     --shadow-color: 0 4px 20px rgba(16, 185, 129, 0.3);
     --shadow-hover-1: 0 12px 40px rgba(16, 185, 129, 0.4);
     --shadow-hover-2: 0 0 30px rgba(16, 185, 129, 0.15);
+  }
+
+  .subject-card.purple {
+    --glow-color: rgba(124,58,237,0.25);
+    --border-color: rgba(124,58,237,0.15);
+    --gradient-bg: linear-gradient(135deg, #8B5CF6, #7C3AED, #4C1D95, #7C3AED, #8B5CF6);
+    --shadow-color: 0 4px 20px rgba(124, 58, 237, 0.3);
+    --shadow-hover-1: 0 12px 40px rgba(124, 58, 237, 0.4);
+    --shadow-hover-2: 0 0 30px rgba(124, 58, 237, 0.15);
   }
 
   .subject-card.disabled {

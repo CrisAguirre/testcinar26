@@ -307,6 +307,18 @@
         customLogo="/algo.png"
       />
       {/if}
+      {#if isAdminOrTeacher}
+      <SubjectCard
+        icon="⚙️"
+        title="Funciones Administrativas"
+        description="Planeación, registro académico, capacitaciones, normativa vigente y soporte técnico."
+        href="/admin"
+        boldTitle
+        noButton
+        color="purple"
+        customLogo="/logo.png"
+      />
+      {/if}
     </div>
   </div>
 {/if}

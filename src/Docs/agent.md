@@ -15,14 +15,14 @@ Cinar DW2/
 │   │   │   │   ├── notas/
 │   │   │   │   ├── enlaces-de-consulta/
 │   │   │   │   └── actividad-de-la-semana/
-│   │   │   ├── desarrollo-web-2/   # DW2 (usuarios con notas DW1 heredan acceso)
+│   │   │   ├── desarrollo-web-2/   # DW2
 │   │   │   │   ├── parcial-1/
 │   │   │   │   ├── parcial-2/
 │   │   │   │   ├── taller/          # Taller práctico
 │   │   │   │   ├── notas/
 │   │   │   │   ├── enlaces-de-consulta/
 │   │   │   │   └── actividad-de-la-semana/
-│   │   │   └── algoritmos/          # Requiere inscripción explícita
+│   │   │   └── algoritmos/
 │   │   │       ├── parcial-1/
 │   │   │       ├── parcial-2/
 │   │   │       ├── taller/           # Taller práctico
@@ -30,10 +30,10 @@ Cinar DW2/
 │   │   │       ├── enlaces-de-consulta/
 │   │   │       └── actividad-de-la-semana/
 │   │   ├── lib/
-│   │   │   ├── data/                # Bancos de preguntas
-│   │   │   ├── stores/              # Auth, preload
+│   │   │   ├── data/                # Bancos de preguntas (DW2 y Algo)
+│   │   │   ├── stores/              # Auth, preloaded (preloadedMyEnrollments)
 │   │   │   ├── components/          # SubjectCard, etc
-│   │   │   └── api.js
+│   │   │   └── api.js               # authApi, gradesApi, enrollmentApi
 │   │   └── lib/data/
 │   │       ├── parcial1_dw2.js
 │   │       ├── parcial2_dw2.js
@@ -47,16 +47,16 @@ Cinar DW2/
 │   │   ├── models/
 │   │   │   ├── User.js
 │   │   │   ├── Grade.js
-│   │   │   └── Enrollment.js    # Sistema de inscripciones
+│   │   │   └── Enrollment.js    # Sistema de inscripciones con projectIdea
 │   │   ├── controllers/
 │   │   │   ├── authController.js
 │   │   │   ├── gradeController.js
-│   │   │   └── enrollmentController.js  # checkEnrollment()
+│   │   │   └── enrollmentController.js  # getMine(), saveProjectIdea()
 │   │   ├── routes/
 │   │   ├── middlewares/
 │   │   └── index.js
 │   └── eslint.config.js
-└── package.json workspaces
+└── package.json workspaces (seed.js ejecuta en start de render)
 ```
 
 ## Reglas de Acceso por Curso
@@ -65,18 +65,13 @@ Cinar DW2/
 - **Todos los usuarios autenticados** pueden acceder al contenido
 - **Examenes bloqueados** para usuarios normales (ven "Curso Finalizado")
 - **Admin/Coordinador** (`role: 'admin'` o `'coordinator'`) pueden presentar examenes
-- No requiere inscripción
+- No requiere inscripción estricta.
 
-### Desarrollo Web 2
-- **Usuarios con notas en DW1** heredan acceso automáticamente
-- Pueden presentar parciales y taller
-- **Backend**: `checkEnrollment()` verifica que tenga `dw1Grades > 0`
-- No requiere inscripción manual
-
-### Algoritmos
-- **Solo usuarios con inscripción explícita** en tabla Enrollment
-- Requiere llamar `POST /api/enrollments` con `{ userId, course: 'algoritmos', canPresent: true }`
-- La API `checkEnrollment()` busca enrollment activo
+### Desarrollo Web 2 y Algoritmos
+- **Acceso mediante Enrollments**: Ahora requiere inscripción explícita.
+- `seed.js` inscribe automáticamente a los alumnos base a los cursos correspondientes durante el arranque del servidor.
+- El Panel de control (`+page.svelte`) utiliza `$derived` para mostrar reactivamente las tarjetas de los cursos según los datos cacheados en `$preloadedMyEnrollments`.
+- Si el usuario accede a la URL directa y no está inscrito, es redirigido mediante hooks reactivos (`$effect`).
 
 ## Modelo de Datos
 
@@ -84,8 +79,9 @@ Cinar DW2/
 ```javascript
 {
   user: ObjectId,
-  course: String,        // 'algoritmos'
+  course: String,        // 'algoritmos', 'desarrollo-web-1', 'desarrollo-web-2'
   canPresent: Boolean,
+  projectIdea: String,   // Idea de proyecto guardada en la Actividad de la Semana
   createdAt: Date
 }
 ```
@@ -117,10 +113,10 @@ Cinar DW2/
 - `GET /api/grades/mine` - Notas del usuario actual
 
 ### Enrollments
-- `GET /api/enrollments` - Todas las inscripciones
-- `POST /api/enrollments` - Inscribir usuario
-- `DELETE /api/enrollments/:userId/:course` - Desinscribir
-- `GET /api/enrollments/:course` - Inscritos en curso
+- `GET /api/enrollments/mine` - Obtener inscripciones del usuario actual (vital para renderizado del Dashboard).
+- `POST /api/enrollments/project-idea` - Guarda/Actualiza la Actividad de la Semana (`projectIdea`).
+- `POST /api/enrollments` - Inscribir usuario manualmente.
+- `GET /api/enrollments/:course` - Inscritos en un curso.
 
 ## Credenciales
 
@@ -131,30 +127,19 @@ Cinar DW2/
 
 ### Frontend (testcinar26)
 - SvelteKit 2.x
-- @sveltejs/adapter-auto
+- Svelte 5 (Runes `$state`, `$derived`, `$effect`)
 - Vite
-- Svelte Motion
 
 ### Backend (testcinar26bknd)
 - Express
 - Mongoose
 - JWT (jsonwebtoken)
 - bcryptjs
-- dotenv
-- cors
 
-### Vulnerabilidades Pendientes
-- 3 low severity en frontend (cookie heredado de @sveltejs/kit) - no crítico
+## Estado de Funcionalidades
+- **Seguridad CSP / Evaluaciones**: Solucionado el fallo en Actividad de la Semana reemplazando llamadas a endpoints inexistentes e integrando la `enrollmentApi` correctamente.
+- **Actividad de la Semana**: Completamente operativa, usa variables `$state` para mostrar UI en modo Solo Lectura si el registro existe y habilita modo Edición.
+- **Bancos de Preguntas**: Todos revisados y en conformidad con los requerimientos temáticos.
 
-## Tareas Pendientes o Incompletas
-
-1. **Vulnerabilidades frontend**: Las 3 low severity requieren `npm audit fix --force` que rompe el workspace protocol
-2. **Algoritmos taller**: Creado en `/algoritmos/taller/+page.svelte`
-3. **DW2 taller**: Creado en `/desarrollo-web-2/taller/+page.svelte`
-
-## Notas Importantes
-
-- El card de DW1 en homepage usa `noButton` para que toda la card sea clickeable
-- Los examenes de DW1 verifican `$isAdmin` para permitir acceso
-- El Enrollment controller tiene lógica `checkEnrollment()` para DW1, DW2 y Algoritmos
-- Bancos de preguntas incluyen campo `explanation` para respuestas de selección múltiple
+## Vulnerabilidades y Deuda Técnica
+- Existen 3 vulnerabilidades low severity en frontend por la cookie herencia de @sveltejs/kit (no crítico para producción, no forzar `npm audit fix` para no romper el workspace).

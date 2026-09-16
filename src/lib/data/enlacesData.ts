@@ -9,10 +9,24 @@ export interface Category {
   title: string;
   icon: string;
   color: string;
+  description?: string;
   links: LinkItem[];
 }
 
 export const categories: Category[] = [
+  {
+    title: 'Pasos iniciales para desarrollo del proyecto',
+    icon: '🚀',
+    color: '#0ea5e9',
+    description:
+      'Para iniciar el desarrollo del proyecto, regístrate en las siguientes 4 plataformas usando tu cuenta de Google. Es obligatorio usar la opción "Continuar con Google" para mantener el acceso unificado.',
+    links: [
+      { title: '1. Vercel — Registro', url: 'https://vercel.com/', desc: 'Regístrate con tu cuenta de Google para desplegar el frontend', tag: 'Herramienta' },
+      { title: '2. GitHub — Registro', url: 'https://github.com/', desc: 'Regístrate con tu cuenta de Google para gestionar el código del proyecto', tag: 'GitHub' },
+      { title: '3. Render — Registro', url: 'https://dashboard.render.com/', desc: 'Regístrate con tu cuenta de Google para desplegar el backend', tag: 'Herramienta' },
+      { title: '4. MongoDB Atlas — Registro', url: 'https://account.mongodb.com/account/login', desc: 'Regístrate con tu cuenta de Google para crear y gestionar la base de datos', tag: 'Herramienta' }
+    ]
+  },
   {
     title: 'Documentación y Tutoriales',
     icon: '📚',

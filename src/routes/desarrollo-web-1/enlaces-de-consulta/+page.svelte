@@ -123,6 +123,9 @@
           <h2>{cat.title}</h2>
           <span class="category-count">{cat.links.length}</span>
         </div>
+        {#if cat.description}
+          <p class="category-desc">{cat.description}</p>
+        {/if}
         <div class="category-links">
           {#each cat.links as link, i}
             <a
@@ -481,6 +484,17 @@
 
   .category:hover .category-count {
     transform: scale(1.15);
+  }
+
+  .category-desc {
+    margin: 0 0 0.85rem;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+    background: color-mix(in srgb, var(--cat-color) 8%, white);
+    border-left: 3px solid var(--cat-color);
+    border-radius: 0 8px 8px 0;
   }
 
   .category-links {

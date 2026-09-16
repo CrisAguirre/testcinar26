@@ -4,8 +4,8 @@ import {
 } from '../enlacesData.ts';
 
 describe('categories', () => {
-  it('tiene exactamente 4 categorías', () => {
-    expect(categories.length).toBe(4);
+  it('tiene exactamente 5 categorías', () => {
+    expect(categories.length).toBe(5);
   });
 
   it('cada categoría tiene title, icon, color, links', () => {
@@ -21,6 +21,11 @@ describe('categories', () => {
   it('cada título de categoría es único', () => {
     const titles = categories.map(c => c.title);
     expect(new Set(titles).size).toBe(titles.length);
+  });
+
+  it('Pasos iniciales para desarrollo del proyecto tiene 4 enlaces', () => {
+    const cat = categories.find(c => c.title === 'Pasos iniciales para desarrollo del proyecto');
+    expect(cat?.links.length).toBe(4);
   });
 
   it('Documentación y Tutoriales tiene 4 enlaces', () => {
@@ -47,8 +52,8 @@ describe('categories', () => {
 describe('links', () => {
   const allLinks = getAllLinks(categories);
 
-  it('total de 16 enlaces', () => {
-    expect(allLinks.length).toBe(16);
+  it('total de 20 enlaces', () => {
+    expect(allLinks.length).toBe(20);
   });
 
   it('cada enlace tiene title, url, desc y tag', () => {
@@ -107,12 +112,12 @@ describe('getTagClass', () => {
 describe('filterCategories', () => {
   it('retorna todas las categorías con query vacío', () => {
     const result = filterCategories(categories, '');
-    expect(result.length).toBe(4);
+    expect(result.length).toBe(5);
   });
 
   it('retorna todas las categorías con query de solo espacios', () => {
     const result = filterCategories(categories, '   ');
-    expect(result.length).toBe(4);
+    expect(result.length).toBe(5);
   });
 
   it('filtra por título de enlace', () => {
@@ -130,9 +135,11 @@ describe('filterCategories', () => {
 
   it('filtra por tag', () => {
     const result = filterCategories(categories, 'GitHub');
-    expect(result.length).toBe(1);
-    expect(result[0].title).toBe('Repositorios del Proyecto');
-    expect(result[0].links.length).toBe(2);
+    expect(result.length).toBe(2);
+    const repo = result.find((c) => c.title === 'Repositorios del Proyecto');
+    const pasos = result.find((c) => c.title === 'Pasos iniciales para desarrollo del proyecto');
+    expect(repo?.links.length).toBe(2);
+    expect(pasos?.links.length).toBe(1);
   });
 
   it('filtra sin distinguir mayúsculas/minúsculas', () => {
@@ -163,8 +170,8 @@ describe('filterCategories', () => {
 });
 
 describe('getAllLinks', () => {
-  it('retorna 16 enlaces totales', () => {
-    expect(getAllLinks(categories).length).toBe(16);
+  it('retorna 20 enlaces totales', () => {
+    expect(getAllLinks(categories).length).toBe(20);
   });
 
   it('retorna arreglo vacío para categorías sin enlaces', () => {

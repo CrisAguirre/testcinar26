@@ -1,6 +1,7 @@
 <script lang="ts">
   import { isAuthenticated } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import { parseDfd, serializeDfd } from '$lib/dfd/parser';
   import { buildRenderData } from '$lib/dfd/renderer';
   import { DfdExecutor } from '$lib/dfd/executor';
@@ -11,6 +12,37 @@
 
   let dfdContent = $state('');
   let currentFileName = $state('ejercicio.dfd');
+  let selectedExerciseId = $state<number | ''>('');
+  let isInitialLoad = $state(true);
+  
+  $effect(() => {
+    if (isInitialLoad && $page.url.searchParams.has('load')) {
+      const loadParam = $page.url.searchParams.get('load');
+      if (loadParam && loadParam.startsWith('Problema ')) {
+        const id = parseInt(loadParam.replace('Problema ', ''));
+        if (!isNaN(id) && id >= 1 && id <= 16) {
+          selectedExerciseId = id;
+          loadExercise(id);
+        }
+      }
+      isInitialLoad = false;
+    }
+  });
+
+  async function loadExercise(id: number) {
+    if (!id) return;
+    try {
+      const filename = `Problema ${id}.dfd`;
+      const res = await fetch(`/dfd/nivel1/${filename}`);
+      if (!res.ok) throw new Error('No se pudo cargar el archivo');
+      dfdContent = await res.text();
+      currentFileName = filename;
+      consoleOutput = [`--- Ejercicio ${id} cargado automáticamente ---`];
+    } catch (err) {
+      console.error(err);
+      consoleOutput = ['--- Error al cargar el ejercicio ---'];
+    }
+  }
   
   let ast = $derived.by(() => {
     if (!dfdContent) return null;
@@ -200,8 +232,14 @@
     <div class="file-controls">
       <span class="file-icon">📄</span>
       <input type="text" id="dfd-filename" name="dfd-filename" bind:value={currentFileName} class="filename-input" />
+      <select class="btn btn-secondary exercise-select" bind:value={selectedExerciseId} onchange={() => { if (selectedExerciseId) loadExercise(selectedExerciseId as number); }}>
+        <option value="">-- Ejercicios Nivel 1 --</option>
+        {#each Array.from({ length: 16 }, (_, i) => i + 1) as i}
+          <option value={i}>Problema {i}</option>
+        {/each}
+      </select>
       <label class="btn btn-secondary">
-        📂 Abrir
+        📂 Abrir Local
         <input type="file" id="dfd-file-upload" name="dfd-file-upload" accept=".dfd,.txt" onchange={handleFileUpload} style="display: none;" />
       </label>
       <button class="btn btn-secondary" onclick={handleSave}>💾 Guardar</button>

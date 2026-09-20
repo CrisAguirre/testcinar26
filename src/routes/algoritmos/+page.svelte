@@ -21,7 +21,8 @@
     { href: '/algoritmos/videos', icon: '🎬', label: 'Videos' },
     { href: '/algoritmos/enlaces-de-consulta', icon: '🔗', label: 'Enlaces de Consulta' },
     { href: '/algoritmos/notas', icon: '📊', label: 'Notas' },
-    { href: '/algoritmos/actividad-de-la-semana', icon: '📺', label: 'Actividad de la semana' }
+    { href: '/algoritmos/actividad-de-la-semana', icon: '📺', label: 'Actividad de la semana' },
+    { href: '/algoritmos/proyecto-personal', icon: '🚀', label: 'Proyecto Personal' }
   ];
 
   const modules = [

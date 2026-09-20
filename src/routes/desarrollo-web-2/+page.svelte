@@ -19,7 +19,8 @@
     { href: '/desarrollo-web-2/taller', icon: '⚙️', label: 'Taller Práctico' },
     { href: '/desarrollo-web-2/enlaces-de-consulta', icon: '🔗', label: 'Enlaces de Consulta' },
     { href: '/desarrollo-web-2/notas', icon: '📊', label: 'Notas' },
-    { href: '/desarrollo-web-2/actividad-de-la-semana', icon: '📺', label: 'Actividad de la semana' }
+    { href: '/desarrollo-web-2/actividad-de-la-semana', icon: '📺', label: 'Actividad de la semana' },
+    { href: '/desarrollo-web-2/proyecto-colaborativo', icon: '🤝', label: 'Proyecto Colaborativo' }
   ];
 
   const modules = [

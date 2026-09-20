@@ -1,34 +1,36 @@
-# Cinar DW2 - Estado Actual de la Plataforma
+# Cinar - Estado Actual de la Plataforma (Septiembre 2026)
 
 ## Estructura del Proyecto
 
 ```
-Cinar DW2/
+Cinar/
 ├── testcinar26/           # Frontend (SvelteKit)
 │   ├── src/
 │   │   ├── routes/
 │   │   │   ├── desarrollo-web-1/   # DW1 (solo contenido, examenes bloqueados para estudiantes)
-│   │   │   │   ├── parcial-1/       # Examen habilitado solo para admin/coordinador
-│   │   │   │   ├── parcial-2/       # Examen habilitado solo para admin/coordinador
+│   │   │   │   ├── parcial-1/       
+│   │   │   │   ├── parcial-2/       
 │   │   │   │   ├── algoritmia/
-│   │   │   │   │   └── taller/      # Taller habilitado solo para admin/coordinador
+│   │   │   │   │   └── taller/      
 │   │   │   │   ├── notas/
 │   │   │   │   ├── enlaces-de-consulta/
 │   │   │   │   └── actividad-de-la-semana/
 │   │   │   ├── desarrollo-web-2/   # DW2
 │   │   │   │   ├── parcial-1/
 │   │   │   │   ├── parcial-2/
-│   │   │   │   ├── taller/          # Taller práctico
+│   │   │   │   ├── taller/          
 │   │   │   │   ├── notas/
 │   │   │   │   ├── enlaces-de-consulta/
-│   │   │   │   └── actividad-de-la-semana/
-│   │   │   └── algoritmos/
+│   │   │   │   ├── actividad-de-la-semana/  # Simplificada y con ejemplos prácticos externos.
+│   │   │   │   └── proyecto-colaborativo/   # NUEVO: Plataforma TRUEQ (Intercambios P2P).
+│   │   │   └── algoritmos/         # Algoritmos
 │   │   │       ├── parcial-1/
 │   │   │       ├── parcial-2/
-│   │   │       ├── taller/           # Taller práctico
+│   │   │       ├── taller/           
 │   │   │       ├── notas/
 │   │   │       ├── enlaces-de-consulta/
-│   │   │       └── actividad-de-la-semana/
+│   │   │       ├── actividad-de-la-semana/  # Ejercicios DFD Nivel 1 con carga automática.
+│   │   │       └── proyecto-personal/       # NUEVO: Asignación de proyectos por estudiante.
 │   │   ├── lib/
 │   │   │   ├── data/                # Bancos de preguntas (DW2 y Algo)
 │   │   │   ├── stores/              # Auth, preloaded (preloadedMyEnrollments)
@@ -55,20 +57,20 @@ Cinar DW2/
 │   │   ├── routes/
 │   │   ├── middlewares/
 │   │   └── index.js
-│   └── eslint.config.js
+│   └── eslint.config.js         # Backend auditado con ESLint (100% limpio).
 └── package.json workspaces (seed.js ejecuta en start de render)
 ```
 
 ## Reglas de Acceso por Curso
 
 ### Desarrollo Web 1
-- **Todos los usuarios autenticados** pueden acceder al contenido
-- **Examenes bloqueados** para usuarios normales (ven "Curso Finalizado")
-- **Admin/Coordinador** (`role: 'admin'` o `'coordinator'`) pueden presentar examenes
+- **Todos los usuarios autenticados** pueden acceder al contenido.
+- **Examenes bloqueados** para usuarios normales (ven "Curso Finalizado").
+- **Admin/Coordinador** (`role: 'admin'` o `'coordinator'`) pueden presentar examenes.
 - No requiere inscripción estricta.
 
 ### Desarrollo Web 2 y Algoritmos
-- **Acceso mediante Enrollments**: Ahora requiere inscripción explícita.
+- **Acceso mediante Enrollments**: Requiere inscripción explícita.
 - `seed.js` inscribe automáticamente a los alumnos base a los cursos correspondientes durante el arranque del servidor.
 - El Panel de control (`+page.svelte`) utiliza `$derived` para mostrar reactivamente las tarjetas de los cursos según los datos cacheados en `$preloadedMyEnrollments`.
 - Si el usuario accede a la URL directa y no está inscrito, es redirigido mediante hooks reactivos (`$effect`).
@@ -98,6 +100,31 @@ Cinar DW2/
   createdAt: Date
 }
 ```
+
+## Novedades y Proyectos Añadidos (Última Iteración)
+
+1. **Proyecto Personal (Algoritmos)**
+   - Ruta `/algoritmos/proyecto-personal`.
+   - Listado consolidado y asignación de temas y stacks tecnológicos para los 11 estudiantes (incluido "Pasto Limpio" de Andrés Felipe Mena). 
+   - Buscador en tiempo real y tags categorizados.
+
+2. **Proyecto Colaborativo (Desarrollo Web 2)**
+   - Ruta `/desarrollo-web-2/proyecto-colaborativo`.
+   - Presenta el proyecto **TRUEQ** (Plataforma de Intercambios).
+   - Incluye cronograma interactivo de 6 semanas y directrices claras de alcance ("Qué recortar" y "Recomendaciones Clave").
+   - Stack definido: Svelte (Frontend), Node+Express (Backend), MongoDB (Database).
+
+3. **Actividad de la Semana (Mejoras)**
+   - **Algoritmos**: Integrados los enunciados en PDF para los ejercicios DFD de Nivel 1. Los archivos `.dfd` ahora se cargan automáticamente en el editor al hacer clic en los menús para mejorar la experiencia del estudiante.
+   - **DW2**: Limpieza de UI (se retiraron los tags de horas y el prefijo de clases). Se añadieron **Ejemplos Prácticos externos** al final de cada temática (E-commerce, Social Media, etc). Solucionado el error 500 inyectando scripts HTML parseados a hexadecimal.
+
+4. **Auditoría del Sistema y Refactorización (Impeccable Style & ESLint)**
+   - **Backend**: Auditado con ESLint. Código completamente limpio (0 Errores).
+   - **Frontend**: Refactorizado siguiendo los principios A11y (accesibilidad) de Impeccable Style y la reactividad correcta de **Svelte 5** (Runes):
+     - Corregidos errores de `totalTime` que perdían reactividad en los exámenes.
+     - Ajustada la inicialización de estados capturados por prop `$props().data` en parciales y talleres usando encadenamiento opcional `??` e inicialización inline.
+     - Asignados roles `presentation` en la página `enlaces-de-consulta` para cumplir estándares ARIA.
+     - Limpiados los warnings de TypeScript respecto a variables potencialmente `null` en la obtención de notas.
 
 ## API Endpoints
 
@@ -136,10 +163,5 @@ Cinar DW2/
 - JWT (jsonwebtoken)
 - bcryptjs
 
-## Estado de Funcionalidades
-- **Seguridad CSP / Evaluaciones**: Solucionado el fallo en Actividad de la Semana reemplazando llamadas a endpoints inexistentes e integrando la `enrollmentApi` correctamente.
-- **Actividad de la Semana**: Completamente operativa, usa variables `$state` para mostrar UI en modo Solo Lectura si el registro existe y habilita modo Edición.
-- **Bancos de Preguntas**: Todos revisados y en conformidad con los requerimientos temáticos.
-
 ## Vulnerabilidades y Deuda Técnica
-- Existen 3 vulnerabilidades low severity en frontend por la cookie herencia de @sveltejs/kit (no crítico para producción, no forzar `npm audit fix` para no romper el workspace).
+- Existen algunas vulnerabilidades low severity en frontend por la cookie herencia de @sveltejs/kit (no crítico para producción, no forzar `npm audit fix` para no romper el workspace).

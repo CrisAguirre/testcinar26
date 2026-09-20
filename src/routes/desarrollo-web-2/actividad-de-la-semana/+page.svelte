@@ -563,39 +563,6 @@ let {
     flex-direction: column;
   }
 
-  .tab-number {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #94a3b8;
-  }
-
-  .class-tab.active .tab-number {
-    color: var(--tab-color);
-  }
-
-  .tab-title {
-    font-size: 0.92rem;
-    font-weight: 600;
-    color: #1e293b;
-  }
-
-  .tab-hours {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #94a3b8;
-    background: #f1f5f9;
-    padding: 0.25rem 0.6rem;
-    border-radius: 999px;
-    flex-shrink: 0;
-  }
-
-  .class-tab.active .tab-hours {
-    background: color-mix(in srgb, var(--tab-color) 12%, white);
-    color: var(--tab-color);
-  }
-
   /* Class content */
   .class-content {
     animation: slideIn 0.35s ease-out;

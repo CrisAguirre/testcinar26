@@ -72,7 +72,7 @@
         all = await gradesApi.getMine();
         preloadedMyGrades.set(all);
       }
-      const examGrades = all.filter((g: any) => g.subject === 'Desarrollo Web 2 - Taller Práctico');
+      const examGrades = (all ?? []).filter((g: any) => g.subject === 'Desarrollo Web 2 - Taller Práctico');
       serverGrades = examGrades;
       serverAttempts = examGrades.length;
     } catch {

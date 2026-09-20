@@ -25,12 +25,8 @@
 
   let currentAttemptNumber = $state(0);
   let serverAttempts = $state(0);
-  
-  const initialGrades = data.serverGrades || [];
-  const initialLoading = !data.serverGrades;
-
-  let serverGrades = $state<any[]>(initialGrades);
-  let loadingServer = $state(initialLoading);
+  let serverGrades = $state<any[]>(data?.serverGrades ?? []);
+  let loadingServer = $state(!data?.serverGrades);
   let saveError = $state('');
   let saveSuccess = $state(false);
   let isSaving = $state(false);

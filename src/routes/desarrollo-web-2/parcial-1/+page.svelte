@@ -25,8 +25,12 @@
 
   let currentAttemptNumber = $state(0);
   let serverAttempts = $state(0);
-  let serverGrades = $state<any[]>(data.serverGrades || []);
-  let loadingServer = $state(!data.serverGrades);
+  
+  const initialGrades = data.serverGrades || [];
+  const initialLoading = !data.serverGrades;
+
+  let serverGrades = $state<any[]>(initialGrades);
+  let loadingServer = $state(initialLoading);
   let saveError = $state('');
   let saveSuccess = $state(false);
   let isSaving = $state(false);
@@ -36,7 +40,7 @@
   let syncingInProgress = $state(false);
 
   const totalQuestions = 20;
-  let totalTime = 45 * 60;
+  let totalTime = $state(45 * 60);
   let isUnlimited = $derived($currentUser?.email === 'coordinacion@cinarsistemas.edu.co');
 
   function getLocalAttempts(): any[] {

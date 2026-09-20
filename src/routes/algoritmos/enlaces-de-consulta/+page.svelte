@@ -74,7 +74,7 @@
   <button class="back-btn" onclick={() => goto('/algoritmos')}>
     <span>←</span> Volver a Algoritmos
   </button>
-  <div class="hero" onmousemove={handleMouseMove} style="--mx: {heroGlowX}%; --my: {heroGlowY}%">
+  <div class="hero" role="presentation" onmousemove={handleMouseMove} style="--mx: {heroGlowX}%; --my: {heroGlowY}%">
     <div class="hero-bg"></div>
     <div class="hero-orbs">
       <div class="orb orb-1"></div>

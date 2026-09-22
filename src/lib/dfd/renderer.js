@@ -73,12 +73,13 @@ function measureNodes(nodes) {
 
 let _id = 0;
 
-function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId) {
+function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId, basePath = []) {
   let y = startY;
   let prevId = parentId;
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
+    const nodePath = [...basePath, i];
     
     // Create a drop zone immediately before this node
     dropZones.push({ targetList: nodes, index: i, cx, cy: y - V_GAP / 2 });
@@ -92,7 +93,7 @@ function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId) {
     // ── Decision ────────────────────────────────────────────────────────
     if (node.type === 'decision') {
       const h = DECISION_H;
-      shapes.push({ id, type: 'decision', text: label, x: cx, y, width: w, height: h });
+      shapes.push({ id, type: 'decision', text: label, x: cx, y, width: w, height: h, path: nodePath });
       if (prevId) links.push(makeLink(prevId, id, shapes));
 
       const mTrue  = measureNodes(node.trueBranch  || []);
@@ -108,7 +109,7 @@ function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId) {
       let trueLastId = null;
       let trueEndY = branchY;
       if (node.trueBranch && node.trueBranch.length > 0 && node.trueBranch[0].type !== 'end') {
-        const res = placeNodes(node.trueBranch, trueCx, branchY, shapes, links, dropZones, null);
+        const res = placeNodes(node.trueBranch, trueCx, branchY, shapes, links, dropZones, null, [...nodePath, 'true']);
         trueLastId = res.lastId;
         trueEndY = res.endY;
         // link decision → first true node
@@ -123,7 +124,7 @@ function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId) {
       let falseLastId = null;
       let falseEndY = branchY;
       if (node.falseBranch && node.falseBranch.length > 0 && node.falseBranch[0].type !== 'end') {
-        const res = placeNodes(node.falseBranch, falseCx, branchY, shapes, links, dropZones, null);
+        const res = placeNodes(node.falseBranch, falseCx, branchY, shapes, links, dropZones, null, [...nodePath, 'false']);
         falseLastId = res.lastId;
         falseEndY = res.endY;
         links.push(makeSideLink(id, res.firstId, shapes, 'No', 'right'));
@@ -157,12 +158,12 @@ function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId) {
     // ── While loop ──────────────────────────────────────────────────────
     } else if (node.type === 'while') {
       const h = DECISION_H;
-      shapes.push({ id, type: 'while', text: label, x: cx, y, width: w, height: h });
+      shapes.push({ id, type: 'while', text: label, x: cx, y, width: w, height: h, path: nodePath });
       if (prevId) links.push(makeLink(prevId, id, shapes));
 
       const bodyY = y + h + V_GAP;
       if (node.body && node.body.length > 0 && node.body[0].type !== 'end') {
-        const res = placeNodes(node.body, cx, bodyY, shapes, links, dropZones, id);
+        const res = placeNodes(node.body, cx, bodyY, shapes, links, dropZones, id, [...nodePath, 'body']);
         // loop-back arrow from last body node back to while
         if (res.lastId) {
           links.push(makeLoopBack(res.lastId, id, shapes, cx, w));
@@ -184,7 +185,7 @@ function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId) {
       if (node.type === 'input')      shapeType = 'input';
       if (node.type === 'call')       shapeType = 'call';
 
-      shapes.push({ id, type: shapeType, text: label, x: cx, y, width: w, height: NODE_H });
+      shapes.push({ id, type: shapeType, text: label, x: cx, y, width: w, height: NODE_H, path: nodePath });
       if (prevId) links.push(makeLink(prevId, id, shapes));
 
       y += NODE_H + V_GAP;

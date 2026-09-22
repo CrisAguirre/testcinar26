@@ -254,6 +254,18 @@ function serializeNodes(nodes, lines) {
         serializeNodes(node.body, lines);
         lines.push('11');
         break;
+      case 'return':
+        lines.push('3');
+        break;
+      case 'call': {
+        const fname = node.funcName || 'func';
+        const params = node.params || '';
+        lines.push('12', '1', String(fname.length), fname, '1', String(params.length), params);
+        break;
+      }
+      case 'merge':
+        // Nodo virtual solo para renderizado, no se serializa
+        break;
     }
   }
 }

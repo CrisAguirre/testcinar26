@@ -22,17 +22,19 @@ Cinar/
 │   │   │   │   ├── notas/
 │   │   │   │   ├── enlaces-de-consulta/
 │   │   │   │   ├── actividad-de-la-semana/  # Simplificada y con ejemplos prácticos externos.
-│   │   │   │   └── proyecto-colaborativo/   # NUEVO: Plataforma TRUEQ (Intercambios P2P).
+│   │   │   │   └── proyecto-colaborativo/   # TRUEQ (Intercambios P2P): stack + roles (7) + cronograma 6 sem. Maquetado ordenado 01/02/03.
 │   │   │   └── algoritmos/         # Algoritmos
 │   │   │       ├── parcial-1/
 │   │   │       ├── parcial-2/
 │   │   │       ├── taller/           
 │   │   │       ├── notas/
-│   │   │       ├── enlaces-de-consulta/
+│   │   │       ├── enlaces-de-consulta/  # Usa $lib/data/enlacesData.ts (IA y Aprendizaje +3: UNAD Cisco, MongoDB University, Capacítate).
 │   │   │       ├── actividad-de-la-semana/  # Ejercicios DFD Nivel 1 con carga automática.
+│   │   │       ├── dfd/             # Editor visual DFD: pseudocódigo legible + drag&drop + panel propiedades.
 │   │   │       └── proyecto-personal/       # NUEVO: Asignación de proyectos por estudiante.
 │   │   ├── lib/
-│   │   │   ├── data/                # Bancos de preguntas (DW2 y Algo)
+│   │   │   ├── data/                # Bancos de preguntas (DW2 y Algo) + enlacesData.ts
+│   │   │   ├── dfd/                 # parser.js (parse/serialize + return/call/merge), renderer.js (path por figura), executor.js, pseudocode.js
 │   │   │   ├── stores/              # Auth, preloaded (preloadedMyEnrollments)
 │   │   │   ├── components/          # SubjectCard, etc
 │   │   │   └── api.js               # authApi, gradesApi, enrollmentApi
@@ -111,12 +113,20 @@ Cinar/
 2. **Proyecto Colaborativo (Desarrollo Web 2)**
    - Ruta `/desarrollo-web-2/proyecto-colaborativo`.
    - Presenta el proyecto **TRUEQ** (Plataforma de Intercambios).
-   - Incluye cronograma interactivo de 6 semanas y directrices claras de alcance ("Qué recortar" y "Recomendaciones Clave").
-   - Stack definido: Svelte (Frontend), Node+Express (Backend), MongoDB (Database).
+   - Stack: Svelte (Frontend), Node+Express (Backend), MongoDB (Database). Tira de despliegue: Vercel + Render + Atlas.
+   - **Equipo y Roles (7 personas)**: docente PM (backlog, integración semanal, demo) + 1 analista requerimientos/tech lead (modelo Mongo, contrato API, wireframes semana 1, luego integración) + 2 frontend Svelte + 2 backend Express/Mongo + 1 QA/DevOps testing y despliegues transversal.
+   - Maquetado ordenado por bloques: hero compacto con chips (6 semanas / 7 personas / stack), 01 Base técnica, 02 Equipo (PM destacada + grid 2x2), 03 Cronograma + sidebar (Acuerdos de trabajo, Qué recortar, Recomendaciones).
+   - Cronograma interactivo 6 semanas + acuerdos (integración viernes, ramas por módulo, contrato API primero).
 
 3. **Actividad de la Semana (Mejoras)**
    - **Algoritmos**: Integrados los enunciados en PDF para los ejercicios DFD de Nivel 1. Los archivos `.dfd` ahora se cargan automáticamente en el editor al hacer clic en los menús para mejorar la experiencia del estudiante.
    - **DW2**: Limpieza de UI (se retiraron los tags de horas y el prefijo de clases). Se añadieron **Ejemplos Prácticos externos** al final de cada temática (E-commerce, Social Media, etc). Solucionado el error 500 inyectando scripts HTML parseados a hexadecimal.
+   - **Enlaces Algoritmos (IA y Aprendizaje)**: agregados 3 items debajo de Anthropic en `src/lib/data/enlacesData.ts`: UNAD ITP Cisco (redes/CCNA/ciberseguridad), MongoDB University (cursos/certificación NoSQL con dashboard), Capacítate para el Empleo Fundación Slim (oficios/tecnología con diploma).
+
+5. **Editor Visual DFD (Algoritmos `/algoritmos/dfd`) — Iteración actual**
+   - **Código Fuente legible**: pestañas `📖 Legible` (default, `generatePseudocode()` en `src/lib/dfd/pseudocode.js`: `Algoritmo X / Inicio / Leer / Escribir / <- / Si-Sino-FinSi / Mientras-FinMientras / Fin`) + `⚙️ .DFD` (crudo FreeDFD editable). Verificado en Problemas 1, 2, 10.
+   - **Drag & Drop completo**: paleta arrastrable + clic `+` (Lectura, Salida, Asignación, Decisión, Mientras; Inicio/Fin auto), `dropZones` azules `+ soltar aquí` con `targetList+index` (incluye ramas Sí/No y cuerpo Mientras), `handleCanvasDrop` al final, `🆕 Nuevo` (lienzo vacío), `↩ Deshacer` (30 pasos), `🗑 Último`, lista Pasos con ↑↓✕ y reordenamiento. `serializeDfd` extendido con `return→3`, `call→12`, `merge→skip`; `renderShape` con `while` morado y `merge` invisible.
+   - **Panel Propiedades**: clic en figura o paso → panel derecho editable en lenguaje natural (variables coma-separadas, texto salida, variable+fórmula con sanitizado, condiciones decisión/mientras), `pushHistory` al enfocar + `serialize` al escribir. Mapeo figura→nodo por `path` en `renderer.js` (`placeNodes(..., basePath)`, `shape.path`, `getNodeByPath`, `data-path`, resaltado azul). Roundtrip edición→serialize→parse→execute verificado.
 
 4. **Auditoría del Sistema y Refactorización (Impeccable Style & ESLint)**
    - **Backend**: Auditado con ESLint. Código completamente limpio (0 Errores).

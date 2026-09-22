@@ -57,6 +57,49 @@
   function toggleWeek(week: number) {
     activeWeek = activeWeek === week ? null : week;
   }
+
+  const roles = [
+    {
+      icon: '🧭',
+      title: 'Project Manager',
+      who: 'Docente',
+      count: '1 persona',
+      focus: 'Backlog, cronograma 6 semanas, desbloqueo e integración semanal.',
+      tasks: ['Prioriza el backlog y define qué se recorta', 'Valida la integración de cada semana', 'Coordina la demo final y la documentación']
+    },
+    {
+      icon: '📐',
+      title: 'Analista de Requerimientos / Tech Lead',
+      who: '1 estudiante',
+      count: 'Semana 1 fuerte, luego integración',
+      focus: 'Define y normaliza requerimientos técnicos: modelo Mongo, contrato API y wireframes.',
+      tasks: ['Modelo de datos y endpoints (contrato API)', 'Wireframes de pantallas clave y convenciones', 'Desde semana 2 apoya integración y panel admin']
+    },
+    {
+      icon: '🎨',
+      title: 'Frontend Dev',
+      who: '2 estudiantes',
+      count: 'En paralelo semanas 2–3',
+      focus: 'Svelte: maquetación, búsqueda, filtros, favoritos, perfiles y solicitudes.',
+      tasks: ['Pantallas principales y diseño general', 'Búsqueda, filtros, favoritos y perfiles', 'Consumo de la API según contrato']
+    },
+    {
+      icon: '🔧',
+      title: 'Backend Dev',
+      who: '2 estudiantes',
+      count: 'En paralelo semanas 2–4',
+      focus: 'Node + Express + MongoDB: auth, publicaciones, solicitudes, calificaciones.',
+      tasks: ['Registro, login y perfiles (API)', 'Publicaciones, solicitudes y calificaciones', 'Panel admin API y coincidencias simples']
+    },
+    {
+      icon: '🧪',
+      title: 'QA / DevOps (Testing y Despliegues)',
+      who: '1 estudiante',
+      count: 'Transversal desde semana 1',
+      focus: 'Plan de pruebas, integración continua y despliegues Vercel + Render + Atlas.',
+      tasks: ['Pruebas y corrección desde la semana 2', 'Despliegues y datos de demostración', 'Guion de demo y estabilización semana 5']
+    }
+  ];
 </script>
 
 <svelte:head>
@@ -69,39 +112,82 @@
   </button>
 
   <header class="hero">
-    <div class="hero-icon">🤝</div>
-    <h1>Proyecto Colaborativo: <span>TRUEQ</span></h1>
+    <span class="hero-badge">🤝 Proyecto colaborativo · DW2</span>
+    <h1>TRUEQ <span>Intercambios P2P</span></h1>
     <p>
-      Una plataforma web donde las personas pueden intercambiar objetos que ya no utilizan.
-      Cuenta con búsqueda, filtros, favoritos, perfiles, chat, solicitudes de intercambio, calificaciones 
-      y un sistema de coincidencias automáticas. También incluye un panel administrativo completo.
+      Plataforma para intercambiar objetos en desuso: búsqueda, filtros, favoritos, perfiles,
+      solicitudes, calificaciones, coincidencias simples y panel admin. Chat en tiempo real solo como extra.
     </p>
+    <div class="hero-meta">
+      <span>📅 6 semanas</span>
+      <span>👥 6 estudiantes + docente PM</span>
+      <span>🔥 Svelte · Node · MongoDB</span>
+    </div>
   </header>
 
-  <section class="stack-section">
-    <h2>Stack Tecnológico</h2>
+  <section class="block">
+    <span class="eyebrow">01 — Base técnica</span>
+    <h2>Stack tecnológico</h2>
     <div class="stack-grid">
       <div class="stack-card svelte">
         <div class="stack-icon">🔥</div>
         <h3>Frontend</h3>
-        <p>Svelte JS</p>
+        <p>Svelte</p>
+        <span class="stack-note">Búsqueda · Filtros · Perfiles</span>
       </div>
       <div class="stack-card node">
         <div class="stack-icon">🟢</div>
         <h3>Backend</h3>
         <p>Node + Express</p>
+        <span class="stack-note">Auth · API · Solicitudes</span>
       </div>
       <div class="stack-card mongo">
         <div class="stack-icon">🍃</div>
-        <h3>Base de Datos</h3>
+        <h3>Base de datos</h3>
         <p>MongoDB</p>
+        <span class="stack-note">Atlas · Modelo TRUEQ</span>
       </div>
+    </div>
+    <div class="deploy-strip">
+      <span>🚀 Despliegue:</span>
+      <strong>Vercel</strong><span class="dot">·</span>
+      <strong>Render</strong><span class="dot">·</span>
+      <strong>MongoDB Atlas</strong>
+    </div>
+  </section>
+
+  <section class="block">
+    <span class="eyebrow">02 — Equipo</span>
+    <h2>Roles (7 personas)</h2>
+    <p class="roles-intro">
+      Docente como Project Manager. El analista normaliza en semana 1 y luego se suma a integración;
+      QA/DevOps es transversal desde el inicio para no acumular pruebas ni despliegue al final.
+    </p>
+    <div class="roles-grid">
+      {#each roles as role, ri}
+        <div class="role-card" class:lead={ri === 0}>
+          <div class="role-top">
+            <span class="role-icon">{role.icon}</span>
+            <div>
+              <h3>{role.title}</h3>
+              <span class="role-who">{role.who} · {role.count}</span>
+            </div>
+          </div>
+          <p class="role-focus">{role.focus}</p>
+          <ul>
+            {#each role.tasks as t}
+              <li>{t}</li>
+            {/each}
+          </ul>
+        </div>
+      {/each}
     </div>
   </section>
 
   <div class="main-content">
-    <section class="timeline-section">
-      <h2>Cronograma (6 Semanas)</h2>
+    <section class="block timeline-section">
+      <span class="eyebrow">03 — Plan</span>
+      <h2>Cronograma (6 semanas)</h2>
       <div class="timeline">
         {#each schedule as item}
           <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -129,27 +215,39 @@
     </section>
 
     <aside class="recommendations-sidebar">
+      <div class="info-card work">
+        <div class="card-header">
+          <span class="card-icon">📌</span>
+          <h3>Acuerdos de trabajo</h3>
+        </div>
+        <ul>
+          <li><strong>Integración cada viernes:</strong> nada se queda en rama más de una semana.</li>
+          <li><strong>Ramas por módulo</strong> + <code>main</code> protegida; PR con revisión de otro equipo.</li>
+          <li><strong>Contrato API primero:</strong> si cambia un endpoint, se avisa en el grupo el mismo día.</li>
+        </ul>
+      </div>
+
       <div class="info-card warning">
         <div class="card-header">
           <span class="card-icon">✂️</span>
-          <h3>¿Qué recortar para ser realistas?</h3>
+          <h3>¿Qué recortar?</h3>
         </div>
         <ul>
-          <li>Las <strong>estadísticas avanzadas y los reportes</strong> del panel admin pasan a ser opcionales.</li>
-          <li>El <strong>chat en tiempo real (WebSockets)</strong> queda como extra, no como requisito.</li>
-          <li>Las <strong>coincidencias automáticas</strong> empiezan con una regla simple; si sobra tiempo se mejoran.</li>
+          <li><strong>Reportes avanzados</strong> del admin → opcional.</li>
+          <li><strong>Chat realtime</strong> → extra; alternativa: mensajes por solicitud.</li>
+          <li><strong>Matching</strong> → regla simple por categoría/etiquetas.</li>
         </ul>
       </div>
 
       <div class="info-card tips">
         <div class="card-header">
           <span class="card-icon">⏱️</span>
-          <h3>Recomendaciones Clave</h3>
+          <h3>Recomendaciones</h3>
         </div>
         <ul>
-          <li>Hacer una <strong>integración al final de cada semana</strong>, para no descubrir problemas en la semana 5.</li>
-          <li>Tener un responsable de integración y otro de despliegue desde el inicio.</li>
-          <li>Si el grupo es grande, asignar <strong>2 o 3 alumnos por módulo</strong> y asegurar que uno de los equipos se encargue del diseño y de las pruebas.</li>
+          <li>Integración semanal para no descubrir fallos en semana 5.</li>
+          <li>Responsables de integración y despliegue desde el día 1.</li>
+          <li>2 estudiantes por módulo (frontend/backend) + diseño y pruebas cubiertos.</li>
         </ul>
       </div>
     </aside>
@@ -185,19 +283,29 @@
 
   .hero {
     text-align: center;
-    margin-bottom: 4rem;
+    margin-bottom: 2.5rem;
+    background: linear-gradient(to bottom, #fef2f2, transparent);
+    border: 1px solid #fecaca;
+    border-radius: 20px;
+    padding: 2.5rem 1.5rem 2rem;
   }
 
-  .hero-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
+  .hero-badge {
     display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #b91c1c;
+    background: white;
+    border: 1px solid #fecaca;
+    padding: 0.3rem 0.9rem;
+    border-radius: 999px;
+    margin-bottom: 1rem;
   }
 
   .hero h1 {
     font-size: 2.5rem;
     color: #0f172a;
-    margin: 0 0 1rem 0;
+    margin: 0 0 0.75rem 0;
     letter-spacing: -0.03em;
   }
 
@@ -211,21 +319,45 @@
 
   .hero p {
     color: #475569;
-    font-size: 1.15rem;
-    max-width: 750px;
-    margin: 0 auto;
+    font-size: 1.05rem;
+    max-width: 720px;
+    margin: 0 auto 1.25rem;
     line-height: 1.6;
   }
 
-  .stack-section {
-    margin-bottom: 4rem;
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
   }
 
-  .stack-section h2 {
-    text-align: center;
-    font-size: 1.5rem;
+  .hero-meta span {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #334155;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 0.35rem 0.85rem;
+  }
+
+  .block {
+    margin-bottom: 2.5rem;
+  }
+
+  .block h2 {
+    font-size: 1.4rem;
     color: #1e293b;
-    margin-bottom: 1.5rem;
+    margin: 0.35rem 0 1rem 0;
+  }
+
+  .eyebrow {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #DC2626;
   }
 
   .stack-grid {
@@ -272,22 +404,123 @@
   .node p { color: #16a34a; }
   .mongo p { color: #0d9488; }
 
+  .stack-note {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.78rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .deploy-strip {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .deploy-strip .dot {
+    opacity: 0.4;
+  }
+
   .main-content {
     display: grid;
     grid-template-columns: 3fr 2fr;
-    gap: 3rem;
+    gap: 2rem;
+    align-items: start;
   }
 
-  @media (max-width: 800px) {
+  @media (max-width: 860px) {
     .main-content {
       grid-template-columns: 1fr;
     }
   }
 
   .timeline-section h2 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     color: #1e293b;
-    margin-bottom: 2rem;
+    margin: 0.35rem 0 1rem 0;
+  }
+
+  .roles-intro {
+    color: #475569;
+    line-height: 1.6;
+    margin: 0 0 1.5rem 0;
+  }
+
+  .roles-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  @media (max-width: 700px) {
+    .roles-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .role-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.1rem 1.2rem;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  }
+
+  .role-card.lead {
+    grid-column: 1 / -1;
+    border-left: 4px solid #DC2626;
+    background: linear-gradient(to right, #fef2f2, #ffffff);
+  }
+
+  .role-top {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .role-icon {
+    font-size: 1.6rem;
+  }
+
+  .role-card h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #0f172a;
+  }
+
+  .role-who {
+    font-size: 0.78rem;
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  .role-focus {
+    font-size: 0.88rem;
+    color: #334155;
+    margin: 0 0 0.6rem 0;
+    line-height: 1.5;
+  }
+
+  .role-card ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: #475569;
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+
+  .role-card li {
+    margin-bottom: 0.3rem;
   }
 
   .timeline {
@@ -408,6 +641,18 @@
   .info-card.tips {
     border-top: 4px solid #3b82f6;
     background: linear-gradient(to bottom, #eff6ff, #ffffff);
+  }
+
+  .info-card.work {
+    border-top: 4px solid #16a34a;
+    background: linear-gradient(to bottom, #f0fdf4, #ffffff);
+  }
+
+  .info-card code {
+    background: #f1f5f9;
+    padding: 0.1rem 0.35rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
   }
 
   .card-header {

@@ -44,6 +44,9 @@ export const categories: Category[] = [
     color: '#8b5cf6',
     links: [
       { title: 'Anthropic Skilljar — Tutoriales de IA', url: 'https://anthropic.skilljar.com/', desc: 'Cursos oficiales de Anthropic sobre inteligencia artificial', tag: 'IA' },
+      { title: 'UNAD ITP Cisco — Formación en Redes y TI', url: 'https://estudios.unad.edu.co/itp-cisco', desc: 'Programa del ITP UNAD en alianza con Cisco Networking Academy: cursos de redes, CCNA, ciberseguridad y TI con certificación', tag: 'Práctica' },
+      { title: 'MongoDB University — Cursos y Certificación', url: 'https://learn.mongodb.com/dashboard/', desc: 'Plataforma oficial de MongoDB: cursos gratuitos, rutas de aprendizaje y certificaciones en bases de datos NoSQL con panel de progreso', tag: 'Herramienta' },
+      { title: 'Capacítate para el Empleo — Fundación Carlos Slim', url: 'https://capacitateparaelempleo.org/', desc: 'Plataforma gratuita con cursos en oficios, tecnología y habilidades laborales, con diploma y rutas hacia el empleo', tag: 'Práctica' },
       { title: 'Novedades ES2024 — ES2025', url: 'https://www.youtube.com/watch?v=v6WZI1Zs9aY', desc: 'Las últimas características de JavaScript explicadas', tag: 'Video' },
       { title: 'FreeCodeCamp — 10 Comandos de Git', url: 'https://www.freecodecamp.org/espanol/news/10-comandos-de-git-que-todo-desarrollador-deberia-saber/', desc: 'Guía esencial de comandos de Git para desarrolladores', tag: 'Git' },
       { title: 'Guía Scrum', url: 'https://drive.google.com/file/d/19is_XbX2ml9Du1tJ9jspwOCiwj6loLeu/view?usp=sharing', desc: 'Documento completo con la guía de metodología Scrum', tag: 'PDF' }

@@ -110,7 +110,8 @@ Cinar/
 1. **Proyecto Personal (Algoritmos)**
    - Ruta `/algoritmos/proyecto-personal`.
    - Listado consolidado y asignación de temas y stacks para 13 estudiantes (11 base incl. "Pasto Limpio" + Jairo Granja Bravo + Julián David Reina Cabrera).
-   - Jairo (verificado en BD `projectIdea` 14/09): "Estrategia para atraer clientes en el campo de la compraventa de oro" (Angular/Node/Mongo). Julián: placeholder por definir (React/Node/Mongo).
+   - Jairo (verificado en BD `projectIdea` 14/09 vía `GET /api/enrollments/course/algoritmos`): "Estrategia para atraer clientes en el campo de la compraventa de oro" (Angular/Node/Mongo). Julián: placeholder por definir (React/Node/Mongo).
+   - **Carrusel "Desarrollo semanal" (24/09, en head antes del listado)**: slider animado 2D (translateX + scale, auto 6s con pausa en hover, flechas, dots, barra progreso) con Paso 1 ✅ registro mismo correo en GitHub/Atlas/Render/Vercel, Paso 2 ✅ repos front+back en GitHub y DB en Atlas, Paso 3 ⏳ martes 29/09 instalar OpenCode desde Dui Warp, Paso 4 ⏳ instalar Antigravity IDE (Git, explorador, terminal, IAs Claude+Google). Escala móvil corregida (compacto, sin scroll anómalo).
    - Buscador en tiempo real y tags categorizados.
 
 2. **Proyecto Colaborativo (Desarrollo Web 2)**
@@ -119,7 +120,7 @@ Cinar/
    - Stack: React (Frontend, antes Svelte), Node+Express (Backend), MongoDB (Database). Tira de despliegue: Vercel + Render + Atlas.
    - **Equipo TrueX Trade (6 + docente PM)**: docente (tú, Project Manager: backlog, integración semanal, demo) + Jeison Martinez (analista requerimientos/tech lead) + David Garcia y Jairo Zambrano (frontend React) + Andres Felipe Meza (backend) + Diego Azain y Harold Quiroz (QA/DevOps testing). William Salas fuera del proyecto.
    - **Tarea semana analista (Jeison)**: definir los requerimientos de la app de manera general — entrega miércoles 30 de septiembre (visible en Semana 1 del cronograma y en su tarjeta).
-   - Maquetado ordenado por bloques: hero compacto con chips (6 semanas / 7 personas / stack), 01 Base técnica, 02 Equipo (PM destacada + grid 2x2), 03 Cronograma + sidebar (Acuerdos de trabajo, Qué recortar, Recomendaciones).
+   - Maquetado ordenado por bloques: hero compacto con chips (6 semanas / 6 estudiantes + docente PM / React·Node·Mongo), 01 Base técnica, 02 Equipo (PM destacada + grid 2x2), 03 Cronograma + sidebar (Acuerdos de trabajo, Qué recortar, Recomendaciones).
    - Cronograma interactivo 6 semanas + acuerdos (integración viernes, ramas por módulo, contrato API primero).
 
 3. **Actividad de la Semana (Mejoras)**
@@ -139,6 +140,11 @@ Cinar/
      - Ajustada la inicialización de estados capturados por prop `$props().data` en parciales y talleres usando encadenamiento opcional `??` e inicialización inline.
      - Asignados roles `presentation` en la página `enlaces-de-consulta` para cumplir estándares ARIA.
      - Limpiados los warnings de TypeScript respecto a variables potencialmente `null` en la obtención de notas.
+
+6. **Bitácora 24/09/2026 (sesión docente)**
+   - `seed.js`: alta de Julián (algo13) solo algoritmos; 7 DW omitidos (no tocar); regla general todo otro `student` → solo algoritmos con limpieza DW; reparar `canPresent:false→true`. Pendiente `npm start` en Render para aplicar en BD prod.
+   - Sondeo prod `testcinar26bknd.onrender.com`: login admin OK; 76 enrollments en algoritmos (muchos test); 10 `projectIdea` no vacías (Jairo = compraventa oro; algo10 = "."; sin idea algo9/algo12/jd.reina).
+   - DW2 TrueX Trade: roles y stacks actualizados en página; PM = docente (tú).
 
 ## API Endpoints
 

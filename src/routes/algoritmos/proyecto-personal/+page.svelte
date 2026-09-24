@@ -40,6 +40,15 @@
       desc: 'Vamos a instalar OpenCode desde Dui Warp para empezar a codificar la app.',
       items: ['Instalar OpenCode (Dui Warp)', 'Conectar repos + Atlas', 'Primer commit de la app'],
       icon: '💻'
+    },
+    {
+      n: 'Paso 4',
+      title: 'Instalar Antigravity IDE',
+      status: 'next',
+      badge: '⏳ Próximo',
+      desc: 'Vamos a instalar Antigravity IDE para el control de cambios con Git, explorador de archivos, terminal local y ayuda adicional con IAs integradas.',
+      items: ['Control de cambios con Git', 'Explorador de archivos + terminal local', 'IAs integradas: Claude y Google'],
+      icon: '🚀'
     }
   ];
 
@@ -580,22 +589,28 @@
     position: relative;
     overflow: hidden;
     border-radius: 16px;
+    width: 100%;
   }
 
   .carousel-track {
     display: flex;
+    width: 100%;
     transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .carousel-slide {
     flex: 0 0 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     background: white;
     border: 1px solid #e2e8f0;
     border-radius: 16px;
-    padding: 1.5rem 3.5rem;
+    padding: 1.5rem 3rem;
     text-align: center;
     transform: scale(0.98);
     transition: transform 0.4s ease, box-shadow 0.4s ease;
+    overflow-wrap: anywhere;
   }
 
   .carousel-slide:hover {
@@ -687,18 +702,20 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%) scale(1);
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     border: 1px solid #e2e8f0;
     background: white;
     color: #0f172a;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
     transition: transform 0.2s ease, background 0.2s ease;
     line-height: 1;
+    z-index: 2;
+    flex-shrink: 0;
   }
 
   .carousel-arrow:hover {
@@ -756,11 +773,28 @@
     }
 
     .carousel {
-      padding: 1.25rem 1rem 1.1rem;
+      padding: 1.25rem 0.85rem 1.1rem;
     }
 
     .carousel-slide {
-      padding: 1.25rem 2.75rem;
+      padding: 1.1rem 2.4rem;
     }
+
+    .carousel-slide h3 {
+      font-size: 1.05rem;
+    }
+
+    .slide-desc {
+      font-size: 0.88rem;
+    }
+
+    .carousel-arrow {
+      width: 32px;
+      height: 32px;
+      font-size: 1.15rem;
+    }
+
+    .carousel-arrow.left { left: 0.35rem; }
+    .carousel-arrow.right { right: 0.35rem; }
   }
 </style>

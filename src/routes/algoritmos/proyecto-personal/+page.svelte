@@ -768,33 +768,112 @@
   }
 
   @media (max-width: 600px) {
+    .page {
+      padding: 1rem 0.75rem 3rem;
+      overflow-x: hidden;
+    }
+
+    .hero h1 {
+      font-size: 1.5rem;
+    }
+
+    .hero p {
+      font-size: 0.9rem;
+    }
+
+    .hero-icon {
+      font-size: 2.2rem;
+    }
+
     .projects-grid {
       grid-template-columns: 1fr;
     }
 
     .carousel {
-      padding: 1.25rem 0.85rem 1.1rem;
+      padding: 1rem 0.6rem 0.9rem;
+      border-radius: 16px;
+      margin-bottom: 1.5rem;
     }
 
-    .carousel-slide {
-      padding: 1.1rem 2.4rem;
-    }
-
-    .carousel-slide h3 {
-      font-size: 1.05rem;
-    }
-
-    .slide-desc {
-      font-size: 0.88rem;
-    }
-
-    .carousel-arrow {
-      width: 32px;
-      height: 32px;
+    .carousel-head h2 {
       font-size: 1.15rem;
     }
 
-    .carousel-arrow.left { left: 0.35rem; }
-    .carousel-arrow.right { right: 0.35rem; }
+    .carousel-head p {
+      font-size: 0.82rem;
+    }
+
+    .carousel-eyebrow {
+      font-size: 0.65rem;
+      padding: 0.25rem 0.7rem;
+    }
+
+    .carousel-slide {
+      padding: 0.9rem 2.1rem;
+      border-radius: 12px;
+    }
+
+    .carousel-slide:hover {
+      transform: scale(0.98);
+      box-shadow: none;
+    }
+
+    .slide-icon {
+      font-size: 1.7rem;
+      animation: none;
+    }
+
+    .slide-n {
+      font-size: 0.62rem;
+    }
+
+    .carousel-slide h3 {
+      font-size: 0.98rem;
+      line-height: 1.3;
+    }
+
+    .slide-badge {
+      font-size: 0.65rem;
+      padding: 0.2rem 0.6rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .slide-desc {
+      font-size: 0.8rem;
+      line-height: 1.45;
+      margin-bottom: 0.75rem;
+    }
+
+    .carousel-slide ul {
+      gap: 0.35rem;
+    }
+
+    .carousel-slide li {
+      font-size: 0.68rem;
+      padding: 0.22rem 0.55rem;
+    }
+
+    .carousel-arrow {
+      width: 28px;
+      height: 28px;
+      font-size: 1rem;
+    }
+
+    .carousel-arrow.left { left: 0.3rem; }
+    .carousel-arrow.right { right: 0.3rem; }
+
+    .carousel-dots {
+      margin-top: 0.7rem;
+      gap: 0.4rem;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+    }
+
+    .dot.active {
+      width: 22px;
+    }
   }
 </style>

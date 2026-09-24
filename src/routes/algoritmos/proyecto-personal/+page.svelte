@@ -1,6 +1,72 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { fade, slide } from 'svelte/transition';
+  import { onMount } from 'svelte';
+
+  interface WeeklyStep {
+    n: string;
+    title: string;
+    status: 'done' | 'next';
+    badge: string;
+    desc: string;
+    items: string[];
+    icon: string;
+  }
+
+  const weeklySteps: WeeklyStep[] = [
+    {
+      n: 'Paso 1',
+      title: 'Registro en plataformas',
+      status: 'done',
+      badge: '✅ Completada',
+      desc: 'Cada estudiante se registró con su mismo correo en las 4 plataformas del flujo.',
+      items: ['GitHub', 'MongoDB Atlas', 'Render', 'Vercel'],
+      icon: '📝'
+    },
+    {
+      n: 'Paso 2',
+      title: 'Repos + base de datos',
+      status: 'done',
+      badge: '✅ Completada',
+      desc: 'Se crearon los repositorios front y back en GitHub y la base de datos de la app en Mongo Atlas.',
+      items: ['Repo frontend en GitHub', 'Repo backend en GitHub', 'Database en Mongo Atlas'],
+      icon: '🗂️'
+    },
+    {
+      n: 'Paso 3 · martes 29 de septiembre',
+      title: 'Instalar OpenCode y codificar',
+      status: 'next',
+      badge: '⏳ Próximo',
+      desc: 'Vamos a instalar OpenCode desde Dui Warp para empezar a codificar la app.',
+      items: ['Instalar OpenCode (Dui Warp)', 'Conectar repos + Atlas', 'Primer commit de la app'],
+      icon: '💻'
+    }
+  ];
+
+  let activeStep = $state(0);
+  let paused = $state(false);
+  let timer: ReturnType<typeof setInterval> | null = null;
+
+  function nextStep() {
+    activeStep = (activeStep + 1) % weeklySteps.length;
+  }
+
+  function prevStep() {
+    activeStep = (activeStep - 1 + weeklySteps.length) % weeklySteps.length;
+  }
+
+  function goStep(i: number) {
+    activeStep = i;
+  }
+
+  onMount(() => {
+    timer = setInterval(() => {
+      if (!paused) nextStep();
+    }, 6000);
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  });
 
   interface Project {
     student: string;
@@ -139,6 +205,51 @@
     <h1>Proyectos Personales</h1>
     <p>Consolidado de elección de proyectos y stack tecnológico para la asignatura de Algoritmos.</p>
   </header>
+
+  <section
+    class="carousel"
+    aria-label="Avance semanal del proyecto"
+    onmouseenter={() => paused = true}
+    onmouseleave={() => paused = false}
+  >
+    <div class="carousel-head">
+      <span class="carousel-eyebrow">🛠️ Desarrollo semanal</span>
+      <h2>Tareas completadas</h2>
+      <p>Desliza para ver el avance del proyecto paso a paso.</p>
+    </div>
+    <div class="carousel-viewport">
+      <div class="carousel-track" style="transform: translateX(-{activeStep * 100}%);">
+        {#each weeklySteps as step}
+          <article class="carousel-slide {step.status}">
+            <div class="slide-icon">{step.icon}</div>
+            <span class="slide-n">{step.n}</span>
+            <h3>{step.title}</h3>
+            <span class="slide-badge {step.status}">{step.badge}</span>
+            <p class="slide-desc">{step.desc}</p>
+            <ul>
+              {#each step.items as item}
+                <li>{item}</li>
+              {/each}
+            </ul>
+          </article>
+        {/each}
+      </div>
+      <button class="carousel-arrow left" onclick={prevStep} aria-label="Anterior">‹</button>
+      <button class="carousel-arrow right" onclick={nextStep} aria-label="Siguiente">›</button>
+    </div>
+    <div class="carousel-dots">
+      {#each weeklySteps as _, i}
+        <button
+          class="dot {i === activeStep ? 'active' : ''}"
+          onclick={() => goStep(i)}
+          aria-label="Ir al paso {i + 1}"
+        ></button>
+      {/each}
+    </div>
+    <div class="carousel-progress">
+      <div class="carousel-progress-bar" style="width: {((activeStep + 1) / weeklySteps.length) * 100}%;"></div>
+    </div>
+  </section>
 
   <div class="search-container">
     <input 
@@ -423,9 +534,233 @@
     margin: 0;
   }
 
+  .carousel {
+    background: linear-gradient(135deg, #ecfdf5, #ffffff 60%, #eff6ff);
+    border: 1px solid #d1fae5;
+    border-radius: 20px;
+    padding: 1.75rem 1.5rem 1.5rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 10px 30px -12px rgba(16, 185, 129, 0.35);
+    overflow: hidden;
+  }
+
+  .carousel-head {
+    text-align: center;
+    margin-bottom: 1.25rem;
+  }
+
+  .carousel-eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #047857;
+    background: white;
+    border: 1px solid #a7f3d0;
+    padding: 0.3rem 0.9rem;
+    border-radius: 999px;
+    margin-bottom: 0.6rem;
+  }
+
+  .carousel-head h2 {
+    margin: 0 0 0.25rem;
+    font-size: 1.6rem;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+  }
+
+  .carousel-head p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.95rem;
+  }
+
+  .carousel-viewport {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+  }
+
+  .carousel-track {
+    display: flex;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .carousel-slide {
+    flex: 0 0 100%;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.5rem 3.5rem;
+    text-align: center;
+    transform: scale(0.98);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  .carousel-slide:hover {
+    transform: scale(1) translateY(-3px);
+    box-shadow: 0 14px 30px -14px rgba(15, 23, 42, 0.25);
+  }
+
+  .carousel-slide.next {
+    border-color: #fcd34d;
+    background: linear-gradient(to bottom, #fffbeb, #ffffff 70%);
+  }
+
+  .slide-icon {
+    font-size: 2.5rem;
+    animation: slideFloat 3s ease-in-out infinite;
+  }
+
+  @keyframes slideFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-6px) scale(1.08); }
+  }
+
+  .slide-n {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #10b981;
+    margin: 0.5rem 0 0.15rem;
+  }
+
+  .carousel-slide h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+    color: #0f172a;
+  }
+
+  .slide-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.25rem 0.8rem;
+    border-radius: 999px;
+    margin-bottom: 0.75rem;
+  }
+
+  .slide-badge.done {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+  }
+
+  .slide-badge.next {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+  }
+
+  .slide-desc {
+    color: #475569;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    max-width: 560px;
+    margin: 0 auto 1rem;
+  }
+
+  .carousel-slide ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .carousel-slide li {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #334155;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+  }
+
+  .carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) scale(1);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #0f172a;
+    font-size: 1.4rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    transition: transform 0.2s ease, background 0.2s ease;
+    line-height: 1;
+  }
+
+  .carousel-arrow:hover {
+    transform: translateY(-50%) scale(1.12);
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+  }
+
+  .carousel-arrow.left { left: 0.6rem; }
+  .carousel-arrow.right { right: 0.6rem; }
+
+  .carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    border: none;
+    background: #cbd5e1;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.25s ease, background 0.25s ease, width 0.25s ease;
+  }
+
+  .dot.active {
+    width: 28px;
+    background: #10b981;
+    transform: scale(1.05);
+  }
+
+  .carousel-progress {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    margin-top: 0.85rem;
+    overflow: hidden;
+  }
+
+  .carousel-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #3b82f6);
+    border-radius: 999px;
+    transition: width 0.5s ease;
+  }
+
   @media (max-width: 600px) {
     .projects-grid {
       grid-template-columns: 1fr;
+    }
+
+    .carousel {
+      padding: 1.25rem 1rem 1.1rem;
+    }
+
+    .carousel-slide {
+      padding: 1.25rem 2.75rem;
     }
   }
 </style>

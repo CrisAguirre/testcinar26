@@ -167,7 +167,7 @@ Cinar/
 
 ## Credenciales
 
-- **Admin**: `admin@cinar.com` / `Janis724@` (role: 'admin')
+- **Admin**: `admin@cinar.com` / `Janis724@#$%` (role: 'admin')
 - **Coordinador**: `coordinacion@cinarsistemas.edu.co` (role: 'coordinator')
 
 ## Dependencias Conocidas

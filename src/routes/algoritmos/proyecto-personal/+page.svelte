@@ -87,6 +87,20 @@
       frontend: 'React',
       backend: 'Node-express',
       database: 'Mongo'
+    },
+    {
+      student: 'Jairo Granja Bravo',
+      idea: 'Estrategia para atraer clientes en el campo de la compraventa de oro.',
+      frontend: 'Angular',
+      backend: 'Node-express',
+      database: 'Mongo'
+    },
+    {
+      student: 'Julián David Reina Cabrera',
+      idea: 'Proyecto personal por definir — pendiente de asignación por el estudiante.',
+      frontend: 'React',
+      backend: 'Node-express',
+      database: 'Mongo'
     }
   ];
 

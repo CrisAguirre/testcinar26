@@ -63,7 +63,7 @@
     {
       icon: '🧭',
       title: 'Project Manager',
-      who: 'Docente',
+      who: 'Docente (tú)',
       count: '1 persona',
       focus: 'Backlog, cronograma 6 semanas, desbloqueo e integración semanal.',
       tasks: ['Prioriza el backlog y define qué se recorta', 'Valida la integración de cada semana', 'Coordina la demo final y la documentación']
@@ -114,7 +114,7 @@
 
   <header class="hero">
     <span class="hero-badge">🤝 Proyecto colaborativo · DW2</span>
-    <h1>TRUEQ <span>Intercambios P2P</span></h1>
+    <h1>TrueX Trade <span>Intercambios P2P</span></h1>
     <p>
       Plataforma para intercambiar objetos en desuso: búsqueda, filtros, favoritos, perfiles,
       solicitudes, calificaciones, coincidencias simples y panel admin. Chat en tiempo real solo como extra.
@@ -146,7 +146,7 @@
         <div class="stack-icon">🍃</div>
         <h3>Base de datos</h3>
         <p>MongoDB</p>
-        <span class="stack-note">Atlas · Modelo TRUEQ</span>
+        <span class="stack-note">Atlas · Modelo TrueX Trade</span>
       </div>
     </div>
     <div class="deploy-strip">
@@ -161,8 +161,10 @@
     <span class="eyebrow">02 — Equipo</span>
     <h2>Roles (7 personas)</h2>
     <p class="roles-intro">
-      Docente como Project Manager. El analista normaliza en semana 1 y luego se suma a integración;
+      Tú (docente) como Project Manager. El analista normaliza en semana 1 y luego se suma a integración;
       QA/DevOps es transversal desde el inicio para no acumular pruebas ni despliegue al final.
+      Equipo TrueX Trade (6): Diego + Harold (QA), Jeison (analista), David + Jairo (frontend), Felipe (backend).
+      William David Salas Lasso queda fuera del proyecto.
     </p>
     <div class="roles-grid">
       {#each roles as role, ri}

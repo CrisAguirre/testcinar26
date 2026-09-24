@@ -1,4 +1,4 @@
-# Cinar - Estado Actual de la Plataforma (Septiembre 2026)
+# Cinar - Estado Actual de la Plataforma (24 Septiembre 2026)
 
 ## Estructura del Proyecto
 
@@ -22,7 +22,7 @@ Cinar/
 │   │   │   │   ├── notas/
 │   │   │   │   ├── enlaces-de-consulta/
 │   │   │   │   ├── actividad-de-la-semana/  # Simplificada y con ejemplos prácticos externos.
-│   │   │   │   └── proyecto-colaborativo/   # TRUEQ (Intercambios P2P): stack + roles (7) + cronograma 6 sem. Maquetado ordenado 01/02/03.
+│   │   │   │   └── proyecto-colaborativo/   # TrueX Trade (Intercambios P2P): React front + roles asignados (6+docente) + cronograma 6 sem. Maquetado ordenado 01/02/03.
 │   │   │   └── algoritmos/         # Algoritmos
 │   │   │       ├── parcial-1/
 │   │   │       ├── parcial-2/
@@ -31,7 +31,7 @@ Cinar/
 │   │   │       ├── enlaces-de-consulta/  # Usa $lib/data/enlacesData.ts (IA y Aprendizaje +3: UNAD Cisco, MongoDB University, Capacítate).
 │   │   │       ├── actividad-de-la-semana/  # Ejercicios DFD Nivel 1 con carga automática.
 │   │   │       ├── dfd/             # Editor visual DFD: pseudocódigo legible + drag&drop + panel propiedades.
-│   │   │       └── proyecto-personal/       # NUEVO: Asignación de proyectos por estudiante.
+│   │   │       └── proyecto-personal/       # Asignación de proyectos por estudiante (13: 11 base + Jairo + Julián).
 │   │   ├── lib/
 │   │   │   ├── data/                # Bancos de preguntas (DW2 y Algo) + enlacesData.ts
 │   │   │   ├── dfd/                 # parser.js (parse/serialize + return/call/merge), renderer.js (path por figura), executor.js, pseudocode.js
@@ -74,6 +74,8 @@ Cinar/
 ### Desarrollo Web 2 y Algoritmos
 - **Acceso mediante Enrollments**: Requiere inscripción explícita.
 - `seed.js` inscribe automáticamente a los alumnos base a los cursos correspondientes durante el arranque del servidor.
+- **Regla 24/09**: los 7 DW (`d.azain, j.zambrano, d.garcia, h.quiroz, a.meza, jeison.martinez, w.salas`) NO se tocan (omitidos en seed). Todo otro `student` → solo `algoritmos` (se crea/repara `canPresent:true` y se borran DW1/DW2).
+- Nuevo alumno algoritmos: `Julián David Reina Cabrera / jd.reina@cinar.edu.co / JDRC13@LgC26 / @cc3500` (solo algoritmos).
 - El Panel de control (`+page.svelte`) utiliza `$derived` para mostrar reactivamente las tarjetas de los cursos según los datos cacheados en `$preloadedMyEnrollments`.
 - Si el usuario accede a la URL directa y no está inscrito, es redirigido mediante hooks reactivos (`$effect`).
 
@@ -107,14 +109,16 @@ Cinar/
 
 1. **Proyecto Personal (Algoritmos)**
    - Ruta `/algoritmos/proyecto-personal`.
-   - Listado consolidado y asignación de temas y stacks tecnológicos para los 11 estudiantes (incluido "Pasto Limpio" de Andrés Felipe Mena). 
+   - Listado consolidado y asignación de temas y stacks para 13 estudiantes (11 base incl. "Pasto Limpio" + Jairo Granja Bravo + Julián David Reina Cabrera).
+   - Jairo (verificado en BD `projectIdea` 14/09): "Estrategia para atraer clientes en el campo de la compraventa de oro" (Angular/Node/Mongo). Julián: placeholder por definir (React/Node/Mongo).
    - Buscador en tiempo real y tags categorizados.
 
 2. **Proyecto Colaborativo (Desarrollo Web 2)**
    - Ruta `/desarrollo-web-2/proyecto-colaborativo`.
-   - Presenta el proyecto **TRUEQ** (Plataforma de Intercambios).
-   - Stack: Svelte (Frontend), Node+Express (Backend), MongoDB (Database). Tira de despliegue: Vercel + Render + Atlas.
-   - **Equipo y Roles (7 personas)**: docente PM (backlog, integración semanal, demo) + 1 analista requerimientos/tech lead (modelo Mongo, contrato API, wireframes semana 1, luego integración) + 2 frontend Svelte + 2 backend Express/Mongo + 1 QA/DevOps testing y despliegues transversal.
+   - Proyecto **TrueX Trade** (antes TRUEQ, Plataforma de Intercambios).
+   - Stack: React (Frontend, antes Svelte), Node+Express (Backend), MongoDB (Database). Tira de despliegue: Vercel + Render + Atlas.
+   - **Equipo TrueX Trade (6 + docente PM)**: docente (tú, Project Manager: backlog, integración semanal, demo) + Jeison Martinez (analista requerimientos/tech lead) + David Garcia y Jairo Zambrano (frontend React) + Andres Felipe Meza (backend) + Diego Azain y Harold Quiroz (QA/DevOps testing). William Salas fuera del proyecto.
+   - **Tarea semana analista (Jeison)**: definir los requerimientos de la app de manera general — entrega miércoles 30 de septiembre (visible en Semana 1 del cronograma y en su tarjeta).
    - Maquetado ordenado por bloques: hero compacto con chips (6 semanas / 7 personas / stack), 01 Base técnica, 02 Equipo (PM destacada + grid 2x2), 03 Cronograma + sidebar (Acuerdos de trabajo, Qué recortar, Recomendaciones).
    - Cronograma interactivo 6 semanas + acuerdos (integración viernes, ramas por módulo, contrato API primero).
 

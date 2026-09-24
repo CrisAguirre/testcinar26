@@ -9,6 +9,7 @@
       week: 1,
       title: 'Semana 1: Base y acuerdos',
       tasks: [
+        'Jeison (analista): definir los requerimientos de la app de manera general — entrega miércoles 30 de septiembre.',
         'Definir el modelo de datos, los endpoints de la API y los wireframes de las pantallas clave.',
         'Repartir equipos por módulo y dejar el repositorio, la base de datos y la estructura del proyecto listos.',
         'Acordar convenciones: ramas, estilos, formato de respuestas de la API.'
@@ -70,23 +71,23 @@
     {
       icon: '📐',
       title: 'Analista de Requerimientos / Tech Lead',
-      who: '1 estudiante',
+      who: 'Jeison Stiven Martinez Zambra',
       count: 'Semana 1 fuerte, luego integración',
       focus: 'Define y normaliza requerimientos técnicos: modelo Mongo, contrato API y wireframes.',
-      tasks: ['Modelo de datos y endpoints (contrato API)', 'Wireframes de pantallas clave y convenciones', 'Desde semana 2 apoya integración y panel admin']
+      tasks: ['Modelo de datos y endpoints (contrato API)', 'Wireframes de pantallas clave y convenciones', 'TAREA SEMANA: definir los requerimientos de la app de manera general — entrega miércoles 30 de septiembre', 'Desde semana 2 apoya integración y panel admin']
     },
     {
       icon: '🎨',
       title: 'Frontend Dev',
-      who: '2 estudiantes',
-      count: 'En paralelo semanas 2–3',
-      focus: 'Svelte: maquetación, búsqueda, filtros, favoritos, perfiles y solicitudes.',
-      tasks: ['Pantallas principales y diseño general', 'Búsqueda, filtros, favoritos y perfiles', 'Consumo de la API según contrato']
+      who: 'David Alejandro Garcia Enriquez + Jairo Daniel Zambrano Valleid',
+      count: '2 estudiantes · En paralelo semanas 2–3',
+      focus: 'React: maquetación, búsqueda, filtros, favoritos, perfiles y solicitudes.',
+      tasks: ['Pantallas principales y diseño general en React', 'Búsqueda, filtros, favoritos y perfiles', 'Consumo de la API según contrato']
     },
     {
       icon: '🔧',
       title: 'Backend Dev',
-      who: '2 estudiantes',
+      who: 'Andres Felipe Meza Leon',
       count: 'En paralelo semanas 2–4',
       focus: 'Node + Express + MongoDB: auth, publicaciones, solicitudes, calificaciones.',
       tasks: ['Registro, login y perfiles (API)', 'Publicaciones, solicitudes y calificaciones', 'Panel admin API y coincidencias simples']
@@ -94,8 +95,8 @@
     {
       icon: '🧪',
       title: 'QA / DevOps (Testing y Despliegues)',
-      who: '1 estudiante',
-      count: 'Transversal desde semana 1',
+      who: 'Diego Sebastian Azain Moran + Harold Esteban Quiroz Alvarez',
+      count: '2 estudiantes · Transversal desde semana 1',
       focus: 'Plan de pruebas, integración continua y despliegues Vercel + Render + Atlas.',
       tasks: ['Pruebas y corrección desde la semana 2', 'Despliegues y datos de demostración', 'Guion de demo y estabilización semana 5']
     }
@@ -121,7 +122,7 @@
     <div class="hero-meta">
       <span>📅 6 semanas</span>
       <span>👥 6 estudiantes + docente PM</span>
-      <span>🔥 Svelte · Node · MongoDB</span>
+      <span>⚛️ React · Node · MongoDB</span>
     </div>
   </header>
 
@@ -130,9 +131,9 @@
     <h2>Stack tecnológico</h2>
     <div class="stack-grid">
       <div class="stack-card svelte">
-        <div class="stack-icon">🔥</div>
+        <div class="stack-icon">⚛️</div>
         <h3>Frontend</h3>
-        <p>Svelte</p>
+        <p>React</p>
         <span class="stack-note">Búsqueda · Filtros · Perfiles</span>
       </div>
       <div class="stack-card node">

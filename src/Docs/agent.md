@@ -110,7 +110,7 @@ Cinar/
 1. **Proyecto Personal (Algoritmos)**
    - Ruta `/algoritmos/proyecto-personal`.
    - Listado consolidado y asignación de temas y stacks para 13 estudiantes (11 base incl. "Pasto Limpio" + Jairo Granja Bravo + Julián David Reina Cabrera).
-   - Jairo (verificado en BD `projectIdea` 14/09 vía `GET /api/enrollments/course/algoritmos`): "Estrategia para atraer clientes en el campo de la compraventa de oro" (Angular/Node/Mongo). Julián: placeholder por definir (React/Node/Mongo).
+   - Jairo (verificado en BD `projectIdea` 14/09 vía `GET /api/enrollments/course/algoritmos`): "Estrategia para atraer clientes en el campo de la compraventa de oro" (Angular/Node/Mongo). Julián: "Prácticas de como obtener alimentos de buena calidad teniendo en cuenta el medio ambiente" (React/Node/Mongo).
    - **Carrusel "Desarrollo semanal" (24/09, en head antes del listado)**: slider animado 2D (translateX + scale, auto 6s con pausa en hover, flechas, dots, barra progreso) con Paso 1 ✅ registro mismo correo en GitHub/Atlas/Render/Vercel, Paso 2 ✅ repos front+back en GitHub y DB en Atlas, Paso 3 ⏳ martes 29/09 instalar OpenCode desde Dui Warp, Paso 4 ⏳ instalar Antigravity IDE (Git, explorador, terminal, IAs Claude+Google). Escala móvil corregida (compacto, sin scroll anómalo).
    - Buscador en tiempo real y tags categorizados.
 

@@ -172,7 +172,7 @@
     },
     {
       student: 'Julián David Reina Cabrera',
-      idea: 'Proyecto personal por definir — pendiente de asignación por el estudiante.',
+      idea: 'Prácticas de como obtener alimentos de buena calidad teniendo en cuenta el medio ambiente.',
       frontend: 'React',
       backend: 'Node-express',
       database: 'Mongo'

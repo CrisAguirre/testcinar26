@@ -244,11 +244,14 @@ function safeEvaluate(expr, vars) {
 // DFD Executor
 // ============================================================
 export class DfdExecutor {
-  constructor(ast, onInput, onOutput) {
+  constructor(ast, onInput, onOutput, onStep = null, stepDelayMs = 0) {
     this.ast = ast;
     this.variables = {};
     this.onInput = onInput;
     this.onOutput = onOutput;
+    this.onStep = onStep;
+    this.stepDelayMs = stepDelayMs;
+    this.stopped = false;
 
     // Initialize variables
     if (this.ast.variables) {
@@ -273,7 +276,24 @@ export class DfdExecutor {
     }
   }
 
-  async runNode(node) {
+  stop() {
+    this.stopped = true;
+  }
+
+  async notifyStep(path) {
+    if (typeof this.onStep === 'function') {
+      try {
+        await this.onStep(path ? [...path] : null, { ...this.variables });
+      } catch {
+        // ignorar errores del resaltado para no frenar la ejecución
+      }
+    }
+    if (this.stepDelayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, this.stepDelayMs));
+    }
+  }
+
+  async runNode(node, path = null) {
     switch (node.type) {
       case 'output': {
         const parts = node.text.split(/,(?=(?:(?:[^']*'){2})*[^']*$)/);
@@ -309,17 +329,17 @@ export class DfdExecutor {
       case 'decision': {
         const conditionResult = this.evaluateExpression(node.condition);
         if (conditionResult) {
-          await this.runNodes(node.trueBranch);
+          await this.runNodes(node.trueBranch, path ? [...path, 'true'] : ['true']);
         } else {
-          await this.runNodes(node.falseBranch);
+          await this.runNodes(node.falseBranch, path ? [...path, 'false'] : ['false']);
         }
         break;
       }
 
       case 'while': {
         let safety = 0;
-        while (this.evaluateExpression(node.condition)) {
-          await this.runNodes(node.body);
+        while (!this.stopped && this.evaluateExpression(node.condition)) {
+          await this.runNodes(node.body, path ? [...path, 'body'] : ['body']);
           if (++safety > 10000) {
             await this.onOutput('[Error]: Bucle infinito detectado, deteniendo.');
             break;
@@ -330,17 +350,22 @@ export class DfdExecutor {
     }
   }
 
-  async runNodes(nodes) {
-    for (const node of nodes) {
+  async runNodes(nodes, basePath = []) {
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (this.stopped) break;
       // Yield to browser event loop to prevent UI freezing
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
       if (node.type === 'end' || node.type === 'return') break;
-      await this.runNode(node);
+      const nodePath = [...basePath, i];
+      await this.notifyStep(nodePath);
+      await this.runNode(node, nodePath);
     }
   }
 
   async execute() {
-    await this.runNodes(this.ast.nodes);
-    await this.onOutput('--- Ejecución Finalizada ---');
+    await this.runNodes(this.ast.nodes, []);
+    await this.notifyStep(null);
+    if (!this.stopped) await this.onOutput('--- Ejecución Finalizada ---');
   }
 }

@@ -17,9 +17,18 @@
   let sourceTab = $state<'legible' | 'dfd'>('legible');
   let isInitialLoad = $state(true);
   let history = $state<string[]>([]);
+  let redoHistory = $state<string[]>([]);
   let activeDropIndex = $state(-1);
   let selectedPath = $state<(number | string)[] | null>(null);
   let editArmed = $state(false);
+  // Mejoras UI/manejo: zoom, guía, ejecución paso a paso, validación
+  let zoom = $state(1);
+  let showGuide = $state(false);
+  let executingPath = $state<(number | string)[] | null>(null);
+  let liveVariables = $state<Record<string, string | number>>({});
+  let parseErrorMsg = $state('');
+  let currentExecutor = $state<any>(null);
+  let showVariables = $state(true);
   
   $effect(() => {
     if (isInitialLoad && $page.url.searchParams.has('load')) {
@@ -53,12 +62,21 @@
   }
   
   let ast = $derived.by(() => {
-    if (!dfdContent) return null;
+    if (!dfdContent) {
+      parseErrorMsg = '';
+      return null;
+    }
     try {
       const parsed = parseDfd(dfdContent);
-      return parsed.error ? null : parsed;
+      if (parsed.error) {
+        parseErrorMsg = parsed.error;
+        return null;
+      }
+      parseErrorMsg = '';
+      return parsed;
     } catch (err) {
-      console.error("Parse error", err);
+      console.error('Parse error', err);
+      parseErrorMsg = 'No pude leer el código .DFD. Revisa la pestaña ⚙️ .DFD o pulsa 🆕 Nuevo.';
       return null;
     }
   });
@@ -108,6 +126,124 @@
     return node;
   }
 
+  function getParentList(root, path) {
+    if (!root || !path || path.length === 0) return null;
+    if (path.length === 1) return root.nodes;
+    const parentPath = path.slice(0, -1);
+    let list = root.nodes;
+    let node = null;
+    for (let k = 0; k < parentPath.length; k++) {
+      const seg = parentPath[k];
+      if (typeof seg === 'number') {
+        node = list?.[seg] ?? null;
+        if (!node) return null;
+      } else {
+        if (!node) return null;
+        if (seg === 'true') list = node.trueBranch;
+        else if (seg === 'false') list = node.falseBranch;
+        else if (seg === 'body') list = node.body;
+        else return null;
+        node = null;
+      }
+    }
+    return list;
+  }
+
+  function describeNodeShort(node) {
+    if (!node) return 'vacío';
+    if (node.type === 'input') return `📥 Leer ${(node.variables || []).join(', ') || '…'}`;
+    if (node.type === 'output') return `📤 Escribir ${(node.text || '').slice(0, 28) || '…'}`;
+    if (node.type === 'assignment')
+      return `⚙️ ${(node.assignments?.[0]?.variable ?? 'x')} ← ${(node.assignments?.[0]?.expression ?? '…')}`;
+    if (node.type === 'decision') return `🔀 Si ${node.condition || '(falta condición)'}`;
+    if (node.type === 'while') return `🔁 Mientras ${node.condition || '(falta condición)'}`;
+    return node.type;
+  }
+
+  function flattenSteps(nodes, basePath = [], depth = 0, acc = []) {
+    nodes.forEach((node, i) => {
+      if (node.type === 'end' || node.type === 'return') return;
+      const path = [...basePath, i];
+      acc.push({ node, path, depth });
+      if (node.type === 'decision') {
+        if (node.trueBranch?.length) {
+          acc.push({ label: '↳ Rama Sí', isLabel: true, depth: depth + 1 });
+          flattenSteps(node.trueBranch, [...path, 'true'], depth + 1, acc);
+        }
+        if (node.falseBranch?.length) {
+          acc.push({ label: '↳ Rama No', isLabel: true, depth: depth + 1 });
+          flattenSteps(node.falseBranch, [...path, 'false'], depth + 1, acc);
+        }
+      } else if (node.type === 'while' && node.body?.length) {
+        acc.push({ label: '↳ Cuerpo del Mientras', isLabel: true, depth: depth + 1 });
+        flattenSteps(node.body, [...path, 'body'], depth + 1, acc);
+      }
+    });
+    return acc;
+  }
+
+  let flatSteps = $derived.by(() => {
+    if (!ast?.nodes) return [];
+    try {
+      return flattenSteps(ast.nodes);
+    } catch {
+      return [];
+    }
+  });
+
+  let stepCount = $derived.by(() => flatSteps.filter((s) => !s.isLabel).length);
+
+  const VAR_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
+  function validateNode(node) {
+    const warnings = [];
+    if (!node) return warnings;
+    if (node.type === 'input') {
+      if (!node.variables || node.variables.length === 0 || node.variables.every((v) => !v))
+        warnings.push('Agrega al menos una variable, ej: n1, n2.');
+      else
+        for (const v of node.variables) {
+          if (v && !VAR_RE.test(v)) warnings.push(`"${v}" no es un nombre válido. Usa letras, números y _.`);
+        }
+    } else if (node.type === 'output') {
+      if (!node.text || !node.text.trim()) warnings.push('Escribe qué mostrar, ej: \'La suma es: \', suma.');
+    } else if (node.type === 'assignment') {
+      for (const a of node.assignments || []) {
+        if (!a.variable || !VAR_RE.test(a.variable))
+          warnings.push(`Variable "${a.variable || 'vacía'}" inválida. Ej: suma.`);
+        if (!a.expression || !a.expression.trim())
+          warnings.push(`Falta la fórmula para ${a.variable || 'la variable'}. Ej: n1+n2.`);
+      }
+    } else if (node.type === 'decision' || node.type === 'while') {
+      if (!node.condition || !node.condition.trim())
+        warnings.push('Escribe la condición, ej: n1 > n2.');
+    }
+    return warnings;
+  }
+
+  let selectedWarnings = $derived.by(() => validateNode(selectedNode));
+
+  let totalWarnings = $derived.by(() => {
+    if (!ast?.nodes) return 0;
+    let n = 0;
+    const walk = (nodes) => {
+      for (const node of nodes) {
+        if (node.type === 'end' || node.type === 'return') continue;
+        n += validateNode(node).length;
+        if (node.type === 'decision') {
+          walk(node.trueBranch || []);
+          walk(node.falseBranch || []);
+        } else if (node.type === 'while') walk(node.body || []);
+      }
+    };
+    try {
+      walk(ast.nodes);
+    } catch {
+      // ignorar
+    }
+    return n;
+  });
+
   let selectedNode = $derived.by(() => {
     if (!ast || !selectedPath) return null;
     try {
@@ -149,8 +285,8 @@
     }
   }
 
-  function selectStep(i) {
-    selectedPath = [i];
+  function selectStep(path) {
+    selectedPath = Array.isArray(path) ? [...path] : [path];
     editArmed = false;
   }
   
@@ -178,33 +314,42 @@
   }
 
   function handleSave() {
-    // If we modified AST visually (future feature), serialize it back.
-    // For now, just save dfdContent
     let contentToSave = dfdContent;
     if (ast) {
-       contentToSave = serializeDfd(ast);
+      contentToSave = serializeDfd(ast);
     }
-    
+
     const blob = new Blob([contentToSave], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = currentFileName;
+    a.download = currentFileName.endsWith('.dfd') ? currentFileName : `${currentFileName}.dfd`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    consoleOutput = [...consoleOutput, `💾 Archivo "${a.download}" guardado. Puedes volver a abrirlo con 📂 Abrir Local.`];
   }
-  
-  async function handleRun() {
-    if (!ast) return;
-    
+
+  async function runExecutor(stepDelayMs, modeLabel) {
+    if (!ast) {
+      consoleOutput = ['⚠️ Primero carga o crea un algoritmo. Pulsa 🆕 Nuevo o elige un Problema 1-16.'];
+      return;
+    }
+    if (totalWarnings > 0) {
+      consoleOutput = [
+        `⚠️ Tienes ${totalWarnings} aviso(s) en los componentes. Revísalos en el panel derecho antes de ejecutar. Igual intento ejecutar…`
+      ];
+    } else {
+      consoleOutput = [`--- ${modeLabel} ---`];
+    }
     isExecuting = true;
-    consoleOutput = ['--- Iniciando Ejecución ---'];
-    
+    executingPath = null;
+    liveVariables = {};
+
     try {
       const executor = new DfdExecutor(
-        ast, 
+        ast,
         async (promptText) => {
           promptMessage = promptText;
           promptValue = '';
@@ -215,16 +360,43 @@
         },
         async (text) => {
           consoleOutput = [...consoleOutput, text];
-        }
+        },
+        async (path, vars) => {
+          executingPath = path;
+          liveVariables = vars || {};
+        },
+        stepDelayMs
       );
-      
+      currentExecutor = executor;
       await executor.execute();
     } catch (e) {
       console.error(e);
       consoleOutput = [...consoleOutput, `[Error de Motor]: ${e.message || e}`];
     } finally {
       isExecuting = false;
+      currentExecutor = null;
+      // mantener el último resaltado 1.2s para que el estudiante vea dónde terminó
+      const lastPath = executingPath;
+      if (lastPath) setTimeout(() => { if (!isExecuting) executingPath = null; }, 1200);
     }
+  }
+
+  async function handleRun() {
+    await runExecutor(0, '▶ Ejecución rápida iniciada');
+  }
+
+  async function handleStepRun() {
+    await runExecutor(750, '🐢 Paso a paso: mira cómo se ilumina cada figura y cambian las variables →');
+  }
+
+  function handleStop() {
+    try {
+      currentExecutor?.stop?.();
+    } catch {
+      // ignorar
+    }
+    isExecuting = false;
+    consoleOutput = [...consoleOutput, '⏹ Ejecución detenida por el usuario.'];
   }
 
   function renderShape(shape) {
@@ -248,7 +420,10 @@
     const rx = 4;
     const safeText = String(shape.text ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const isSel = selectedPath && shape.path && pathKey(selectedPath) === pathKey(shape.path);
-    const selStyle = isSel ? ' stroke:#1d4ed8; stroke-width:4;' : '';
+    const isExec = executingPath && shape.path && pathKey(executingPath) === pathKey(shape.path);
+    let selStyle = '';
+    if (isExec) selStyle = ' stroke:#16a34a; stroke-width:5; filter:drop-shadow(0 0 6px #22c55e);';
+    else if (isSel) selStyle = ' stroke:#1d4ed8; stroke-width:4;';
     const pathAttr = shape.path ? ` data-path='${JSON.stringify(shape.path)}'` : '';
     return `
       <g transform="translate(${shape.x - shape.width/2}, ${shape.y})"${pathAttr} style="cursor:pointer;">
@@ -313,24 +488,33 @@
   }
 
   function createNode(type) {
-    if (type === 'output') return { type: 'output', text: "'Nuevo mensaje'" };
-    if (type === 'input') return { type: 'input', variables: ['var1'] };
+    if (type === 'output') return { type: 'output', text: "'Resultado: ', x" };
+    if (type === 'input') return { type: 'input', variables: ['n1'] };
     if (type === 'process') return { type: 'assignment', assignments: [{ variable: 'x', expression: '0' }] };
     if (type === 'decision') return { type: 'decision', condition: 'x > 0', trueBranch: [], falseBranch: [], flag: 0 };
-    if (type === 'while') return { type: 'while', condition: 'x > 0', body: [] };
+    if (type === 'while') return { type: 'while', condition: 'contador <= 5', body: [] };
     return null;
   }
 
+  function componentLabel(type) {
+    if (type === 'input') return 'Lectura 📥 (pedir dato)';
+    if (type === 'output') return 'Salida 📤 (mostrar resultado)';
+    if (type === 'process') return 'Asignación ⚙️ (calcular)';
+    if (type === 'decision') return 'Decisión 🔀 (pregunta Sí/No)';
+    if (type === 'while') return 'Mientras 🔁 (repetir)';
+    return type;
+  }
+
   function pushHistory() {
-    history = [...history.slice(-29), dfdContent];
+    history = [...history.slice(-49), dfdContent];
+    redoHistory = [];
   }
 
   function ensureAst() {
     if (ast) return true;
-    // Si no hay algoritmo, crear uno vacío para poder arrastrar
     pushHistory();
     dfdContent = serializeDfd({ variables: [], nodes: [{ type: 'end' }] });
-    consoleOutput = ['--- Nuevo algoritmo creado, ahora arrastra componentes ---'];
+    consoleOutput = ['✨ Creé un algoritmo vacío. Paso 1: arrastra una Lectura 📥. Paso 2: agrega una Salida 📤. Paso 3: pulsa ▶ Ejecutar.'];
     return true;
   }
 
@@ -339,10 +523,10 @@
     const newNode = createNode(type);
     if (!newNode || !targetList) return;
     pushHistory();
-    targetList.splice(index, 0, newNode);
+    const safeIndex = Math.max(0, Math.min(index, targetList.length));
+    targetList.splice(safeIndex, 0, newNode);
     dfdContent = serializeDfd(ast);
-    const label = type === 'input' ? 'Lectura' : type === 'output' ? 'Salida' : type === 'process' ? 'Asignación' : type === 'decision' ? 'Decisión' : 'Mientras';
-    consoleOutput = [`--- Componente "${label}" insertado en la posición ${index + 1} ---`];
+    consoleOutput = [`✅ ${componentLabel(type)} agregado en la posición ${safeIndex + 1}. Clic en la figura para editar sus datos →`];
   }
 
   function handleDrop(e, zone) {
@@ -355,7 +539,7 @@
     insertNodeAt(zone.targetList, zone.index, type);
   }
 
-  // Fallback táctil / accesible: clic en paleta agrega al final del flujo principal
+  // Clic en paleta agrega al final del flujo principal (accesible y táctil)
   function handlePaletteClick(type) {
     if (!ast && !ensureAst()) return;
     insertNodeAt(ast.nodes, Math.max(0, ast.nodes.length - 1), type);
@@ -371,7 +555,6 @@
       ensureAst();
       return;
     }
-    // Soltado fuera de una zona precisa: agregar al final (antes del Fin)
     insertNodeAt(ast.nodes, Math.max(0, ast.nodes.length - 1), type);
   }
 
@@ -381,42 +564,154 @@
     currentFileName = 'nuevo.dfd';
     selectedPath = null;
     editArmed = false;
+    executingPath = null;
+    liveVariables = {};
     dfdContent = serializeDfd({ variables: [], nodes: [{ type: 'end' }] });
-    consoleOutput = ['--- Lienzo nuevo. Arrastra componentes desde la izquierda ---'];
+    consoleOutput = ['🆕 Lienzo vacío listo. Guía rápida: 1) Arrastra 📥 Lectura 2) Arrastra ⚙️ Asignación 3) Arrastra 📤 Salida 4) ▶ Ejecutar.'];
   }
 
   function handleUndo() {
+    if (history.length === 0) return;
     const prev = history.pop();
-    if (prev !== undefined) dfdContent = prev;
+    if (prev !== undefined) {
+      redoHistory = [...redoHistory.slice(-49), dfdContent];
+      dfdContent = prev;
+    }
+    selectedPath = null;
+    editArmed = false;
+  }
+
+  function handleRedo() {
+    if (redoHistory.length === 0) return;
+    const next = redoHistory.pop();
+    if (next !== undefined) {
+      history = [...history.slice(-49), dfdContent];
+      dfdContent = next;
+    }
     selectedPath = null;
     editArmed = false;
   }
 
   function handleDeleteLast() {
-    if (!ast || ast.nodes.length <= 1) return;
+    if (!ast || ast.nodes.length <= 1) {
+      consoleOutput = ['ℹ️ No hay pasos para borrar. Agrega componentes desde la izquierda.'];
+      return;
+    }
     pushHistory();
-    // Eliminar último nodo real (antes del 'end')
     const idx = ast.nodes.findIndex((n) => n.type === 'end' || n.type === 'return');
     const removeAt = idx > 0 ? idx - 1 : ast.nodes.length - 1;
+    const removed = ast.nodes[removeAt];
     ast.nodes.splice(removeAt, 1);
     dfdContent = serializeDfd(ast);
+    consoleOutput = [`🗑 Eliminado: ${describeNodeShort(removed)}. Puedes ↩ Deshacer si fue un error.`];
+  }
+
+  function handleDeletePath(path) {
+    if (!ast || !path) return;
+    const list = getParentList(ast, path);
+    const idx = path[path.length - 1];
+    if (!Array.isArray(list) || typeof idx !== 'number' || !list[idx]) return;
+    pushHistory();
+    const removed = list[idx];
+    list.splice(idx, 1);
+    dfdContent = serializeDfd(ast);
+    selectedPath = null;
+    editArmed = false;
+    consoleOutput = [`🗑 Eliminado: ${describeNodeShort(removed)}. Tip: usa Duplicar para probar variantes.`];
   }
 
   function handleDeleteAt(index) {
-    if (!ast) return;
+    handleDeletePath([index]);
+  }
+
+  function handleDeleteSelected() {
+    if (!selectedPath) {
+      consoleOutput = ['👆 Primero haz clic en una figura del lienzo o en un paso de la lista para seleccionarlo.'];
+      return;
+    }
+    handleDeletePath(selectedPath);
+  }
+
+  function handleDuplicateSelected() {
+    if (!ast || !selectedPath) {
+      consoleOutput = ['👆 Selecciona un componente para duplicarlo (clic en la figura).'];
+      return;
+    }
+    const list = getParentList(ast, selectedPath);
+    const idx = selectedPath[selectedPath.length - 1];
+    if (!Array.isArray(list) || typeof idx !== 'number' || !list[idx]) return;
     pushHistory();
-    ast.nodes.splice(index, 1);
+    const copy = JSON.parse(JSON.stringify(list[idx]));
+    list.splice(idx + 1, 0, copy);
     dfdContent = serializeDfd(ast);
+    consoleOutput = [`📋 Duplicado: ${describeNodeShort(copy)} justo debajo del original.`];
+  }
+
+  function handleMovePath(path, dir) {
+    if (!ast || !path) return;
+    const list = getParentList(ast, path);
+    const idx = path[path.length - 1];
+    if (!Array.isArray(list) || typeof idx !== 'number') return;
+    const j = idx + dir;
+    if (j < 0 || j >= list.length) return;
+    // No mover terminales
+    if (list[idx]?.type === 'end' || list[idx]?.type === 'return') return;
+    if (list[j]?.type === 'end' || list[j]?.type === 'return') return;
+    pushHistory();
+    const [item] = list.splice(idx, 1);
+    list.splice(j, 0, item);
+    dfdContent = serializeDfd(ast);
+    const newPath = [...path.slice(0, -1), j];
+    selectedPath = newPath;
   }
 
   function handleMove(index, dir) {
-    if (!ast) return;
-    const j = index + dir;
-    if (j < 0 || j >= ast.nodes.length) return;
-    pushHistory();
-    const [item] = ast.nodes.splice(index, 1);
-    ast.nodes.splice(j, 0, item);
-    dfdContent = serializeDfd(ast);
+    handleMovePath([index], dir);
+  }
+
+  function handleMoveSelected(dir) {
+    if (!selectedPath) return;
+    handleMovePath(selectedPath, dir);
+  }
+
+  function zoomIn() {
+    zoom = Math.min(1.8, Math.round((zoom + 0.15) * 100) / 100);
+  }
+  function zoomOut() {
+    zoom = Math.max(0.5, Math.round((zoom - 0.15) * 100) / 100);
+  }
+  function zoomReset() {
+    zoom = 1;
+  }
+
+  function handleGlobalKeydown(e) {
+    const target = e.target as HTMLElement;
+    const tag = (target?.tagName || '').toLowerCase();
+    const isTyping = tag === 'input' || tag === 'textarea' || tag === 'select' || target?.isContentEditable;
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+      e.preventDefault();
+      handleUndo();
+      return;
+    }
+    if ((mod && e.key.toLowerCase() === 'y') || (mod && e.shiftKey && e.key.toLowerCase() === 'z')) {
+      e.preventDefault();
+      handleRedo();
+      return;
+    }
+    if (isTyping) return;
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (selectedPath) {
+        e.preventDefault();
+        handleDeleteSelected();
+      }
+    } else if (e.key === 'Escape') {
+      selectedPath = null;
+      promptVisible = false;
+    } else if (mod && e.key.toLowerCase() === 'd') {
+      e.preventDefault();
+      handleDuplicateSelected();
+    }
   }
 </script>
 
@@ -424,15 +719,22 @@
   <title>Editor Visual DFD - Algoritmos</title>
 </svelte:head>
 
+<svelte:window onkeydown={handleGlobalKeydown} />
+
 <div class="page">
   <div class="top-nav">
-    <button class="back-btn" onclick={() => goto('/algoritmos')}>
-      <span>←</span> Menú Principal
-    </button>
+    <div class="nav-left">
+      <button class="back-btn" onclick={() => goto('/algoritmos')}>
+        <span>←</span> Menú Principal
+      </button>
+      <button class="btn btn-secondary" onclick={() => showGuide = true} title="Ver guía paso a paso para estudiantes">
+        ❓ ¿Cómo usar?
+      </button>
+    </div>
     <div class="file-controls">
       <span class="file-icon">📄</span>
-      <input type="text" id="dfd-filename" name="dfd-filename" bind:value={currentFileName} class="filename-input" />
-      <select class="btn btn-secondary exercise-select" bind:value={selectedExerciseId} onchange={() => { if (selectedExerciseId) loadExercise(selectedExerciseId as number); }}>
+      <input type="text" id="dfd-filename" name="dfd-filename" bind:value={currentFileName} class="filename-input" aria-label="Nombre del archivo" />
+      <select class="btn btn-secondary exercise-select" bind:value={selectedExerciseId} onchange={() => { if (selectedExerciseId) loadExercise(selectedExerciseId as number); }} aria-label="Elegir ejercicio Nivel 1">
         <option value="">-- Ejercicios Nivel 1 --</option>
         {#each Array.from({ length: 16 }, (_, i) => i + 1) as i}
           <option value={i}>Problema {i}</option>
@@ -443,51 +745,79 @@
         <input type="file" id="dfd-file-upload" name="dfd-file-upload" accept=".dfd,.txt" onchange={handleFileUpload} style="display: none;" />
       </label>
       <button class="btn btn-secondary" onclick={handleSave}>💾 Guardar</button>
-      <button class="btn btn-primary run-btn" onclick={handleRun} disabled={!ast}>
-        {isExecuting ? '⏳ Ejecutando...' : '▶ Ejecutar'}
-      </button>
+      {#if isExecuting}
+        <button class="btn btn-danger" onclick={handleStop}>⏹ Detener</button>
+      {:else}
+        <button class="btn btn-primary run-btn" onclick={handleRun} disabled={!ast} title="Ejecutar rápido sin pausas">
+          ▶ Ejecutar
+        </button>
+        <button class="btn btn-step" onclick={handleStepRun} disabled={!ast} title="Ejecutar despacio iluminando cada figura">
+          🐢 Paso a paso
+        </button>
+      {/if}
     </div>
   </div>
+  {#if parseErrorMsg}
+    <div class="error-banner" role="alert">
+      ⚠️ {parseErrorMsg}
+      <button class="mini-btn" onclick={handleNew}>🆕 Empezar de cero</button>
+    </div>
+  {:else if totalWarnings > 0 && ast}
+    <div class="warn-banner" role="status">
+      💡 Tienes {totalWarnings} aviso(s): haz clic en cada paso de la lista para completarlo. Ejemplo: toda Decisión necesita condición como <code>n1 &gt; n2</code>.
+    </div>
+  {/if}
 
   <div class="layout">
     <!-- Left Sidebar: Palette -->
     <div class="sidebar">
-      <h3>Componentes</h3>
-      <p class="sidebar-help">Arrastra al lienzo o haz clic en + para agregar al final. Las zonas azules marcan el engranaje entre pasos.</p>
+      <h3>1️⃣ Componentes — arrastra o toca +</h3>
+      <p class="sidebar-help">
+        <strong>Para estudiantes:</strong> arrastra al lienzo y suelta en la zona azul <em>"+ soltar aquí"</em>.
+        O haz clic en <strong>+</strong> para agregar al final. Después haz clic en la figura para escribir sus datos.
+      </p>
       <div class="palette">
-        <div class="palette-item palette-static"><div class="palette-shape start"></div> Inicio/Fin <span class="palette-tag">auto</span></div>
-        <div class="palette-item" role="button" tabindex="0" draggable="true" ondragstart={(e) => handleDragStart(e, 'input')} ondragend={handleDragEnd} onclick={() => handlePaletteClick('input')} onkeydown={(e) => e.key === 'Enter' && handlePaletteClick('input')} title="Arrastrar o clic para agregar Lectura"><div class="palette-shape input"></div> Lectura <span class="palette-add">+</span></div>
-        <div class="palette-item" role="button" tabindex="0" draggable="true" ondragstart={(e) => handleDragStart(e, 'output')} ondragend={handleDragEnd} onclick={() => handlePaletteClick('output')} onkeydown={(e) => e.key === 'Enter' && handlePaletteClick('output')} title="Arrastrar o clic para agregar Salida"><div class="palette-shape output"></div> Salida <span class="palette-add">+</span></div>
-        <div class="palette-item" role="button" tabindex="0" draggable="true" ondragstart={(e) => handleDragStart(e, 'process')} ondragend={handleDragEnd} onclick={() => handlePaletteClick('process')} onkeydown={(e) => e.key === 'Enter' && handlePaletteClick('process')} title="Arrastrar o clic para agregar Asignación"><div class="palette-shape process"></div> Asignación <span class="palette-add">+</span></div>
-        <div class="palette-item" role="button" tabindex="0" draggable="true" ondragstart={(e) => handleDragStart(e, 'decision')} ondragend={handleDragEnd} onclick={() => handlePaletteClick('decision')} onkeydown={(e) => e.key === 'Enter' && handlePaletteClick('decision')} title="Arrastrar o clic para agregar Decisión"><div class="palette-shape decision"></div> Decisión <span class="palette-add">+</span></div>
-        <div class="palette-item" role="button" tabindex="0" draggable="true" ondragstart={(e) => handleDragStart(e, 'while')} ondragend={handleDragEnd} onclick={() => handlePaletteClick('while')} onkeydown={(e) => e.key === 'Enter' && handlePaletteClick('while')} title="Arrastrar o clic para agregar Mientras"><div class="palette-shape while"></div> Mientras <span class="palette-add">+</span></div>
+        <div class="palette-item palette-static" title="Inicio y Fin se crean solos"><div class="palette-shape start"></div> Inicio/Fin <span class="palette-tag">auto</span></div>
+        <div class="palette-item" role="button" tabindex="0" draggable="true" ondragstart={(e) => handleDragStart(e, 'input')} ondragend={handleDragEnd} onclick={() => handlePaletteClick('input')} onkeydown={(e) => e.key === 'Enter' && handlePaletteClick('input')} title="Pide un dato al usuario. Ej: n1"><div class="palette-shape input"></div> <span><strong>Lectura</strong><br /><small>pide dato ej: n1</small></span> <span class="palette-add">+</span></div>
+        <div class="palette-item" role="button" tabindex="0" draggable="true" ondragstart={(e) => handleDragStart(e, 'output')} ondragend={handleDragEnd} onclick={() => handlePaletteClick('output')} onkeydown={(e) => e.key === 'Enter' && handlePaletteClick('output')} title="Muestra un resultado. Ej: 'La suma es: ', suma"><div class="palette-shape output"></div> <span><strong>Salida</strong><br /><small>muestra ej: suma</small></span> <span class="palette-add">+</span></div>
+        <div class="palette-item" role="button" tabindex="0" draggable="true" ondragstart={(e) => handleDragStart(e, 'process')} ondragend={handleDragEnd} onclick={() => handlePaletteClick('process')} onkeydown={(e) => e.key === 'Enter' && handlePaletteClick('process')} title="Calcula y guarda. Ej: suma <- n1+n2"><div class="palette-shape process"></div> <span><strong>Asignación</strong><br /><small>calcula ej: suma</small></span> <span class="palette-add">+</span></div>
+        <div class="palette-item" role="button" tabindex="0" draggable="true" ondragstart={(e) => handleDragStart(e, 'decision')} ondragend={handleDragEnd} onclick={() => handlePaletteClick('decision')} onkeydown={(e) => e.key === 'Enter' && handlePaletteClick('decision')} title="Pregunta con dos caminos: Sí (izquierda) / No (derecha)"><div class="palette-shape decision"></div> <span><strong>Decisión</strong><br /><small>pregunta Sí/No</small></span> <span class="palette-add">+</span></div>
+        <div class="palette-item" role="button" tabindex="0" draggable="true" ondragstart={(e) => handleDragStart(e, 'while')} ondragend={handleDragEnd} onclick={() => handlePaletteClick('while')} onkeydown={(e) => e.key === 'Enter' && handlePaletteClick('while')} title="Repite mientras se cumpla la condición"><div class="palette-shape while"></div> <span><strong>Mientras</strong><br /><small>repite ej: i&lt;=5</small></span> <span class="palette-add">+</span></div>
       </div>
 
       <div class="canvas-actions">
         <button class="mini-btn" onclick={handleNew} title="Lienzo vacío">🆕 Nuevo</button>
-        <button class="mini-btn" onclick={handleUndo} disabled={history.length === 0} title="Deshacer último cambio">↩ Deshacer</button>
+        <button class="mini-btn" onclick={handleUndo} disabled={history.length === 0} title="Deshacer (Ctrl+Z)">↩ Deshacer</button>
+        <button class="mini-btn" onclick={handleRedo} disabled={redoHistory.length === 0} title="Rehacer (Ctrl+Y)">↪ Rehacer</button>
         <button class="mini-btn" onclick={handleDeleteLast} title="Eliminar último paso">🗑 Último</button>
       </div>
+      <p class="code-hint">⌨️ Atajos: <code>Ctrl+Z</code> deshacer, <code>Ctrl+Y</code> rehacer, <code>Supr</code> borrar seleccionado, <code>Ctrl+D</code> duplicar, <code>Esc</code> soltar selección.</p>
 
-      {#if ast && ast.nodes.length > 1}
-        <h3 style="margin-top: 1.25rem;">Pasos ({ast.nodes.filter((n) => n.type !== 'end' && n.type !== 'return').length})</h3>
+      {#if ast}
+        <h3 style="margin-top: 1.25rem;">2️⃣ Pasos ({stepCount}) — clic para editar</h3>
+        {#if flatSteps.length === 0}
+          <p class="code-hint">Aún no hay pasos. Arrastra tu primer componente 📥.</p>
+        {:else}
         <ol class="steps-list">
-          {#each ast.nodes as node, i}
-            {#if node.type !== 'end' && node.type !== 'return'}
-              <li class="step-item" class:selected={selectedPath && JSON.stringify(selectedPath) === JSON.stringify([i])}>
-                <button class="step-label-btn" onclick={() => selectStep(i)} title="Clic para editar propiedades">
-                  <span class="step-label">{i + 1}. {node.type === 'input' ? `Leer ${(node.variables || []).join(',')}` : node.type === 'output' ? `Escribir ${(node.text || '').slice(0, 24)}` : node.type === 'assignment' ? `${(node.assignments?.[0]?.variable ?? 'x')} <- ${(node.assignments?.[0]?.expression ?? '')}` : node.type === 'decision' ? `Si ${node.condition}` : node.type === 'while' ? `Mientras ${node.condition}` : node.type}</span>
+          {#each flatSteps as item}
+            {#if item.isLabel}
+              <li class="branch-label" style="padding-left: {item.depth * 12}px;">{item.label}</li>
+            {:else}
+              <li class="step-item" class:selected={selectedPath && pathKey(selectedPath) === pathKey(item.path)} class:executing={executingPath && pathKey(executingPath) === pathKey(item.path)} style="margin-left: {item.depth * 12}px;">
+                <button class="step-label-btn" onclick={() => selectStep(item.path)} title="Clic para editar propiedades en el panel derecho">
+                  <span class="step-label">{describeNodeShort(item.node)}</span>
                 </button>
                 <span class="step-btns">
-                  <button class="icon-btn" onclick={() => handleMove(i, -1)} aria-label="Subir paso {i + 1}">↑</button>
-                  <button class="icon-btn" onclick={() => handleMove(i, 1)} aria-label="Bajar paso {i + 1}">↓</button>
-                  <button class="icon-btn danger" onclick={() => handleDeleteAt(i)} aria-label="Eliminar paso {i + 1}">✕</button>
+                  <button class="icon-btn" onclick={() => handleMovePath(item.path, -1)} aria-label="Subir paso">↑</button>
+                  <button class="icon-btn" onclick={() => handleMovePath(item.path, 1)} aria-label="Bajar paso">↓</button>
+                  <button class="icon-btn danger" onclick={() => handleDeletePath(item.path)} aria-label="Eliminar paso">✕</button>
                 </span>
               </li>
             {/if}
           {/each}
         </ol>
-        <p class="code-hint">💡 Clic en un paso o en una figura del lienzo para editarlo.</p>
+        <p class="code-hint">💡 Incluye ramas Sí/No y cuerpo del Mientras. Clic en un paso o figura para editarlo →</p>
+        {/if}
       {/if}
       
       <h3 style="margin-top: 2rem;">Código Fuente</h3>
@@ -533,11 +863,23 @@
       ondragover={(e) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; }}
       ondrop={handleCanvasDrop}
     >
+      <div class="canvas-toolbar" role="toolbar" aria-label="Controles del lienzo">
+        <span class="toolbar-title">3️⃣ Lienzo — diagrama</span>
+        <span class="zoom-group">
+          <button class="icon-btn" onclick={zoomOut} aria-label="Reducir zoom" title="Reducir zoom">−</button>
+          <span class="zoom-label">{Math.round(zoom * 100)}%</span>
+          <button class="icon-btn" onclick={zoomIn} aria-label="Ampliar zoom" title="Ampliar zoom">+</button>
+          <button class="icon-btn" onclick={zoomReset} aria-label="Zoom 100%" title="Volver a 100%">⤾</button>
+        </span>
+        {#if executingPath}
+          <span class="exec-badge">🟢 Ejecutando… figura iluminada en verde</span>
+        {/if}
+      </div>
       {#if renderData}
         {#if isDragging}
-          <div class="drop-hint">Suelta sobre una zona azul para engranar el componente en ese punto del flujo</div>
+          <div class="drop-hint">👇 Suelta sobre una zona azul para colocar el componente justo ahí (también dentro de Sí/No o Mientras)</div>
         {/if}
-        <svg class="dfd-canvas" viewBox="0 0 {renderData.width} {renderData.height}" onclick={handleShapeClick} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleShapeClick(e); }}>
+        <svg class="dfd-canvas" viewBox="0 0 {renderData.width} {renderData.height}" style="width: {Math.round(renderData.width * zoom)}px; max-width: none;" onclick={handleShapeClick} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleShapeClick(e); }} role="img" aria-label="Diagrama de flujo del algoritmo">
           <defs>
             <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
               <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
@@ -598,9 +940,11 @@
           ondragover={(e) => { e.preventDefault(); }}
           ondrop={handleCanvasDrop}
         >
-          <h3>No hay un algoritmo cargado</h3>
-          <p>Usa "Abrir" para cargar un .dfd, elige un ejercicio Nivel 1, o crea uno nuevo.</p>
+          <h3>👋 ¡Empieza tu primer algoritmo!</h3>
+          <p>1) Pulsa <strong>🆕 Crear lienzo</strong> &nbsp; 2) Arrastra 📥 Lectura &nbsp; 3) Agrega 📤 Salida &nbsp; 4) Pulsa ▶ Ejecutar</p>
+          <p class="code-hint">O elige un Problema 1-16 arriba para ver un ejemplo resuelto.</p>
           <button class="btn btn-primary" onclick={handleNew}>🆕 Crear lienzo vacío</button>
+          {#if parseErrorMsg}<p class="error-text">{parseErrorMsg}</p>{/if}
         </div>
       {/if}
     </div>
@@ -609,25 +953,34 @@
       <aside class="props-panel" aria-label="Propiedades del componente seleccionado">
         <div class="props-header">
           <strong>
-            {#if selectedNode.type === 'input'}📥 Lectura
-            {:else if selectedNode.type === 'output'}📤 Salida
-            {:else if selectedNode.type === 'assignment'}⚙️ Asignación
-            {:else if selectedNode.type === 'decision'}🔀 Decisión
-            {:else if selectedNode.type === 'while'}🔁 Mientras
+            {#if selectedNode.type === 'input'}📥 Lectura — pedir dato
+            {:else if selectedNode.type === 'output'}📤 Salida — mostrar resultado
+            {:else if selectedNode.type === 'assignment'}⚙️ Asignación — calcular
+            {:else if selectedNode.type === 'decision'}🔀 Decisión — pregunta Sí/No
+            {:else if selectedNode.type === 'while'}🔁 Mientras — repetir
             {:else}🧩 Componente{/if}
           </strong>
           <button class="icon-btn" onclick={() => selectedPath = null} aria-label="Cerrar propiedades">✕</button>
         </div>
-        <p class="props-hint">Edita en lenguaje natural. El diagrama y el pseudocódigo se actualizan solos.</p>
+        <p class="props-hint">✏️ Edita con palabras simples. El dibujo y el pseudocódigo 📖 se actualizan solos.</p>
+        {#if selectedWarnings.length > 0}
+          <div class="props-warnings" role="alert">
+            {#each selectedWarnings as w}
+              <div class="warn-line">⚠️ {w}</div>
+            {/each}
+          </div>
+        {:else}
+          <div class="props-ok">✅ ¡Bien! Este componente está completo.</div>
+        {/if}
 
         {#if selectedNode.type === 'input'}
-          <label class="props-label" for="prop-input-vars">Variables a leer (separadas por coma)</label>
+          <label class="props-label" for="prop-input-vars">1) ¿Qué variables quieres pedir? (separadas por coma)</label>
           <input id="prop-input-vars" class="props-input" value={(selectedNode.variables || []).join(', ')} onfocus={armEdit} oninput={(e) => { selectedNode.variables = e.currentTarget.value.split(',').map((v) => v.trim()).filter(Boolean); commitEdit(); }} placeholder="ej: n1, n2" />
-          <p class="props-example">Ej: <code>n1, n2</code> → genera <code>Leer n1, n2</code></p>
+          <p class="props-example">✍️ Escribe: <code>n1, n2</code> → el programa hará <code>Leer n1, n2</code> y preguntará los valores al ejecutar.</p>
         {:else if selectedNode.type === 'output'}
-          <label class="props-label" for="prop-output-text">Qué mostrar (texto entre ' ' y variables con comas)</label>
+          <label class="props-label" for="prop-output-text">1) ¿Qué quieres mostrar en pantalla?</label>
           <input id="prop-output-text" class="props-input" value={selectedNode.text || ''} onfocus={armEdit} oninput={(e) => { selectedNode.text = e.currentTarget.value; commitEdit(); }} placeholder="ej: 'La suma es: ', suma" />
-          <p class="props-example">Ej: <code>'La suma es: ', suma</code></p>
+          <p class="props-example">✍️ Texto entre comillas simples + variables con coma. Ej: <code>'La suma es: ', suma</code></p>
         {:else if selectedNode.type === 'assignment'}
           {#each selectedNode.assignments as a, ai}
             <div class="props-row">
@@ -641,33 +994,78 @@
               </div>
             </div>
           {/each}
-          <p class="props-example">Genera <code>suma &lt;- n1+n2</code></p>
+          <p class="props-example">✍️ Variable a la izquierda, fórmula a la derecha. Genera <code>suma &lt;- n1+n2</code>. Puedes usar + - * / % y paréntesis.</p>
         {:else if selectedNode.type === 'decision'}
-          <label class="props-label" for="prop-decision-cond">Condición (Sí / No)</label>
+          <label class="props-label" for="prop-decision-cond">1) Escribe la pregunta (condición)</label>
           <input id="prop-decision-cond" class="props-input" value={selectedNode.condition || ''} onfocus={armEdit} oninput={(e) => { selectedNode.condition = e.currentTarget.value; commitEdit(); }} placeholder="ej: n1 > n2" />
-          <p class="props-example">Ej: <code>n1 &gt; n2</code>, <code>nota &gt;= 3</code>. Rama izquierda = Sí, derecha = No.</p>
+          <p class="props-example">✍️ Ej: <code>n1 &gt; n2</code>, <code>nota &gt;= 3</code>. Si es verdad va a la <strong>izquierda (Sí)</strong>, si no a la <strong>derecha (No)</strong>. Arrastra componentes a cada rama con las zonas azules.</p>
         {:else if selectedNode.type === 'while'}
-          <label class="props-label" for="prop-while-cond">Condición para repetir</label>
+          <label class="props-label" for="prop-while-cond">1) ¿Cuándo debe repetirse?</label>
           <input id="prop-while-cond" class="props-input" value={selectedNode.condition || ''} onfocus={armEdit} oninput={(e) => { selectedNode.condition = e.currentTarget.value; commitEdit(); }} placeholder="ej: contador <= 5" />
-          <p class="props-example">Ej: <code>contador &lt;= 5</code>. Arrastra componentes dentro del cuerpo usando las zonas azules.</p>
+          <p class="props-example">✍️ Ej: <code>contador &lt;= 5</code>. Todo lo que arrastres al cuerpo azul se repetirá. ¡No olvides aumentar el contador dentro o será infinito!</p>
         {/if}
+        <div class="props-actions">
+          <button class="mini-btn" onclick={() => handleMoveSelected(-1)} title="Subir dentro de su lista">↑ Subir</button>
+          <button class="mini-btn" onclick={() => handleMoveSelected(1)} title="Bajar dentro de su lista">↓ Bajar</button>
+          <button class="mini-btn" onclick={handleDuplicateSelected} title="Duplicar (Ctrl+D)">📋 Duplicar</button>
+          <button class="mini-btn danger-btn" onclick={handleDeleteSelected} title="Eliminar (Supr)">🗑 Borrar</button>
+        </div>
       </aside>
     {/if}
   </div>
 
-  <!-- Bottom: Console Output -->
-  <div class="console">
-    <div class="console-header">💻 Consola de Ejecución</div>
-    <div class="console-body">
-      {#each consoleOutput as line}
-        <div class="console-line">{line}</div>
-      {/each}
-      {#if consoleOutput.length === 0}
-        <div class="console-placeholder">Presiona ▶ Ejecutar para ver los resultados aquí.</div>
+  <!-- Bottom: Console + Variables -->
+  <div class="bottom-panel">
+    <div class="console">
+      <div class="console-header">💻 4️⃣ Consola — pulsa ▶ Ejecutar o 🐢 Paso a paso para ver el resultado</div>
+      <div class="console-body">
+        {#each consoleOutput as line}
+          <div class="console-line">{line}</div>
+        {/each}
+        {#if consoleOutput.length === 0}
+          <div class="console-placeholder">Ejemplo: si tu algoritmo lee n1=5 y muestra la suma, aquí verás los mensajes. Prueba con 🐢 Paso a paso para ver cómo se ilumina cada figura.</div>
+        {/if}
+      </div>
+    </div>
+    <div class="variables-panel">
+      <div class="variables-header">
+        <span>🧮 Variables en vivo</span>
+        <button class="icon-btn" onclick={() => showVariables = !showVariables} aria-label="Mostrar u ocultar variables">{showVariables ? '−' : '+'}</button>
+      </div>
+      {#if showVariables}
+        <div class="variables-body">
+          {#if Object.keys(liveVariables).length === 0}
+            <div class="console-placeholder">Aquí aparecerán los valores mientras ejecutas 🐢 Paso a paso. Ej: n1=5, suma=10.</div>
+          {:else}
+            {#each Object.entries(liveVariables) as [k, v]}
+              <div class="var-chip"><strong>{k}</strong> = {String(v)}</div>
+            {/each}
+          {/if}
+          {#if executingPath}
+            <div class="exec-hint">🟢 Iluminado en verde = paso actual</div>
+          {/if}
+        </div>
       {/if}
     </div>
   </div>
 </div>
+
+{#if showGuide}
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-label="Guía del editor DFD">
+    <div class="modal-content guide-modal">
+      <h4>📘 Guía rápida — Editor DFD (5 minutos)</h4>
+      <ol class="guide-list">
+        <li><strong>1️⃣ Agrega:</strong> arrastra 📥 Lectura, ⚙️ Asignación y 📤 Salida al lienzo. Suelta en la zona azul.</li>
+        <li><strong>2️⃣ Edita:</strong> haz clic en cada figura y escribe datos simples. Ej: Lectura <code>n1, n2</code>, Asignación <code>suma &lt;- n1+n2</code>, Salida <code>'La suma es: ', suma</code>.</li>
+        <li><strong>3️⃣ Decide:</strong> 🔀 Decisión pregunta Sí (izquierda) / No (derecha). Ej: <code>n1 &gt; n2</code>. Arrastra pasos dentro de cada rama.</li>
+        <li><strong>4️⃣ Repite:</strong> 🔁 Mientras repite su cuerpo. Ej: <code>contador &lt;= 5</code>. Recuerda aumentar el contador dentro.</li>
+        <li><strong>5️⃣ Ejecuta:</strong> ▶ rápido o 🐢 paso a paso (ilumina en verde + muestra variables). Mira la consola 💻.</li>
+        <li><strong>⌨️ Atajos:</strong> Ctrl+Z deshacer, Ctrl+Y rehacer, Supr borrar, Ctrl+D duplicar, Esc soltar.</li>
+      </ol>
+      <button class="btn btn-primary modal-btn" onclick={() => showGuide = false}>¡Entendido, a crear! 🚀</button>
+    </div>
+  </div>
+{/if}
 
 {#if promptVisible}
   <div class="modal-overlay">
@@ -1134,5 +1532,50 @@
   .modal-btn {
     align-self: flex-end;
     margin-top: 0.5rem;
+  }
+
+  .nav-left { display: flex; align-items: center; gap: 0.5rem; }
+  .back-btn { padding: 0.4rem 0.9rem; border-radius: 6px; border: 1px solid #e2e8f0; background: white; color: #334155; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+  .back-btn:hover { background: #f1f5f9; }
+  .btn-step { background: #16a34a; color: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+  .btn-step:hover:not(:disabled) { background: #15803d; transform: translateY(-1px); }
+  .btn-step:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-danger { background: #dc2626; color: white; }
+  .btn-danger:hover { background: #b91c1c; }
+  .error-banner { display: flex; align-items: center; gap: 0.75rem; background: #fef2f2; color: #991b1b; border-bottom: 1px solid #fecaca; padding: 0.6rem 1.5rem; font-size: 0.85rem; }
+  .warn-banner { background: #fffbeb; color: #92400e; border-bottom: 1px solid #fde68a; padding: 0.6rem 1.5rem; font-size: 0.85rem; }
+  .warn-banner code { background: #fef3c7; padding: 0.1rem 0.3rem; border-radius: 4px; }
+  .canvas-toolbar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); border-bottom: 1px solid #e2e8f0; padding: 0.5rem 0.9rem; }
+  .toolbar-title { font-size: 0.8rem; font-weight: 700; color: #334155; }
+  .zoom-group { display: flex; align-items: center; gap: 0.35rem; }
+  .zoom-label { font-size: 0.75rem; font-weight: 700; color: #475569; min-width: 44px; text-align: center; }
+  .exec-badge { font-size: 0.75rem; font-weight: 700; color: #15803d; background: #dcfce7; border: 1px solid #86efac; padding: 0.2rem 0.6rem; border-radius: 999px; }
+  .branch-label { list-style: none; font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.3rem; }
+  .step-item.executing { border-color: #22c55e; background: #f0fdf4; box-shadow: 0 0 0 2px #bbf7d0; }
+  .props-warnings { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 0.6rem; margin-bottom: 0.6rem; }
+  .warn-line { font-size: 0.78rem; color: #92400e; margin-bottom: 0.25rem; }
+  .props-ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; font-size: 0.78rem; font-weight: 600; border-radius: 8px; padding: 0.5rem 0.6rem; margin-bottom: 0.6rem; }
+  .props-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 1rem; }
+  .danger-btn { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+  .danger-btn:hover:not(:disabled) { background: #fee2e2; }
+  .bottom-panel { display: flex; gap: 0; border-top: 4px solid #3b82f6; background: #1e293b; height: 210px; }
+  .bottom-panel .console { flex: 2; height: 100%; border-top: none; }
+  .variables-panel { flex: 1; min-width: 240px; max-width: 360px; background: #0f172a; border-left: 1px solid #334155; display: flex; flex-direction: column; }
+  .variables-header { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; color: #e2e8f0; font-size: 0.85rem; font-weight: 700; }
+  .variables-body { flex: 1; overflow-y: auto; padding: 0.75rem 1rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-content: flex-start; }
+  .var-chip { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; font-size: 0.78rem; font-family: monospace; padding: 0.3rem 0.6rem; border-radius: 999px; }
+  .var-chip strong { color: #93c5fd; }
+  .exec-hint { width: 100%; font-size: 0.75rem; color: #86efac; margin-top: 0.4rem; }
+  .error-text { color: #dc2626; font-size: 0.8rem; font-weight: 600; }
+  .guide-modal { width: 460px; max-width: 92vw; }
+  .guide-list { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.86rem; color: #334155; line-height: 1.5; }
+  .guide-list code { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 0.1rem 0.3rem; border-radius: 4px; font-size: 0.78rem; }
+  .palette-item small { color: #64748b; font-weight: 400; font-size: 0.72rem; }
+  @media (max-width: 1100px) {
+    .sidebar { width: 240px; }
+    .props-panel { width: 260px; }
+    .bottom-panel { flex-direction: column; height: auto; }
+    .variables-panel { max-width: none; }
+    .top-nav { flex-wrap: wrap; gap: 0.6rem; }
   }
 </style>

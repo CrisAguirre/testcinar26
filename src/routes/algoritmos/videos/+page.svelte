@@ -16,6 +16,11 @@
       title: 'Reto',
       description: 'Reto práctico para poner a prueba tus habilidades de lógica y algoritmia.',
       src: '/Reto.mp4'
+    },
+    {
+      title: 'Video 3 - Algoritmos',
+      description: 'Tercer video del curso: continúa con la explicación práctica de algoritmos. Si tienes el título exacto dímelo y lo actualizo.',
+      src: '/videos/Video_3.mp4'
     }
   ];
 </script>

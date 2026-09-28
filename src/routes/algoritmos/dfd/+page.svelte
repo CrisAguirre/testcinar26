@@ -13,7 +13,7 @@
 
   let dfdContent = $state('');
   let currentFileName = $state('ejercicio.dfd');
-  let selectedExerciseId = $state<number | ''>('');
+  let selectedExerciseId = $state<string | ''>('');
   let sourceTab = $state<'legible' | 'dfd'>('legible');
   let isInitialLoad = $state(true);
   let history = $state<string[]>([]);
@@ -28,35 +28,62 @@
   let liveVariables = $state<Record<string, string | number>>({});
   let currentExecutor = $state<any>(null);
   let showVariables = $state(true);
-  
+
+  function parseLoadParam(loadParam: string | null): { nivel: 'nivel1' | 'nivel2'; id: number } | null {
+    if (!loadParam) return null;
+    // Nuevos: N1-5, N2-12
+    let m = loadParam.match(/^N([12])-(\d{1,2})$/i);
+    if (m) {
+      const nivel = m[1] === '2' ? 'nivel2' : 'nivel1';
+      const id = parseInt(m[2]);
+      const max = nivel === 'nivel1' ? 16 : 22;
+      if (!isNaN(id) && id >= 1 && id <= max) return { nivel, id };
+      return null;
+    }
+    // Compatibles: "Problema 5" (N1), "N2-Problema 5", "Problema N2-5"
+    m = loadParam.match(/Problema\s+N?2?-?(\d{1,2})/i);
+    if (m) {
+      const id = parseInt(m[1]);
+      const isN2 = /N2/i.test(loadParam);
+      if (isN2 && id >= 1 && id <= 22) return { nivel: 'nivel2', id };
+      if (!isN2 && id >= 1 && id <= 16) return { nivel: 'nivel1', id };
+    }
+    return null;
+  }
+
+  function exerciseKey(nivel: 'nivel1' | 'nivel2', id: number) {
+    return nivel === 'nivel1' ? `N1-${id}` : `N2-${id}`;
+  }
+
   $effect(() => {
     if (isInitialLoad && $page.url.searchParams.has('load')) {
-      const loadParam = $page.url.searchParams.get('load');
-      if (loadParam && loadParam.startsWith('Problema ')) {
-        const id = parseInt(loadParam.replace('Problema ', ''));
-        if (!isNaN(id) && id >= 1 && id <= 16) {
-          selectedExerciseId = id;
-          loadExercise(id);
-        }
+      const parsed = parseLoadParam($page.url.searchParams.get('load'));
+      if (parsed) {
+        selectedExerciseId = exerciseKey(parsed.nivel, parsed.id);
+        loadExercise(parsed.id, parsed.nivel);
       }
       isInitialLoad = false;
     }
   });
 
-  async function loadExercise(id: number) {
+  async function loadExercise(id: number, nivel: 'nivel1' | 'nivel2' = 'nivel1') {
     if (!id) return;
     try {
       const filename = `Problema ${id}.dfd`;
-      const res = await fetch(`/dfd/nivel1/${filename}`);
+      const folder = nivel === 'nivel1' ? 'nivel1' : 'nivel2';
+      const label = nivel === 'nivel1' ? `N1-Problema ${id}` : `N2-Problema ${id}`;
+      const res = await fetch(`/dfd/${folder}/${filename}`);
       if (!res.ok) throw new Error('No se pudo cargar el archivo');
       dfdContent = await res.text();
-      currentFileName = filename;
+      currentFileName = nivel === 'nivel1' ? filename : `N2-${filename}`;
       selectedPath = null;
       editArmed = false;
-      consoleOutput = [`--- Ejercicio ${id} cargado automáticamente ---`];
+      executingPath = null;
+      liveVariables = {};
+      consoleOutput = [`--- ${label} cargado: revisa el pseudocódigo Legible y ejecútalo en Paso a paso ---`];
     } catch (err) {
       console.error(err);
-      consoleOutput = ['--- Error al cargar el ejercicio ---'];
+      consoleOutput = ['--- Error al cargar el ejercicio: verifica Nivel 1 (1-16) o Nivel 2 (1-22) ---'];
     }
   }
   
@@ -716,58 +743,84 @@
 <svelte:window onkeydown={handleGlobalKeydown} />
 
 <div class="page">
-  <div class="top-nav">
-    <div class="nav-left">
-      <button class="back-btn" onclick={() => goto('/algoritmos')}>
-        <span>←</span> Menú Principal
-      </button>
-      <button class="btn btn-secondary" onclick={() => showGuide = true} title="Ver guía paso a paso para estudiantes">
-        ❓ ¿Cómo usar?
-      </button>
-      <a
-        class="btn btn-secondary"
-        href="/guias/Manual_Manejo_Editor_DFD.pdf"
-        target="_blank"
-        rel="noopener"
-        title="Abrir Manual de Manejo en PDF en pestaña nueva"
-      >
-        📘 Ver Manual
-      </a>
-      <a
-        class="btn btn-secondary"
-        href="/guias/Manual_Manejo_Editor_DFD.pdf"
-        download="Manual_Manejo_Editor_DFD.pdf"
-        title="Descargar Manual de Manejo en PDF"
-      >
-        ⬇️ Descargar
-      </a>
-    </div>
-    <div class="file-controls">
-      <span class="file-icon">📄</span>
-      <input type="text" id="dfd-filename" name="dfd-filename" bind:value={currentFileName} class="filename-input" aria-label="Nombre del archivo" />
-      <select class="btn btn-secondary exercise-select" bind:value={selectedExerciseId} onchange={() => { if (selectedExerciseId) loadExercise(selectedExerciseId as number); }} aria-label="Elegir ejercicio Nivel 1">
-        <option value="">-- Ejercicios Nivel 1 --</option>
-        {#each Array.from({ length: 16 }, (_, i) => i + 1) as i}
-          <option value={i}>Problema {i}</option>
-        {/each}
-      </select>
-      <label class="btn btn-secondary">
-        📂 Abrir Local
-        <input type="file" id="dfd-file-upload" name="dfd-file-upload" accept=".dfd,.txt" onchange={handleFileUpload} style="display: none;" />
-      </label>
-      <button class="btn btn-secondary" onclick={handleSave}>💾 Guardar</button>
-      {#if isExecuting}
-        <button class="btn btn-danger" onclick={handleStop}>⏹ Detener</button>
-      {:else}
-        <button class="btn btn-primary run-btn" onclick={handleRun} disabled={!ast} title="Ejecutar rápido sin pausas">
-          ▶ Ejecutar
+  <header class="toolbar" aria-label="Barra principal del editor DFD">
+    <div class="toolbar-row">
+      <div class="tool-group" aria-label="Navegación">
+        <span class="group-label">Menú</span>
+        <button class="back-btn" onclick={() => goto('/algoritmos')}>
+          <span>←</span> Algoritmos
         </button>
-        <button class="btn btn-step" onclick={handleStepRun} disabled={!ast} title="Ejecutar despacio iluminando cada figura">
-          🐢 Paso a paso
+      </div>
+
+      <div class="tool-group group-exercise" aria-label="Ejercicios">
+        <span class="group-label">Ejercicios N1 + N2</span>
+        <select class="btn btn-secondary exercise-select" bind:value={selectedExerciseId} onchange={() => { if (selectedExerciseId) { const [n, idStr] = String(selectedExerciseId).split('-'); loadExercise(parseInt(idStr), n === 'N2' ? 'nivel2' : 'nivel1'); } }} aria-label="Elegir ejercicio Nivel 1 o Nivel 2">
+          <option value="">-- Elegir --</option>
+          <optgroup label="Nivel 1 — Operadores (16)">
+            {#each Array.from({ length: 16 }, (_, i) => i + 1) as i}
+              <option value={`N1-${i}`}>N1 · Problema {i}</option>
+            {/each}
+          </optgroup>
+          <optgroup label="Nivel 2 — Condicionales (22)">
+            {#each Array.from({ length: 22 }, (_, i) => i + 1) as i}
+              <option value={`N2-${i}`}>N2 · Problema {i}</option>
+            {/each}
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="tool-group" aria-label="Archivo">
+        <span class="group-label">Archivo</span>
+        <span class="file-wrap" title="Nombre del archivo .dfd">
+          <span class="file-icon" aria-hidden="true">📄</span>
+          <input type="text" id="dfd-filename" name="dfd-filename" bind:value={currentFileName} class="filename-input" aria-label="Nombre del archivo" />
+        </span>
+        <label class="btn btn-secondary" title="Abrir un .dfd de tu PC">
+          📂 Abrir
+          <input type="file" id="dfd-file-upload" name="dfd-file-upload" accept=".dfd,.txt" onchange={handleFileUpload} style="display: none;" />
+        </label>
+        <button class="btn btn-secondary" onclick={handleSave} title="Descargar el algoritmo como .dfd">💾 Guardar</button>
+      </div>
+
+      <div class="tool-group group-run" aria-label="Ejecución">
+        <span class="group-label">Ejecutar</span>
+        {#if isExecuting}
+          <button class="btn btn-danger" onclick={handleStop} title="Detener la ejecución actual">⏹ Detener</button>
+        {:else}
+          <button class="btn btn-primary run-btn" onclick={handleRun} disabled={!ast} title="Ejecutar rápido sin pausas">
+            ▶ Ejecutar
+          </button>
+          <button class="btn btn-step" onclick={handleStepRun} disabled={!ast} title="Ejecutar despacio iluminando cada figura">
+            🐢 Paso a paso
+          </button>
+        {/if}
+      </div>
+
+      <div class="tool-group" aria-label="Ayuda">
+        <span class="group-label">Ayuda</span>
+        <button class="btn btn-secondary" onclick={() => showGuide = true} title="Ver guía paso a paso para estudiantes">
+          ❓ Guía
         </button>
-      {/if}
+        <a
+          class="btn btn-secondary"
+          href="/guias/Manual_Manejo_Editor_DFD.pdf"
+          target="_blank"
+          rel="noopener"
+          title="Abrir Manual de Manejo en PDF en pestaña nueva"
+        >
+          📘 Manual
+        </a>
+        <a
+          class="btn btn-secondary"
+          href="/guias/Manual_Manejo_Editor_DFD.pdf"
+          download="Manual_Manejo_Editor_DFD.pdf"
+          title="Descargar Manual de Manejo en PDF"
+        >
+          ⬇️ PDF
+        </a>
+      </div>
     </div>
-  </div>
+  </header>
   {#if parseErrorMsg}
     <div class="error-banner" role="alert">
       ⚠️ {parseErrorMsg}
@@ -1106,37 +1159,82 @@
     background: #f1f5f9;
   }
 
-  .top-nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 1.5rem;
+  .toolbar {
     background: white;
     border-bottom: 1px solid rgba(0,0,0,0.06);
     box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     z-index: 10;
+    padding: 0.6rem 1rem;
   }
 
-  .file-controls {
+  .toolbar-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .tool-group {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.45rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .group-label {
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    white-space: nowrap;
+  }
+
+  .group-exercise {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .group-run {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+  }
+
+  .file-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.15rem 0.5rem;
+  }
+
+  .file-icon {
+    font-size: 0.9rem;
+  }
+
+  .exercise-select {
+    max-width: 190px;
+    text-overflow: ellipsis;
   }
 
   .filename-input {
-    border: 1px solid transparent;
+    border: none;
     border-radius: 6px;
-    padding: 0.35rem 0.5rem;
-    font-size: 0.9rem;
-    width: 180px;
-    background: #f8fafc;
+    padding: 0.3rem 0.4rem;
+    font-size: 0.85rem;
+    width: 150px;
+    background: transparent;
     transition: all 0.2s;
   }
-  
-  .filename-input:focus, .filename-input:hover {
-    border-color: #cbd5e1;
+
+  .filename-input:focus {
     background: white;
-    outline: none;
+    outline: 1px solid #cbd5e1;
   }
 
   .btn {
@@ -1181,13 +1279,15 @@
     display: flex;
     flex: 1;
     overflow: hidden;
+    min-height: 0;
   }
 
   .sidebar {
-    width: 280px;
+    width: 240px;
+    flex-shrink: 0;
     background: white;
     border-right: 1px solid rgba(0,0,0,0.06);
-    padding: 1.5rem;
+    padding: 1.1rem 1rem;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -1319,10 +1419,11 @@
   }
 
   .props-panel {
-    width: 300px;
+    width: 270px;
+    flex-shrink: 0;
     background: white;
     border-left: 1px solid rgba(0,0,0,0.06);
-    padding: 1.25rem;
+    padding: 1rem;
     overflow-y: auto;
     box-shadow: -4px 0 12px rgba(0,0,0,0.04);
   }
@@ -1417,7 +1518,8 @@
   }
 
   .canvas-container {
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
     position: relative;
     overflow: auto;
     background: #f8fafc;
@@ -1429,6 +1531,7 @@
     min-width: 100%;
     min-height: 100%;
     display: block;
+    margin: 0 auto;
   }
 
   .empty-state {
@@ -1545,8 +1648,7 @@
     margin-top: 0.5rem;
   }
 
-  .nav-left { display: flex; align-items: center; gap: 0.5rem; }
-  .back-btn { padding: 0.4rem 0.9rem; border-radius: 6px; border: 1px solid #e2e8f0; background: white; color: #334155; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+  .back-btn { padding: 0.4rem 0.9rem; border-radius: 6px; border: 1px solid #e2e8f0; background: white; color: #334155; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
   .back-btn:hover { background: #f1f5f9; }
   .btn-step { background: #16a34a; color: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
   .btn-step:hover:not(:disabled) { background: #15803d; transform: translateY(-1px); }
@@ -1583,10 +1685,12 @@
   .guide-list code { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 0.1rem 0.3rem; border-radius: 4px; font-size: 0.78rem; }
   .palette-item small { color: #64748b; font-weight: 400; font-size: 0.72rem; }
   @media (max-width: 1100px) {
-    .sidebar { width: 240px; }
-    .props-panel { width: 260px; }
+    .sidebar { width: 220px; }
+    .props-panel { width: 250px; }
     .bottom-panel { flex-direction: column; height: auto; }
     .variables-panel { max-width: none; }
-    .top-nav { flex-wrap: wrap; gap: 0.6rem; }
+    .toolbar-row { gap: 0.5rem; }
+    .tool-group { flex: 1 1 100%; justify-content: flex-start; flex-wrap: wrap; }
+    .exercise-select { max-width: none; flex: 1; }
   }
 </style>

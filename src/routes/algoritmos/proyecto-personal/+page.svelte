@@ -13,6 +13,8 @@
     icon: string;
   }
 
+  const TOTAL_STEPS = 10;
+
   const weeklySteps: WeeklyStep[] = [
     {
       n: 'Paso 1',
@@ -49,6 +51,60 @@
       desc: 'Vamos a instalar Antigravity IDE para el control de cambios con Git, explorador de archivos, terminal local y ayuda adicional con IAs integradas.',
       items: ['Control de cambios con Git', 'Explorador de archivos + terminal local', 'IAs integradas: Claude y Google'],
       icon: '🚀'
+    },
+    {
+      n: 'Paso 5',
+      title: 'Modelo de datos + CRUD base',
+      status: 'next',
+      badge: '⏳ Próximo',
+      desc: 'Define las colecciones en Atlas y crea el CRUD mínimo en el backend para tu idea.',
+      items: ['Diseñar colecciones', 'Endpoints crear/listar', 'Probar con datos reales'],
+      icon: '🗄️'
+    },
+    {
+      n: 'Paso 6',
+      title: 'Frontend: pantallas principales',
+      status: 'next',
+      badge: '⏳ Próximo',
+      desc: 'Maqueta las 2-3 pantallas clave de tu app con tu stack asignado.',
+      items: ['Pantalla principal', 'Formulario + listado', 'Navegación'],
+      icon: '🎨'
+    },
+    {
+      n: 'Paso 7',
+      title: 'Backend: API + conexión Atlas',
+      status: 'next',
+      badge: '⏳ Próximo',
+      desc: 'Conecta el backend a Atlas y completa la API que usará el frontend.',
+      items: ['Conexión Atlas', 'Rutas + validación', 'Variables de entorno'],
+      icon: '🔌'
+    },
+    {
+      n: 'Paso 8',
+      title: 'Integración + pruebas',
+      status: 'next',
+      badge: '⏳ Próximo',
+      desc: 'Une frontend y backend, prueba el flujo completo y corrige errores.',
+      items: ['fetch a la API', 'Probar crear/ver', 'Corregir errores'],
+      icon: '🧪'
+    },
+    {
+      n: 'Paso 9',
+      title: 'Despliegue + demo',
+      status: 'next',
+      badge: '⏳ Próximo',
+      desc: 'Publica frontend en Vercel y backend en Render con la DB de Atlas.',
+      items: ['Deploy Vercel', 'Deploy Render', 'URL demo funcional'],
+      icon: '🌐'
+    },
+    {
+      n: 'Paso 10',
+      title: 'Presentación final',
+      status: 'next',
+      badge: '⏳ Próximo',
+      desc: 'Documenta y presenta: idea, demo en vivo y aprendizajes.',
+      items: ['README + capturas', 'Video/demo 3 min', 'Exposición'],
+      icon: '🏁'
     }
   ];
 
@@ -83,9 +139,14 @@
     frontend: string;
     backend: string;
     database: string;
+    progressStep: number;
   }
 
-  const projects: Project[] = [
+  function withProgress(p: Omit<Project, 'progressStep'>): Project {
+    return { ...p, progressStep: 2 };
+  }
+
+  const rawProjects: Omit<Project, 'progressStep'>[] = [
     {
       student: 'David Santiago Erazo Moncayo',
       idea: 'Sistema de organización de libros de una biblioteca.',
@@ -178,6 +239,12 @@
       database: 'Mongo'
     }
   ];
+
+  const projects: Project[] = rawProjects.map(withProgress);
+
+  function progressPct(step: number) {
+    return Math.round((Math.min(Math.max(step, 0), TOTAL_STEPS) / TOTAL_STEPS) * 100);
+  }
 
   let searchQuery = $state('');
   
@@ -299,6 +366,21 @@
                 <span class="tech-label">DB</span>
                 <strong>{project.database}</strong>
               </span>
+            </div>
+          </div>
+
+          <div class="progress-section" aria-label="Progreso del proyecto de {project.student}">
+            <div class="progress-top">
+              <span class="progress-label">📊 Progreso: Paso {project.progressStep} de {TOTAL_STEPS}</span>
+              <span class="progress-pct">{progressPct(project.progressStep)}%</span>
+            </div>
+            <div class="progress-bar" role="progressbar" aria-valuenow={project.progressStep} aria-valuemin={0} aria-valuemax={TOTAL_STEPS} aria-label="Paso {project.progressStep} de {TOTAL_STEPS}">
+              <div class="progress-fill" style="width: {progressPct(project.progressStep)}%;"></div>
+            </div>
+            <div class="progress-steps">
+              {#each Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1) as s}
+                <span class="p-step {s <= project.progressStep ? 'done' : ''}" title="Paso {s}">{s}</span>
+              {/each}
             </div>
           </div>
         </div>
@@ -765,6 +847,76 @@
     background: linear-gradient(90deg, #10b981, #3b82f6);
     border-radius: 999px;
     transition: width 0.5s ease;
+  }
+
+  .progress-section {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .progress-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+  .progress-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #334155;
+  }
+
+  .progress-pct {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #047857;
+    background: #dcfce7;
+    border: 1px solid #86efac;
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+  }
+
+  .progress-bar {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #3b82f6);
+    border-radius: 999px;
+    transition: width 0.5s ease;
+  }
+
+  .progress-steps {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.55rem;
+    flex-wrap: wrap;
+  }
+
+  .p-step {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    font-weight: 800;
+    background: #f1f5f9;
+    color: #94a3b8;
+    border: 1px solid #e2e8f0;
+  }
+
+  .p-step.done {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
   }
 
   @media (max-width: 600px) {

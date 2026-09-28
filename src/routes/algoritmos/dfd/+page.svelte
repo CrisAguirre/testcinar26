@@ -724,6 +724,23 @@
       <button class="btn btn-secondary" onclick={() => showGuide = true} title="Ver guía paso a paso para estudiantes">
         ❓ ¿Cómo usar?
       </button>
+      <a
+        class="btn btn-secondary"
+        href="/guias/Manual_Manejo_Editor_DFD.pdf"
+        target="_blank"
+        rel="noopener"
+        title="Abrir Manual de Manejo en PDF en pestaña nueva"
+      >
+        📘 Ver Manual
+      </a>
+      <a
+        class="btn btn-secondary"
+        href="/guias/Manual_Manejo_Editor_DFD.pdf"
+        download="Manual_Manejo_Editor_DFD.pdf"
+        title="Descargar Manual de Manejo en PDF"
+      >
+        ⬇️ Descargar
+      </a>
     </div>
     <div class="file-controls">
       <span class="file-icon">📄</span>

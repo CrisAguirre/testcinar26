@@ -167,7 +167,7 @@ Cinar/
 
 ## Credenciales
 
-- **Admin**: `admin@cinar.com` / contraseña inicial en `ADMIN_PASSWORD` (env, mín. 12 car.). Se crea solo si no existe; cambiarla tras el primer ingreso. Nunca documentar el valor aquí.
+- **Admin**: `admin@cinar.com` / contraseña definida por `ADMIN_PASSWORD` (env, mín. 12 car.). Cada arranque la sincroniza: cambiar la variable + redesplegar = nueva contraseña. Nunca documentar el valor aquí.
 - **Coordinador**: `coordinacion@cinarsistemas.edu.co` (role: 'coordinator')
 
 ## Seguridad (P0+P1 Sep-2026, P2 Sep-2026)

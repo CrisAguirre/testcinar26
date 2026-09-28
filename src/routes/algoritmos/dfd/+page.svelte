@@ -26,7 +26,6 @@
   let showGuide = $state(false);
   let executingPath = $state<(number | string)[] | null>(null);
   let liveVariables = $state<Record<string, string | number>>({});
-  let parseErrorMsg = $state('');
   let currentExecutor = $state<any>(null);
   let showVariables = $state(true);
   

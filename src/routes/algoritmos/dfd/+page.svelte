@@ -61,25 +61,20 @@
     }
   }
   
-  let ast = $derived.by(() => {
-    if (!dfdContent) {
-      parseErrorMsg = '';
-      return null;
-    }
+  let parseResult = $derived.by(() => {
+    if (!dfdContent) return { ast: null, error: '' };
     try {
       const parsed = parseDfd(dfdContent);
-      if (parsed.error) {
-        parseErrorMsg = parsed.error;
-        return null;
-      }
-      parseErrorMsg = '';
-      return parsed;
+      if (parsed.error) return { ast: null, error: parsed.error };
+      return { ast: parsed, error: '' };
     } catch (err) {
       console.error('Parse error', err);
-      parseErrorMsg = 'No pude leer el código .DFD. Revisa la pestaña ⚙️ .DFD o pulsa 🆕 Nuevo.';
-      return null;
+      return { ast: null, error: 'No pude leer el codigo .DFD. Revisa la pestana .DFD o pulsa Nuevo.' };
     }
   });
+
+  let ast = $derived.by(() => parseResult.ast);
+  let parseErrorMsg = $derived.by(() => parseResult.error);
 
   let renderData = $derived.by(() => {
     if (!ast) return null;

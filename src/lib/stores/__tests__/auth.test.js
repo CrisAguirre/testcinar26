@@ -15,6 +15,7 @@ function createMockStorage(initial = {}) {
 
 beforeEach(() => {
   vi.stubGlobal('localStorage', createMockStorage());
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({}) }));
   vi.resetModules();
 });
 
@@ -60,10 +61,10 @@ describe('login', () => {
     expect(get(mod.currentUser)).toEqual(userData);
   });
 
-  it('guarda en localStorage', async () => {
+  it('guarda el usuario en localStorage pero el token solo en memoria', async () => {
     const mod = await importAuth();
     mod.login({ username: 'u', role: 'student' }, 't');
-    expect(localStorage.getItem('token')).toBe('t');
+    expect(localStorage.getItem('token')).toBeNull();
     expect(JSON.parse(localStorage.getItem('user'))).toEqual({ username: 'u', role: 'student' });
   });
 

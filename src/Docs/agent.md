@@ -170,11 +170,14 @@ Cinar/
 - **Admin**: `admin@cinar.com` / contraseña inicial en `ADMIN_PASSWORD` (env, mín. 12 car.). Se crea solo si no existe; cambiarla tras el primer ingreso. Nunca documentar el valor aquí.
 - **Coordinador**: `coordinacion@cinarsistemas.edu.co` (role: 'coordinator')
 
-## Seguridad (P0+P1 Sep-2026)
+## Seguridad (P0+P1 Sep-2026, P2 Sep-2026)
 
 - Registro público (`POST /api/auth/register`) siempre crea `student`; ignora `role`. Crear usuarios con rol vía `POST /api/auth/users` (admin).
-- Sin `JWT_SECRET` en producción el backend no arranca. CORS restringido a `FRONTEND_URLS`.
-- `helmet` + rate-limit (login/register 20/15min, API 300/15min). `GET /api/grades/:id` verifica dueño o rol privilegiado.
+- Sin `JWT_SECRET` en producción el backend no arranca. CORS restringido a `FRONTEND_URLS` con `credentials:true`.
+- `helmet` + rate-limit (login/register 20/15min, refresh 60/15min, API 300/15min). `GET /api/grades/:id` verifica dueño o rol privilegiado.
+- P2 sesiones: access JWT 15min solo en memoria del front; refresh opaco rotativo 7d en cookie `cinar_refresh` httpOnly (`Secure`+`SameSite=None` en prod). `POST /api/auth/refresh` (con chequeo de origen anti-CSRF) y `POST /api/auth/logout` que revoca. Logout limpia todo el localStorage salvo el tema.
+- P2 bloqueo: `EXAMS_LOCKED` (default true) bloquea en servidor `POST /api/grades/mine` y `PUT /api/grades/mine/:id` de exámenes para no privilegiados; el frontend redirige (`src/lib/guards/examLock.js`).
+- `Cache-Control: no-store` en `/api/grades`, `/api/enrollments`, `/api/auth/profile`.
 - Bloqueo temporal de parciales/talleres: frontend redirige no-admin (`src/lib/guards/examLock.js`, `EXAM_LOCK_ACTIVE`); el backend ya valida ventanas e inscripción en `POST /api/grades/mine`.
 
 ## Dependencias Conocidas

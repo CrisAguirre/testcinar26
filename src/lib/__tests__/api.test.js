@@ -65,6 +65,7 @@ describe('api', () => {
     const result = await api('GET', '/test');
     expect(fetch).toHaveBeenCalledWith(`${API_URL}/test`, {
       method: 'GET',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' }
     });
     expect(result).toEqual({ data: 'ok' });
@@ -76,6 +77,7 @@ describe('api', () => {
     await api('GET', '/secure');
     expect(fetch).toHaveBeenCalledWith(`${API_URL}/secure`, {
       method: 'GET',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer tok123'
@@ -89,6 +91,7 @@ describe('api', () => {
     await api('POST', '/items', data);
     expect(fetch).toHaveBeenCalledWith(`${API_URL}/items`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
@@ -122,6 +125,7 @@ describe('authApi', () => {
     const result = await authApi.login('user', 'pass');
     expect(fetch).toHaveBeenCalledWith(`${API_URL}/auth/login`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: 'user', password: 'pass' })
     });

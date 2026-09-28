@@ -167,8 +167,15 @@ Cinar/
 
 ## Credenciales
 
-- **Admin**: `admin@cinar.com` / `Janis724@#$%` (role: 'admin')
+- **Admin**: `admin@cinar.com` / contraseña inicial en `ADMIN_PASSWORD` (env, mín. 12 car.). Se crea solo si no existe; cambiarla tras el primer ingreso. Nunca documentar el valor aquí.
 - **Coordinador**: `coordinacion@cinarsistemas.edu.co` (role: 'coordinator')
+
+## Seguridad (P0+P1 Sep-2026)
+
+- Registro público (`POST /api/auth/register`) siempre crea `student`; ignora `role`. Crear usuarios con rol vía `POST /api/auth/users` (admin).
+- Sin `JWT_SECRET` en producción el backend no arranca. CORS restringido a `FRONTEND_URLS`.
+- `helmet` + rate-limit (login/register 20/15min, API 300/15min). `GET /api/grades/:id` verifica dueño o rol privilegiado.
+- Bloqueo temporal de parciales/talleres: frontend redirige no-admin (`src/lib/guards/examLock.js`, `EXAM_LOCK_ACTIVE`); el backend ya valida ventanas e inscripción en `POST /api/grades/mine`.
 
 ## Dependencias Conocidas
 

@@ -1693,4 +1693,17 @@
     .tool-group { flex: 1 1 100%; justify-content: flex-start; flex-wrap: wrap; }
     .exercise-select { max-width: none; flex: 1; }
   }
+
+  /* Móvil y tablet vertical: apilar paneles para que el lienzo respire */
+  @media (max-width: 860px) {
+    .page { height: auto; min-height: 100vh; }
+    .layout { flex-direction: column; overflow: visible; }
+    .sidebar { width: 100%; max-height: none; order: 2; }
+    .canvas-container { order: 1; min-height: 52vh; max-height: 70vh; }
+    .props-panel { width: 100%; border-left: none; border-top: 1px solid rgba(0,0,0,0.06); order: 3; }
+    .canvas-toolbar { flex-wrap: wrap; }
+    .bottom-panel { height: auto; }
+    .toolbar { padding: 0.5rem 0.6rem; }
+    .btn { padding: 0.4rem 0.7rem; font-size: 0.8rem; }
+  }
 </style>

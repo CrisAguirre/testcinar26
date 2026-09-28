@@ -4,6 +4,14 @@
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
+  import { isStrictAdmin, EXAM_LOCK_ACTIVE } from '$lib/guards/examLock';
+
+  // Bloqueo temporal: parciales y taller solo para admin (aún no son las fechas).
+  let examLocked = $derived(EXAM_LOCK_ACTIVE && !isStrictAdmin($currentUser));
+  $effect(() => {
+    if (!$currentUser) { goto('/login'); return; }
+    if (examLocked) goto('/algoritmos');
+  });
   import {
     STORAGE_KEY, TOTAL_QUESTIONS, TOTAL_TIME,
     getAttemptLabel, formatTime, getProgressPercent,

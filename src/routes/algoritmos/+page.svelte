@@ -2,6 +2,7 @@
   import { isAuthenticated, currentUser } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
   import { preloadedMyEnrollments } from '$lib/stores/preloaded';
+  import { isStrictAdmin, EXAM_LOCK_ACTIVE, EXAM_LOCK_MESSAGE } from '$lib/guards/examLock';
 
   $effect(() => {
     if (!$isAuthenticated) { goto('/login'); return; }
@@ -13,7 +14,10 @@
     }
   });
 
-  const links: { href: string | null; icon: string; label: string; disabled?: boolean }[] = [
+  // Bloqueo temporal de parciales/taller: solo admin (aún no son las fechas).
+  let examsLocked = $derived(EXAM_LOCK_ACTIVE && !isStrictAdmin($currentUser));
+
+  const links: { href: string | null; icon: string; label: string; disabled?: boolean; lockLabel?: string }[] = [
     { href: '/algoritmos/parcial-1', icon: '📝', label: 'Parcial 1' },
     { href: '/algoritmos/parcial-2', icon: '📝', label: 'Parcial 2' },
     { href: '/algoritmos/taller', icon: '⚙️', label: 'Taller Práctico' },
@@ -24,6 +28,14 @@
     { href: '/algoritmos/actividad-de-la-semana', icon: '📺', label: 'Actividad de la semana' },
     { href: '/algoritmos/proyecto-personal', icon: '🚀', label: 'Proyecto Personal' }
   ];
+
+  let displayLinks = $derived(
+    links.map((l) => {
+      const isExam = l.href !== null && /parcial|taller/i.test(l.href);
+      if (isExam && examsLocked) return { ...l, href: null, disabled: true, lockLabel: '🔒 Bloqueado' };
+      return l;
+    })
+  );
 
   const modules = [
     { hours: '2h', topic: 'Introducción a los algoritmos', objective: 'Características y fases de resolución de problemas' },
@@ -70,13 +82,16 @@
 </div>
 
 <div class="page">
+  {#if examsLocked}
+    <div class="lock-banner" role="status">🔒 {EXAM_LOCK_MESSAGE}</div>
+  {/if}
   <div class="cards">
-    {#each links as link, i}
+    {#each displayLinks as link, i}
       {#if link.disabled}
         <div class="card card--disabled" style="--i: {i}">
           <span class="card-bounce">{link.icon}</span>
           <span class="card-label">{link.label}</span>
-          <span class="card-badge">Próximamente</span>
+          <span class="card-badge">{link.lockLabel ?? 'Próximamente'}</span>
         </div>
       {:else}
         <a
@@ -345,6 +360,18 @@
     border-radius: 999px;
     position: relative;
     z-index: 1;
+  }
+
+  .lock-banner {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
   }
 
   .card-shine {

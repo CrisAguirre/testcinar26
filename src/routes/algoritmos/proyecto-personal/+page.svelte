@@ -323,7 +323,7 @@
       {/each}
     </div>
     <div class="carousel-progress">
-      <div class="carousel-progress-bar" style="width: {((activeStep + 1) / weeklySteps.length) * 100}%;"></div>
+      <div class="carousel-progress-bar" style="transform: scaleX({(activeStep + 1) / weeklySteps.length});"></div>
     </div>
   </section>
 
@@ -375,7 +375,7 @@
               <span class="progress-pct">{progressPct(project.progressStep)}%</span>
             </div>
             <div class="progress-bar" role="progressbar" aria-valuenow={project.progressStep} aria-valuemin={0} aria-valuemax={TOTAL_STEPS} aria-label="Paso {project.progressStep} de {TOTAL_STEPS}">
-              <div class="progress-fill" style="width: {progressPct(project.progressStep)}%;"></div>
+              <div class="progress-fill" style="transform: scaleX({progressPct(project.progressStep) / 100});"></div>
             </div>
             <div class="progress-steps">
               {#each Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1) as s}
@@ -825,7 +825,7 @@
     background: #cbd5e1;
     cursor: pointer;
     padding: 0;
-    transition: transform 0.25s ease, background 0.25s ease, width 0.25s ease;
+    transition: transform 0.25s ease, background 0.25s ease;
   }
 
   .dot.active {
@@ -844,9 +844,11 @@
 
   .carousel-progress-bar {
     height: 100%;
+    width: 100%;
     background: linear-gradient(90deg, #10b981, #3b82f6);
     border-radius: 999px;
-    transition: width 0.5s ease;
+    transform-origin: left center;
+    transition: transform 0.5s ease;
   }
 
   .progress-section {
@@ -887,9 +889,11 @@
 
   .progress-fill {
     height: 100%;
+    width: 100%;
     background: linear-gradient(90deg, #10b981, #3b82f6);
     border-radius: 999px;
-    transition: width 0.5s ease;
+    transform-origin: left center;
+    transition: transform 0.5s ease;
   }
 
   .progress-steps {

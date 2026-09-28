@@ -4,6 +4,14 @@
   import { currentUser, isAdmin } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
+  import { isStrictAdmin, EXAM_LOCK_ACTIVE } from '$lib/guards/examLock';
+
+  // Bloqueo temporal: parciales y taller solo para admin (aún no son las fechas).
+  let examLocked = $derived(EXAM_LOCK_ACTIVE && !isStrictAdmin($currentUser));
+  $effect(() => {
+    if (!$currentUser) { goto('/login'); return; }
+    if (examLocked) goto('/desarrollo-web-1');
+  });
   import { STORAGE_KEY, DETAIL_KEY, SIMULACRO_END, EVAL_START, EVAL_END, MAX_SIMULACROS, MAX_EVALUACIONES, TOTAL_QUESTIONS, TOTAL_TIME, TIME_PER_MC, TIME_PER_OPEN, calculateTotalTime, formatTime, getAttemptLabel, getAttemptType, calculateScore, buildExamData, SYNC_QUEUE_KEY, getSyncQueue, addToSyncQueue, removeFromSyncQueue, setHealthCheckOk, isHealthCheckRecent, SAVED_ANSWERS_KEY, saveAnswersSnapshot, clearSavedAnswers } from '$lib/exam2';
   import { preloadedMyGrades, preloadingStatus, wakeUpStatus } from '$lib/stores/preloaded';
 

@@ -368,5 +368,12 @@
     .problems-grid {
       grid-template-columns: 1fr;
     }
+    .level-tabs {
+      flex-direction: column;
+    }
+    .level-tab {
+      font-size: 0.82rem;
+      padding: 0.6rem 0.7rem;
+    }
   }
 </style>

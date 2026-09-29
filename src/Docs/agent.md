@@ -1,4 +1,4 @@
-# Cinar - Estado Actual de la Plataforma (24 Septiembre 2026)
+# Cinar - Estado Actual de la Plataforma (29 Septiembre 2026)
 
 ## Estructura del Proyecto
 
@@ -16,28 +16,34 @@ Cinar/
 │   │   │   │   ├── enlaces-de-consulta/
 │   │   │   │   └── actividad-de-la-semana/
 │   │   │   ├── desarrollo-web-2/   # DW2
-│   │   │   │   ├── parcial-1/
-│   │   │   │   ├── parcial-2/
-│   │   │   │   ├── taller/          
+│   │   │   │   ├── parcial-1/      # BLOQUEADO no-admin (guard examLock)
+│   │   │   │   ├── parcial-2/      # BLOQUEADO no-admin
+│   │   │   │   ├── taller/         # BLOQUEADO no-admin
 │   │   │   │   ├── notas/
 │   │   │   │   ├── enlaces-de-consulta/
 │   │   │   │   ├── actividad-de-la-semana/  # Simplificada y con ejemplos prácticos externos.
 │   │   │   │   └── proyecto-colaborativo/   # TrueX Trade (Intercambios P2P): React front + roles asignados (6+docente) + cronograma 6 sem. Maquetado ordenado 01/02/03.
 │   │   │   └── algoritmos/         # Algoritmos
-│   │   │       ├── parcial-1/
-│   │   │       ├── parcial-2/
-│   │   │       ├── taller/           
+│   │   │       ├── parcial-1/      # BLOQUEADO no-admin
+│   │   │       ├── parcial-2/      # BLOQUEADO no-admin
+│   │   │       ├── taller/         # BLOQUEADO no-admin (+ variantes algoritmia/taller x3 cursos)
 │   │   │       ├── notas/
+│   │   │       ├── videos/         # 3 videos (Pensamiento crítico, Reto, Video 3)
 │   │   │       ├── enlaces-de-consulta/  # Usa $lib/data/enlacesData.ts (IA y Aprendizaje +3: UNAD Cisco, MongoDB University, Capacítate).
-│   │   │       ├── actividad-de-la-semana/  # Ejercicios DFD Nivel 1 con carga automática.
-│   │   │       ├── dfd/             # Editor visual DFD: pseudocódigo legible + drag&drop + panel propiedades.
-│   │   │       └── proyecto-personal/       # Asignación de proyectos por estudiante (13: 11 base + Jairo + Julián).
+│   │   │       ├── actividad-de-la-semana/  # Tabs Nivel 1 (16) + Nivel 2 (22) con análisis; abre en editor (?load=N1-X/N2-X).
+│   │   │       ├── dfd/             # Editor visual DFD v2 (ver punto 5 y 7).
+│   │   │       └── proyecto-personal/       # 13 proyectos + carrusel 10 pasos + barra progreso (todos en paso 2).
 │   │   ├── lib/
 │   │   │   ├── data/                # Bancos de preguntas (DW2 y Algo) + enlacesData.ts
-│   │   │   ├── dfd/                 # parser.js (parse/serialize + return/call/merge), renderer.js (path por figura), executor.js, pseudocode.js
-│   │   │   ├── stores/              # Auth, preloaded (preloadedMyEnrollments)
+│   │   │   ├── dfd/                 # parser.js (parse/serialize + return/call/merge), renderer.js (path por figura), executor.js (con onStep/path), pseudocode.js
+│   │   │   ├── guards/              # examLock.js (EXAM_LOCK_ACTIVE, isStrictAdmin solo role==='admin')
+│   │   │   ├── stores/              # Auth (token en memoria + migración legada + logout total), preloaded
 │   │   │   ├── components/          # SubjectCard, etc
-│   │   │   └── api.js               # authApi, gradesApi, enrollmentApi
+│   │   │   └── api.js               # access en memoria + refresh silencioso single-flight + credentials:include
+│   │   └── static/
+│   │       ├── guias/Manual_Manejo_Editor_DFD.pdf  # Manual con logo (Ver/Descargar desde el editor)
+│   │       ├── videos/Video_3.mp4                 # Video 3 algoritmos (10.5 MB)
+│   │       └── dfd/nivel1/ (16) + dfd/nivel2/ (22 Condicionales)
 │   │   └── lib/data/
 │   │       ├── parcial1_dw2.js
 │   │       ├── parcial2_dw2.js
@@ -49,21 +55,27 @@ Cinar/
 ├── testcinar26bknd/       # Backend (Express)
 │   ├── src/
 │   │   ├── models/
-│   │   │   ├── User.js
+│   │   │   ├── User.js         # + refreshTokenHash/ExpiresAt (select:false) para P2
 │   │   │   ├── Grade.js
 │   │   │   └── Enrollment.js    # Sistema de inscripciones con projectIdea
 │   │   ├── controllers/
-│   │   │   ├── authController.js
-│   │   │   ├── gradeController.js
+│   │   │   ├── authController.js   # register fuerza student, validación, sesiones refresh/logout, cambio de contraseña
+│   │   │   ├── gradeController.js  # IDOR fix en getById + bloqueo EXAMS_LOCK en mine
 │   │   │   └── enrollmentController.js  # getMine(), saveProjectIdea()
-│   │   ├── routes/
-│   │   ├── middlewares/
-│   │   └── index.js
-│   └── eslint.config.js         # Backend auditado con ESLint (100% limpio).
+│   │   ├── routes/             # auth (+/refresh /logout /users /password), grades, enrollments, schedule
+│   │   ├── middlewares/        # authMiddleware (fail-fast JWT) + requireAllowedOrigin (anti-CSRF)
+│   │   └── index.js            # helmet, CORS restringido+credentials, rate-limits, no-store, seedAdmin por env
+│   └── eslint.config.js         # Backend auditado con ESLint (0 errores, verificado 29/09).
+│   └── deps nuevas: helmet, express-rate-limit
 └── package.json workspaces (seed.js ejecuta en start de render)
 ```
 
 ## Reglas de Acceso por Curso
+
+### Bloqueo temporal de parciales/talleres (29/09, vigente)
+- **Solo `role==='admin'`** puede entrar a parcial-1, parcial-2 y taller (incluye `algoritmia/taller`) de los 3 cursos. Estudiantes, coordinadores y teachers ven `🔒 Bloqueado` + banner en los menús y son redirigidos si usan URL directa.
+- Frontend: `src/lib/guards/examLock.js` (`EXAM_LOCK_ACTIVE=true`). Backend espejo: `EXAMS_LOCKED` (default true) bloquea `POST/PUT /api/grades/mine` de exámenes a no privilegiados. Para levantar: ambos flags en false.
+- Motivo: aún no son las fechas.
 
 ### Desarrollo Web 1
 - **Todos los usuarios autenticados** pueden acceder al contenido.
@@ -128,35 +140,66 @@ Cinar/
    - **DW2**: Limpieza de UI (se retiraron los tags de horas y el prefijo de clases). Se añadieron **Ejemplos Prácticos externos** al final de cada temática (E-commerce, Social Media, etc). Solucionado el error 500 inyectando scripts HTML parseados a hexadecimal.
    - **Enlaces Algoritmos (IA y Aprendizaje)**: agregados 3 items debajo de Anthropic en `src/lib/data/enlacesData.ts`: UNAD ITP Cisco (redes/CCNA/ciberseguridad), MongoDB University (cursos/certificación NoSQL con dashboard), Capacítate para el Empleo Fundación Slim (oficios/tecnología con diploma).
 
-5. **Editor Visual DFD (Algoritmos `/algoritmos/dfd`) — Iteración actual**
-   - **Código Fuente legible**: pestañas `📖 Legible` (default, `generatePseudocode()` en `src/lib/dfd/pseudocode.js`: `Algoritmo X / Inicio / Leer / Escribir / <- / Si-Sino-FinSi / Mientras-FinMientras / Fin`) + `⚙️ .DFD` (crudo FreeDFD editable). Verificado en Problemas 1, 2, 10.
-   - **Drag & Drop completo**: paleta arrastrable + clic `+` (Lectura, Salida, Asignación, Decisión, Mientras; Inicio/Fin auto), `dropZones` azules `+ soltar aquí` con `targetList+index` (incluye ramas Sí/No y cuerpo Mientras), `handleCanvasDrop` al final, `🆕 Nuevo` (lienzo vacío), `↩ Deshacer` (30 pasos), `🗑 Último`, lista Pasos con ↑↓✕ y reordenamiento. `serializeDfd` extendido con `return→3`, `call→12`, `merge→skip`; `renderShape` con `while` morado y `merge` invisible.
-   - **Panel Propiedades**: clic en figura o paso → panel derecho editable en lenguaje natural (variables coma-separadas, texto salida, variable+fórmula con sanitizado, condiciones decisión/mientras), `pushHistory` al enfocar + `serialize` al escribir. Mapeo figura→nodo por `path` en `renderer.js` (`placeNodes(..., basePath)`, `shape.path`, `getNodeByPath`, `data-path`, resaltado azul). Roundtrip edición→serialize→parse→execute verificado.
+5. **Editor Visual DFD (Algoritmos `/algoritmos/dfd`) — v2 (26-29/09)**
+    - **Código Fuente legible**: pestañas `📖 Legible` (default, `generatePseudocode()` en `src/lib/dfd/pseudocode.js`: `Algoritmo X / Inicio / Leer / Escribir / <- / Si-Sino-FinSi / Mientras-FinMientras / Fin`) + `⚙️ .DFD` (crudo FreeDFD editable). Verificado en Problemas 1, 2, 10.
+    - **Drag & Drop completo**: paleta arrastrable + clic `+` (Lectura, Salida, Asignación, Decisión, Mientras; Inicio/Fin auto), `dropZones` azules `+ soltar aquí` con `targetList+index` (incluye ramas Sí/No y cuerpo Mientras), `handleCanvasDrop` al final, `🆕 Nuevo` (lienzo vacío), `↩ Deshacer` + `↪ Rehacer` (50 pasos), `🗑 Último`, lista Pasos **recursiva** (muestra Rama Sí/No y Cuerpo Mientras) con ↑↓✕ por nivel + `📋 Duplicar`. `serializeDfd` extendido con `return→3`, `call→12`, `merge→skip`; `renderShape` con `while` morado y `merge` invisible.
+    - **Panel Propiedades**: clic en figura o paso → panel derecho editable en lenguaje natural (variables coma-separadas, texto salida, variable+fórmula con sanitizado, condiciones decisión/mientras), `pushHistory` al enfocar + `serialize` al escribir. Mapeo figura→nodo por `path` en `renderer.js` (`placeNodes(..., basePath)`, `shape.path`, `getNodeByPath`, `data-path`, resaltado azul). Roundtrip edición→serialize→parse→execute verificado. **Validación amigable**: avisos por componente + banner de conteo + `✅ ¡Bien!`.
+    - **Ejecución paso a paso**: `▶ Ejecutar` rápido + `🐢 Paso a paso` (750ms, ilumina figura en verde vía `executingPath`, panel `🧮 Variables en vivo`) + `⏹ Detener`. `DfdExecutor` con `onStep(path, vars)`, `stepDelayMs` y `stop()`; `test_executor.mjs` 3/3 PASS.
+    - **Zoom y atajos**: `−/+/⤾` (50-180%), `Ctrl+Z/Y`, `Supr`, `Ctrl+D`, `Esc`. Toolbar rediseñada por grupos (Menú / Ejercicios N1+N2 / Archivo / Ejecutar / Ayuda); layout ampliado (sidebar 240, props 270) + apilado móvil `@media 860px`.
+    - **Niveles**: selector con N1 (16 Operadores) + N2 (22 Condicionales); `?load=N1-X/N2-X` (legacy `Problema X`→N1). `static/dfd/nivel2/` publicado (22 `.dfd`).
+    - **Manual PDF**: `static/guias/Manual_Manejo_Editor_DFD.pdf` (logo + título Manual de Manejo, 4 págs sin solapamientos) con botones `📘 Ver Manual` / `⬇️ Descargar` en el editor. Copia fuente en `src/Docs/trimc26/Algoritmos/`.
 
 4. **Auditoría del Sistema y Refactorización (Impeccable Style & ESLint)**
-   - **Backend**: Auditado con ESLint. Código completamente limpio (0 Errores).
-   - **Frontend**: Refactorizado siguiendo los principios A11y (accesibilidad) de Impeccable Style y la reactividad correcta de **Svelte 5** (Runes):
-     - Corregidos errores de `totalTime` que perdían reactividad en los exámenes.
-     - Ajustada la inicialización de estados capturados por prop `$props().data` en parciales y talleres usando encadenamiento opcional `??` e inicialización inline.
-     - Asignados roles `presentation` en la página `enlaces-de-consulta` para cumplir estándares ARIA.
-     - Limpiados los warnings de TypeScript respecto a variables potencialmente `null` en la obtención de notas.
+    - **Backend**: Auditado con ESLint. Código completamente limpio (0 errores, verificado 29/09).
+    - **Frontend**: Refactorizado siguiendo los principios A11y (accesibilidad) de Impeccable Style y la reactividad correcta de **Svelte 5** (Runes):
+      - Corregidos errores de `totalTime` que perdían reactividad en los exámenes.
+      - Ajustada la inicialización de estados capturados por prop `$props().data` en parciales y talleres usando encadenamiento opcional `??` e inicialización inline.
+      - Asignados roles `presentation` en la página `enlaces-de-consulta` para cumplir estándares ARIA.
+      - Limpiados los warnings de TypeScript respecto a variables potencialmente `null` en la obtención de notas.
+    - **Impeccable 29/09**: 35 hallazgos (mayoría estilísticos preexistentes: easings bounce, gradient-text, side-tabs, contraste de HTML viejo en Docs). Corregidos los 3 de rendimiento (barras/dots con `transform` en vez de `width`).
+    - **svelte-check**: 420 errores base preexistentes en 40 archivos (implicit `any`, archivos intactos incluidos); `vite build` pasa (es lo que corre Vercel).
+    - **Tests front 29/09**: 47/47 PASS en `api.test.js`, `auth.test.js`, `preloaded.test.js`. 8 fallos preexistentes ajenos: `api.grades.test.js` (integración contra prod + ventanas de agosto vencidas), `exam.test.js` (ventana vencida), `enlacesData.test.js` (espera 20, hay 23 por los +3 agregados).
+
+7. **Actividad de la semana Nivel 2 + Videos (29/09)**
+    - Actividad algoritmos con tabs `Nivel 1 (16)` / `Nivel 2 (22 Condicionales, enunciados reales de `Ejercicios.pdf`, pares=Propuesto)`. Cada tarjeta: revisar enunciado → `Abrir en Editor DFD` (`?load=N2-X`) → `Revisar y analizar` (guía secuencial vs condicional).
+    - Videos algoritmos: 3 videos (`/Pensamiento_critico.mp4`, `/Reto.mp4`, `/videos/Video_3.mp4` 10.5 MB desde `src/Docs/.../videos/Video 3.mp4`).
+
+8. **Proyecto personal: 10 pasos + progreso (29/09)**
+    - `weeklySteps` de 4 → 10 (5 Modelo+CRUD, 6 Frontend, 7 API+Atlas, 8 Integración, 9 Despliegue, 10 Presentación). Carrusel y dots se adaptan solos.
+    - Cada card de los 13 estudiantes: `📊 Progreso Paso 2 de 10 (20%)` + barra (animada con `transform`) + 10 bolitas (1-2 verdes).
+
+9. **Bloqueo temporal parciales/talleres (29/09, vigente)**
+    - 11 rutas (6 parciales + 5 talleres incl. `algoritmia/taller`) redirigen a no-admin; menús con `🔒 Bloqueado` + banner. Ver sección Reglas de Acceso.
+
+10. **Seguridad P0/P1/P2 (29/09)** — ver sección Seguridad. Env requeridas en Render: `JWT_SECRET`, `ADMIN_PASSWORD`, `FRONTEND_URL` (singular válido).
 
 6. **Bitácora 24/09/2026 (sesión docente)**
-   - `seed.js`: alta de Julián (algo13) solo algoritmos; 7 DW omitidos (no tocar); regla general todo otro `student` → solo algoritmos con limpieza DW; reparar `canPresent:false→true`. Pendiente `npm start` en Render para aplicar en BD prod.
-   - Sondeo prod `testcinar26bknd.onrender.com`: login admin OK; 76 enrollments en algoritmos (muchos test); 10 `projectIdea` no vacías (Jairo = compraventa oro; algo10 = "."; sin idea algo9/algo12/jd.reina).
-   - DW2 TrueX Trade: roles y stacks actualizados en página; PM = docente (tú).
+    - `seed.js`: alta de Julián (algo13) solo algoritmos; 7 DW omitidos (no tocar); regla general todo otro `student` → solo algoritmos con limpieza DW; reparar `canPresent:false→true`. Pendiente `npm start` en Render para aplicar en BD prod.
+    - Sondeo prod `testcinar26bknd.onrender.com`: login admin OK; 76 enrollments en algoritmos (muchos test); 10 `projectIdea` no vacías (Jairo = compraventa oro; algo10 = "."; sin idea algo9/algo12/jd.reina).
+    - DW2 TrueX Trade: roles y stacks actualizados en página; PM = docente (tú).
+
+7. **Bitácora 29/09/2026 (sesión docente)**
+    - DFD v2 desplegado en concepto: verificar en prod `/algoritmos/dfd` y `?load=N2-1` tras push.
+    - Pendientes de deploy: backend P0/P1/P2 (push + env `JWT_SECRET`, `ADMIN_PASSWORD`, `FRONTEND_URL` en Render + redespliegue) y front (sesiones con cookie requieren backend nuevo).
+    - Tras el deploy, rotar la contraseña admin expuesta vía `PATCH /api/auth/password`.
 
 ## API Endpoints
 
 ### Auth
-- `POST /api/auth/register`
+- `POST /api/auth/register` (siempre crea `student`)
 - `POST /api/auth/login`
+- `POST /api/auth/refresh` (cookie httpOnly + origen permitido)
+- `POST /api/auth/logout` (revoca refresh)
+- `PATCH /api/auth/password` (cambio propio, pide actual + nueva)
+- `PATCH /api/auth/users/:id/password` (admin, reseteo)
+- `POST /api/auth/users` (admin, crear con rol)
 - `GET /api/auth/profile`
 
 ### Grades
-- `GET /api/grades` - Todas las notas
-- `POST /api/grades` - Crear nota
-- `PUT /api/grades/:id` - Actualizar nota
+- `GET /api/grades` - Todas las notas (admin/teacher)
+- `POST /api/grades` - Crear nota (admin/teacher)
+- `PUT /api/grades/:id` - Actualizar nota (admin/teacher)
+- `GET /api/grades/:id` - Verifica dueño o privilegiado
 - `GET /api/grades/mine` - Notas del usuario actual
 
 ### Enrollments
@@ -170,15 +213,17 @@ Cinar/
 - **Admin**: `admin@cinar.com` / contraseña definida por `ADMIN_PASSWORD` (env, mín. 12 car.). Cada arranque la sincroniza: cambiar la variable + redesplegar = nueva contraseña. Nunca documentar el valor aquí.
 - **Coordinador**: `coordinacion@cinarsistemas.edu.co` (role: 'coordinator')
 
-## Seguridad (P0+P1 Sep-2026, P2 Sep-2026)
+## Seguridad (P0+P1+P2, 29/09/2026)
 
-- Registro público (`POST /api/auth/register`) siempre crea `student`; ignora `role`. Crear usuarios con rol vía `POST /api/auth/users` (admin).
-- Sin `JWT_SECRET` en producción el backend no arranca. CORS restringido a `FRONTEND_URLS` con `credentials:true`.
-- `helmet` + rate-limit (login/register 20/15min, refresh 60/15min, API 300/15min). `GET /api/grades/:id` verifica dueño o rol privilegiado.
-- P2 sesiones: access JWT 15min solo en memoria del front; refresh opaco rotativo 7d en cookie `cinar_refresh` httpOnly (`Secure`+`SameSite=None` en prod). `POST /api/auth/refresh` (con chequeo de origen anti-CSRF) y `POST /api/auth/logout` que revoca. Logout limpia todo el localStorage salvo el tema.
-- P2 bloqueo: `EXAMS_LOCKED` (default true) bloquea en servidor `POST /api/grades/mine` y `PUT /api/grades/mine/:id` de exámenes para no privilegiados; el frontend redirige (`src/lib/guards/examLock.js`).
+- Registro público (`POST /api/auth/register`) siempre crea `student`; ignora `role`. Crear usuarios con rol vía `POST /api/auth/users` (admin). Validación: email formato, usuario 3-40, contraseña mín. 8, bcrypt cost 12.
+- `ADMIN_PASSWORD` (env, mín. 12): cada arranque la sincroniza al admin (cambiar var + redesplegar = nueva contraseña). Sin ella en prod no arranca.
+- Sin `JWT_SECRET` en producción el backend no arranca. CORS restringido a `FRONTEND_URL`/`FRONTEND_URLS` (ambas válidas) con `credentials:true`; orígenes denegados en limpio (sin 500).
+- `helmet` + rate-limit (login/register 60/15min, refresh 60/15min, API 600/15min; pensados para redes escolares tras una IP). `GET /api/grades/:id` verifica dueño o rol privilegiado.
+- P2 sesiones: access JWT 15min solo en memoria del front; refresh opaco rotativo 7d en cookie `cinar_refresh` httpOnly (`Secure`+`SameSite=None` en prod, `Lax` en dev). `POST /api/auth/refresh` (single-flight + reintento en `api.js`, con chequeo de origen anti-CSRF) y `POST /api/auth/logout` que revoca. Logout limpia todo el localStorage salvo el tema. Migración única de tokens legados.
+- Rotación de contraseña: `PATCH /api/auth/password` (propia) y `PATCH /api/auth/users/:id/password` (admin).
+- P2 bloqueo: `EXAMS_LOCKED` (default true) bloquea en servidor `POST /api/grades/mine` y `PUT /api/grades/mine/:id` de exámenes para no privilegiados; el frontend redirige (`src/lib/guards/examLock.js`, `EXAM_LOCK_ACTIVE`).
 - `Cache-Control: no-store` en `/api/grades`, `/api/enrollments`, `/api/auth/profile`.
-- Bloqueo temporal de parciales/talleres: frontend redirige no-admin (`src/lib/guards/examLock.js`, `EXAM_LOCK_ACTIVE`); el backend ya valida ventanas e inscripción en `POST /api/grades/mine`.
+- Env Render requeridas: `JWT_SECRET` (32+ aleatorio), `ADMIN_PASSWORD` (12+), `FRONTEND_URL` (origen exacto del front).
 
 ## Dependencias Conocidas
 
@@ -188,10 +233,11 @@ Cinar/
 - Vite
 
 ### Backend (testcinar26bknd)
-- Express
+- Express (helmet, express-rate-limit, CORS con credenciales)
 - Mongoose
-- JWT (jsonwebtoken)
-- bcryptjs
+- JWT (jsonwebtoken, access 15m + refresh rotativo)
+- bcryptjs (cost 12)
 
 ## Vulnerabilidades y Deuda Técnica
 - Existen algunas vulnerabilidades low severity en frontend por la cookie herencia de @sveltejs/kit (no crítico para producción, no forzar `npm audit fix` para no romper el workspace).
+- Tests con fallos preexistentes no tocados (29/09): `api.grades.test.js` (integración contra prod + ventanas ago-2026 vencidas), `exam.test.js` (ventana vencida), `enlacesData.test.js` (espera 20, hay 23).

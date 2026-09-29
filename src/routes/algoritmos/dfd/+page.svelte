@@ -6,6 +6,7 @@
   import { buildRenderData } from '$lib/dfd/renderer';
   import { generatePseudocode } from '$lib/dfd/pseudocode';
   import { DfdExecutor } from '$lib/dfd/executor';
+  import { getExerciseStatement } from '$lib/data/dfdExercises';
 
   $effect(() => {
     if (!$isAuthenticated) goto('/login');
@@ -55,6 +56,8 @@
     return nivel === 'nivel1' ? `N1-${id}` : `N2-${id}`;
   }
 
+  let currentExercise = $derived.by(() => getExerciseStatement(selectedExerciseId));
+
   $effect(() => {
     if (isInitialLoad && $page.url.searchParams.has('load')) {
       const parsed = parseLoadParam($page.url.searchParams.get('load'));
@@ -68,6 +71,7 @@
 
   async function loadExercise(id: number, nivel: 'nivel1' | 'nivel2' = 'nivel1') {
     if (!id) return;
+    selectedExerciseId = exerciseKey(nivel, id);
     try {
       const filename = `Problema ${id}.dfd`;
       const folder = nivel === 'nivel1' ? 'nivel1' : 'nivel2';
@@ -326,6 +330,7 @@
     
     const file = input.files[0];
     currentFileName = file.name;
+    selectedExerciseId = '';
     const reader = new FileReader();
     reader.onload = (e) => {
       dfdContent = (e.target?.result as string) || '';
@@ -821,6 +826,25 @@
       </div>
     </div>
   </header>
+  {#if currentExercise}
+    <section class="exercise-statement" aria-label="Enunciado del ejercicio" aria-live="polite">
+      <div class="statement-icon" aria-hidden="true">📝</div>
+      <div class="statement-body">
+        <div class="statement-meta">
+          <strong>{currentExercise.label}</strong>
+          <span class="statement-level">{currentExercise.nivelLabel}</span>
+          {#if currentExercise.propuesto}
+            <span class="badge-propuesto">Propuesto</span>
+          {:else}
+            <span class="badge-resuelto">Resuelto</span>
+          {/if}
+        </div>
+        <p class="statement-text">{currentExercise.text}</p>
+        <p class="statement-hint">Planteamiento del problema: léelo, identifica entradas → proceso → salida y luego ejecuta 🐢 Paso a paso.</p>
+      </div>
+      <a class="statement-link" href="/algoritmos/actividad-de-la-semana">Ver actividad</a>
+    </section>
+  {/if}
   {#if parseErrorMsg}
     <div class="error-banner" role="alert">
       ⚠️ {parseErrorMsg}
@@ -1658,6 +1682,17 @@
   .error-banner { display: flex; align-items: center; gap: 0.75rem; background: #fef2f2; color: #991b1b; border-bottom: 1px solid #fecaca; padding: 0.6rem 1.5rem; font-size: 0.85rem; }
   .warn-banner { background: #fffbeb; color: #92400e; border-bottom: 1px solid #fde68a; padding: 0.6rem 1.5rem; font-size: 0.85rem; }
   .warn-banner code { background: #fef3c7; padding: 0.1rem 0.3rem; border-radius: 4px; }
+  .exercise-statement { display: flex; align-items: flex-start; gap: 0.9rem; background: linear-gradient(135deg, #eff6ff, #f0fdf4); border-bottom: 1px solid #bfdbfe; padding: 0.8rem 1.5rem; }
+  .statement-icon { font-size: 1.6rem; line-height: 1; flex-shrink: 0; }
+  .statement-body { flex: 1; min-width: 0; }
+  .statement-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; font-size: 0.85rem; color: #0f172a; margin-bottom: 0.25rem; }
+  .statement-level { font-size: 0.75rem; font-weight: 600; color: #475569; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 0.15rem 0.55rem; border-radius: 999px; }
+  .badge-propuesto { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 0.15rem 0.55rem; border-radius: 999px; }
+  .badge-resuelto { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 0.15rem 0.55rem; border-radius: 999px; }
+  .statement-text { margin: 0; font-size: 0.95rem; line-height: 1.55; color: #0f172a; }
+  .statement-hint { margin: 0.3rem 0 0; font-size: 0.78rem; color: #475569; }
+  .statement-link { flex-shrink: 0; font-size: 0.78rem; font-weight: 700; color: #1d4ed8; background: white; border: 1px solid #bfdbfe; padding: 0.4rem 0.7rem; border-radius: 8px; text-decoration: none; }
+  .statement-link:hover { background: #eff6ff; }
   .canvas-toolbar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); border-bottom: 1px solid #e2e8f0; padding: 0.5rem 0.9rem; }
   .toolbar-title { font-size: 0.8rem; font-weight: 700; color: #334155; }
   .zoom-group { display: flex; align-items: center; gap: 0.35rem; }

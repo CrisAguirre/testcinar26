@@ -76,6 +76,10 @@ let _id = 0;
 function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId, basePath = []) {
   let y = startY;
   let prevId = parentId;
+  // Primer shape real colocado en ESTE nivel (no búsqueda por texto).
+  // Antes se buscaba por texto y no contemplaba Asignación/call,
+  // por eso el link Sí/No apuntaba a (0,0) = esquina del plano.
+  let firstPlacedId = null;
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
@@ -87,6 +91,7 @@ function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId, baseP
     if (node.type === 'end' || node.type === 'return') break;
 
     const id = `n${_id++}`;
+    if (firstPlacedId === null) firstPlacedId = id;
     const label = labelFor(node);
     const w = nodeWidth(label);
 
@@ -220,27 +225,7 @@ function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId, baseP
     dropZones.push({ targetList: nodes, index: nodes.length, cx, cy: y - V_GAP / 2 });
   }
 
-  // Return tracking info
-  const firstShape = shapes.find(s => s.id === `n${_id - nodes.filter(n => n.type !== 'end' && n.type !== 'return').length}`);
-  return { lastId: prevId, endY: y, firstId: shapes.length > 0 ? findFirstPlacedId(nodes, shapes) : null };
-}
-
-function findFirstPlacedId(nodes, shapes) {
-  for (const node of nodes) {
-    if (node.type === 'end' || node.type === 'return') continue;
-    // The first node placed should be the one matching
-    const placed = shapes.find(s => {
-      if (node.type === 'decision') return s.type === 'decision' && s.text === (node.condition || '');
-      if (node.type === 'while') return s.type === 'while' && s.text === (node.condition || '');
-      if (node.type === 'output') return s.type === 'output' && s.text === (node.text || '');
-      if (node.type === 'input') return s.type === 'input' && s.text === node.variables.join(', ');
-      return false;
-    });
-    if (placed) return placed.id;
-    // fallback: return last non-merge shape
-    break;
-  }
-  return null;
+  return { lastId: prevId, endY: y, firstId: firstPlacedId };
 }
 
 // ── Link builders ───────────────────────────────────────────────────────────

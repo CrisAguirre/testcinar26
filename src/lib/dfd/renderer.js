@@ -96,6 +96,10 @@ function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId, baseP
       shapes.push({ id, type: 'decision', text: label, x: cx, y, width: w, height: h, path: nodePath });
       if (prevId) links.push(makeLink(prevId, id, shapes));
 
+      // Garantizar arrays para que las ramas vacías también acepten drops
+      if (!Array.isArray(node.trueBranch)) node.trueBranch = [];
+      if (!Array.isArray(node.falseBranch)) node.falseBranch = [];
+
       const mTrue  = measureNodes(node.trueBranch  || []);
       const mFalse = measureNodes(node.falseBranch || []);
 
@@ -152,6 +156,18 @@ function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId, baseP
         links.push({ sourceX: falseCx, sourceY: branchY, targetX: cx, targetY: mergeY });
       }
 
+      // Ramas vacías: crear zona de soltado visible en el punto medio
+      // para permitir arrastrar Lectura/Salida/Asignación dentro del Sí/No.
+      // Sin esto, una Decisión recién creada era imposible de llenar con drag&drop.
+      const isTrueEmpty = !(node.trueBranch.length > 0 && node.trueBranch[0].type !== 'end');
+      const isFalseEmpty = !(node.falseBranch.length > 0 && node.falseBranch[0].type !== 'end');
+      if (isTrueEmpty) {
+        dropZones.push({ targetList: node.trueBranch, index: 0, cx: trueCx, cy: (branchY + mergeY) / 2 });
+      }
+      if (isFalseEmpty) {
+        dropZones.push({ targetList: node.falseBranch, index: 0, cx: falseCx, cy: (branchY + mergeY) / 2 });
+      }
+
       y = mergeY;
       prevId = mergeId;
 
@@ -161,8 +177,10 @@ function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId, baseP
       shapes.push({ id, type: 'while', text: label, x: cx, y, width: w, height: h, path: nodePath });
       if (prevId) links.push(makeLink(prevId, id, shapes));
 
+      if (!Array.isArray(node.body)) node.body = [];
+      const isBodyEmpty = !(node.body.length > 0 && node.body[0].type !== 'end');
       const bodyY = y + h + V_GAP;
-      if (node.body && node.body.length > 0 && node.body[0].type !== 'end') {
+      if (!isBodyEmpty) {
         const res = placeNodes(node.body, cx, bodyY, shapes, links, dropZones, id, [...nodePath, 'body']);
         // loop-back arrow from last body node back to while
         if (res.lastId) {
@@ -173,6 +191,10 @@ function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId, baseP
       // Exit link to the right (will point down past the body)
       const mBody = measureNodes(node.body || []);
       y = bodyY + (mBody.height > 0 ? mBody.height : 0) + V_GAP;
+      if (isBodyEmpty) {
+        // Cuerpo vacío: zona para arrastrar componentes dentro del Mientras
+        dropZones.push({ targetList: node.body, index: 0, cx, cy: (bodyY + y) / 2 });
+      }
       const exitId = `exit_${id}`;
       shapes.push({ id: exitId, type: 'merge', text: '', x: cx, y, width: 0, height: 0 });
       links.push(makeExitWhile(id, exitId, shapes, cx, w, y));

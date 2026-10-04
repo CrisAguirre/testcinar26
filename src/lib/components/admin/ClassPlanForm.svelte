@@ -12,6 +12,7 @@
   let currentCourse = $state('algoritmos');
   let currentPeriod = $state('2026-3');
   let isPrivileged = $derived($currentUser?.role === 'admin' || $currentUser?.role === 'coordinator');
+  let readonly = $derived(currentRecord && currentRecord.status !== 'borrador');
 
   let formData = $state({
     level: '',
@@ -188,7 +189,6 @@
     </div>
 
     <div class="scroll-form">
-      {@const readonly = currentRecord && currentRecord.status !== 'borrador'}
       
       <div class="section-title">Información General</div>
       <div class="form-grid">

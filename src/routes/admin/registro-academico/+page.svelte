@@ -1,11 +1,9 @@
 <script lang="ts">
   import { isAuthenticated, currentUser } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
-  import { gradesApi } from '$lib/api';
-  import AttendanceTable from '$lib/components/admin/AttendanceTable.svelte';
   import GradeSheetTable from '$lib/components/admin/GradeSheetTable.svelte';
   import CourseContentForm from '$lib/components/admin/CourseContentForm.svelte';
+  import AttendanceTable from '$lib/components/admin/AttendanceTable.svelte';
   import ContentTrackingTable from '$lib/components/admin/ContentTrackingTable.svelte';
 
   $effect(() => {
@@ -15,41 +13,12 @@
   });
 
   let activeTab = $state('notas');
-  let notas = $state<any[]>([]);
-  let loadingNotas = $state(true);
 
-  onMount(async () => {
-    if ($currentUser?.role === 'admin' || $currentUser?.role === 'coordinator' || $currentUser?.role === 'teacher') {
-      try {
-        const response = await gradesApi.getAll();
-        // Agrupar por curso/estudiante si fuera necesario, o simplemente listar
-        notas = response;
-      } catch (e) {
-        console.error("Error al cargar notas:", e);
-      } finally {
-        loadingNotas = false;
-      }
-    }
-  });
-
-  const contenidos = [
-    { materia: 'Desarrollo Web 1', modulo: 'Módulo 1: Fundamentos de Svelte', estado: 'Completado' },
-    { materia: 'Desarrollo Web 1', modulo: 'Módulo 2: SvelteKit Routing', estado: 'En curso' },
-    { materia: 'Desarrollo Web 2', modulo: 'Módulo 1: Arquitectura y API', estado: 'En curso' },
-    { materia: 'Algoritmos', modulo: 'Módulo 1: Lógica y Estructuras', estado: 'Completado' }
-  ];
-
-  const cronograma = [
-    { fecha: '2026-10-01', evento: 'Inicio de trimestre', tipo: 'Académico' },
-    { fecha: '2026-10-15', evento: 'Primer Parcial - Algoritmos', tipo: 'Evaluación' },
-    { fecha: '2026-11-10', evento: 'Entrega de Proyecto Web', tipo: 'Evaluación' },
-    { fecha: '2026-12-15', evento: 'Cierre de notas', tipo: 'Administrativo' }
-  ];
-
-  const asistencia = [
-    { estudiante: 'Juan Pérez', materia: 'Desarrollo Web 1', fecha: '2026-09-10', estado: 'Presente' },
-    { estudiante: 'María García', materia: 'Algoritmos', fecha: '2026-09-12', estado: 'Falta Justificada' },
-    { estudiante: 'Carlos López', materia: 'Desarrollo Web 2', fecha: '2026-09-14', estado: 'Ausente' }
+  const tabs = [
+    { id: 'notas', icon: '📝', label: 'Planilla de Notas' },
+    { id: 'contenidos', icon: '📚', label: 'Contenido Temático' },
+    { id: 'asistencia', icon: '👥', label: 'Asistencia' },
+    { id: 'seguimiento', icon: '📈', label: 'Seguimiento Temático' }
   ];
 </script>
 
@@ -57,129 +26,52 @@
   <title>Registro Académico — Cinar Sistemas</title>
 </svelte:head>
 
-<div class="page">
-  <button class="back-btn" onclick={() => goto('/admin')}>
-    <span>←</span> Volver a Funciones Administrativas
-  </button>
-
-  <div class="hero">
-    <span class="hero-icon">📋</span>
-    <h1>Registro Académico</h1>
-    <p class="hero-desc">Gestión de notas, contenidos, cronograma y asistencia de estudiantes</p>
+<div class="banner">
+  <div class="banner-bg"></div>
+  <div class="banner-inner">
+    <button class="back-btn" onclick={() => goto('/admin')}>
+      <span>←</span> Volver a Funciones Administrativas
+    </button>
+    <div class="banner-content">
+      <img class="banner-logo" src="/logo.png" alt="Cinar Sistemas" />
+      <div class="banner-text">
+        <span class="banner-icon">📋</span>
+        <h1>Registro Académico</h1>
+        <p class="banner-desc">Evaluaciones, asistencia, syllabus y seguimiento de clases</p>
+      </div>
+    </div>
+    <div class="banner-decor">
+      <span class="code-sym sym-1">📝</span>
+      <span class="code-sym sym-2">📚</span>
+      <span class="code-sym sym-3">📅</span>
+      <span class="code-sym sym-4">👥</span>
+      <span class="code-sym sym-5">📈</span>
+      <span class="code-sym sym-6">📋</span>
+      <span class="code-sym sym-7">A+</span>
+      <span class="code-sym sym-8">100</span>
+    </div>
   </div>
+</div>
 
+<div class="page">
   <div class="tabs">
-    <button class="tab" class:active={activeTab === 'notas'} onclick={() => activeTab = 'notas'}>Notas Históricas</button>
-    <button class="tab" class:active={activeTab === 'planilla-notas'} onclick={() => activeTab = 'planilla-notas'}>Planilla de Notas</button>
-    <button class="tab" class:active={activeTab === 'asistencia'} onclick={() => activeTab = 'asistencia'}>Asistencia</button>
-    <button class="tab" class:active={activeTab === 'contenido-tematico'} onclick={() => activeTab = 'contenido-tematico'}>Contenido Temático</button>
-    <button class="tab" class:active={activeTab === 'control-contenidos'} onclick={() => activeTab = 'control-contenidos'}>Control de Contenidos</button>
-    <button class="tab" class:active={activeTab === 'cronograma'} onclick={() => activeTab = 'cronograma'}>Cronograma</button>
+    {#each tabs as tab}
+      <button class="tab" class:active={activeTab === tab.id} onclick={() => activeTab = tab.id}>
+        <span class="tab-icon">{tab.icon}</span>
+        {tab.label}
+      </button>
+    {/each}
   </div>
 
   {#if activeTab === 'notas'}
-    <div class="card">
-      <h2>Registro General de Notas</h2>
-      <p class="card-text">Listado de evaluaciones presentadas por los estudiantes.</p>
-      
-      {#if loadingNotas}
-        <p class="loading">Cargando notas...</p>
-      {:else if notas.length === 0}
-        <p class="empty">No hay notas registradas en el sistema.</p>
-      {:else}
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Estudiante</th>
-                <th>Materia/Evaluación</th>
-                <th>Puntaje</th>
-                <th>Máximo</th>
-                <th>Porcentaje</th>
-              </tr>
-            </thead>
-            <tbody>
-              {#each notas as n}
-                <tr>
-                  <td><strong>{n.student?.full_name || n.student?.username || 'Estudiante'}</strong></td>
-                  <td>{n.subject}</td>
-                  <td>{n.score}</td>
-                  <td>{n.max_score}</td>
-                  <td>{n.percentage}%</td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      {/if}
+    <div class="card fade-in" style="padding: 1.5rem;">
+      <GradeSheetTable />
     </div>
   {/if}
 
   {#if activeTab === 'contenidos'}
-    <div class="card">
-      <h2>Contenidos Temáticos</h2>
-      <p class="card-text">Seguimiento del progreso de los módulos por curso.</p>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Materia</th>
-              <th>Módulo/Tema</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each contenidos as c}
-              <tr>
-                <td><strong>{c.materia}</strong></td>
-                <td>{c.modulo}</td>
-                <td>
-                  <span class="badge {c.estado === 'Completado' ? 'badge-green' : 'badge-yellow'}">
-                    {c.estado}
-                  </span>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  {/if}
-
-  {#if activeTab === 'cronograma'}
-    <div class="card">
-      <h2>Cronograma Académico</h2>
-      <p class="card-text">Fechas importantes para el trimestre vigente.</p>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Evento</th>
-              <th>Tipo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each cronograma as c}
-              <tr>
-                <td><strong>{c.fecha}</strong></td>
-                <td>{c.evento}</td>
-                <td>
-                  <span class="badge {c.tipo === 'Evaluación' ? 'badge-red' : c.tipo === 'Académico' ? 'badge-green' : 'badge-purple'}">
-                    {c.tipo}
-                  </span>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  {/if}
-
-  {#if activeTab === 'planilla-notas'}
     <div class="card fade-in" style="padding: 1.5rem;">
-      <GradeSheetTable />
+      <CourseContentForm />
     </div>
   {/if}
 
@@ -189,13 +81,7 @@
     </div>
   {/if}
 
-  {#if activeTab === 'contenido-tematico'}
-    <div class="card fade-in" style="padding: 1.5rem;">
-      <CourseContentForm />
-    </div>
-  {/if}
-
-  {#if activeTab === 'control-contenidos'}
+  {#if activeTab === 'seguimiento'}
     <div class="card fade-in" style="padding: 1.5rem;">
       <ContentTrackingTable />
     </div>
@@ -203,71 +89,88 @@
 </div>
 
 <style>
-  .page { max-width: 720px; margin: 0 auto; width: 100%; padding-bottom: 3rem; }
+  /* ── Banner ── */
+  .banner { position: relative; width: 100vw; margin-left: calc(-50vw + 50%); overflow: hidden; }
+  .banner-bg {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, #3B82F6, #2563EB, #1D4ED8, #2563EB, #3B82F6);
+    background-size: 400% 400%; animation: gradientShift 15s ease infinite; z-index: 0;
+  }
+  @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+  .banner-inner { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 1.5rem 1rem 2rem; }
+  .banner-content { display: flex; align-items: center; justify-content: center; gap: 1.5rem; text-align: left; }
+  .banner-logo { width: 72px; height: 72px; object-fit: contain; border-radius: 16px; filter: drop-shadow(0 0 8px rgba(255,255,255,0.15)); animation: logoFloat 4s ease-in-out infinite, logoGlow 3s ease-in-out infinite; }
+  @keyframes logoFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  @keyframes logoGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(255,255,255,0.15)); } 50% { filter: drop-shadow(0 0 18px rgba(255,255,255,0.35)); } }
+  .banner-text { flex: 1; color: white; }
+  .banner-icon { font-size: 2rem; display: block; margin-bottom: 0.35rem; animation: bannerIconFloat 3s ease-in-out infinite; filter: drop-shadow(0 0 6px rgba(255,255,255,0.2)); }
+  @keyframes bannerIconFloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-8px) scale(1.1); } }
+  h1 {
+    font-size: 1.55rem; margin: 0 0 0.35rem; font-weight: 700; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff, #bfdbfe, #93c5fd, #fff); background-size: 300% 300%;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    animation: bannerTitleGrad 5s ease infinite; filter: drop-shadow(0 0 12px rgba(147,197,253,0.3));
+  }
+  @keyframes bannerTitleGrad { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+  .banner-desc { font-size: 0.85rem; color: rgba(255,255,255,0.75); margin: 0; animation: descFadeIn 1s 0.3s cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes descFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
   .back-btn {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    background: transparent; border: none; color: #64748b;
-    padding: 0; font-size: 0.85rem; font-weight: 500;
-    cursor: pointer; margin-bottom: 2rem; transition: color 0.2s ease;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.8); padding: 0.4rem 1rem; border-radius: 20px;
+    font-size: 0.82rem; cursor: pointer; margin-bottom: 1.25rem;
+    transition: border-color 0.2s, transform 0.15s, background 0.2s;
   }
-  .back-btn:hover { color: #0f172a; }
+  .back-btn:hover { color: white; border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.15); transform: translateX(-3px); }
 
-  .hero { margin-bottom: 2rem; }
-  .hero-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
-  h1 { font-size: 1.75rem; letter-spacing: -0.02em; margin: 0 0 0.5rem; color: #0f172a; font-weight: 600; }
-  .hero-desc { font-size: 1rem; color: #64748b; margin: 0; }
+  .banner-decor { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+  .code-sym { position: absolute; font-size: 1.2rem; opacity: 0.1; }
+  .sym-1 { top: 8%; left: 8%; animation: codeDrift 7s 0.5s ease-in-out infinite; }
+  .sym-2 { bottom: 12%; left: 20%; animation: codeDrift 8s 1.2s ease-in-out infinite; }
+  .sym-3 { top: 45%; left: 5%; animation: codeDrift 6s 2s ease-in-out infinite; }
+  .sym-4 { bottom: 20%; right: 25%; animation: codeDrift 9s 0.8s ease-in-out infinite; }
+  .sym-5 { top: 25%; right: 8%; animation: codeDrift 7.5s 1.8s ease-in-out infinite; }
+  .sym-6 { bottom: 8%; right: 35%; animation: codeDrift 8.5s 3s ease-in-out infinite; }
+  .sym-7 { top: 50%; left: 50%; animation: codeDrift 10s 0.3s ease-in-out infinite; }
+  .sym-8 { top: 15%; right: 40%; animation: codeDrift 9s 1.5s ease-in-out infinite; }
+  @keyframes codeDrift { 0%, 100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-12px) rotate(2deg); } 50% { transform: translateY(-6px) rotate(-1deg); } 75% { transform: translateY(-16px) rotate(1deg); } }
 
+  /* ── Page ── */
+  .page { max-width: 1000px; margin: 0 auto; width: 100%; padding: 1.5rem 1rem 3rem; }
+
+  /* ── Tabs (premium) ── */
   .tabs {
-    display: flex; gap: 0.5rem; margin-bottom: 1.5rem;
-    border-bottom: 2px solid #e2e8f0; padding-bottom: 0;
-    overflow-x: auto;
+    display: flex; gap: 0.35rem; margin-bottom: 1.5rem; padding: 0.35rem;
+    background: #f1f5f9; border-radius: 12px; overflow-x: auto;
   }
-
   .tab {
-    padding: 0.6rem 1.2rem; border: none; background: transparent;
-    font-size: 0.85rem; font-weight: 500; color: #64748b;
-    cursor: pointer; border-bottom: 2px solid transparent;
-    margin-bottom: -2px; transition: all 0.2s ease; white-space: nowrap;
+    padding: 0.55rem 1rem; border: none; background: transparent;
+    font-size: 0.82rem; font-weight: 500; color: #64748b;
+    cursor: pointer; border-radius: 8px; transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+    white-space: nowrap; display: flex; align-items: center; gap: 0.35rem;
   }
-  .tab:hover { color: #0f172a; }
-  .tab.active { color: #7c3aed; border-bottom-color: #7c3aed; font-weight: 600; }
+  .tab:hover { color: #0f172a; background: rgba(255,255,255,0.5); }
+  .tab.active {
+    color: #2563eb; background: white; font-weight: 600;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.12), 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .tab-icon { font-size: 0.95rem; }
 
+  /* ── Card ── */
   .card {
     background: white; border-radius: 16px; padding: 2rem;
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.025);
     border: 1px solid rgba(0,0,0,0.04);
-    animation: fadeIn 0.3s ease;
   }
-
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-  .card h2 { margin: 0 0 0.5rem; font-size: 1.15rem; color: #0f172a; font-weight: 600; }
-  .card-text { font-size: 0.9rem; color: #64748b; margin: 0 0 1.5rem; }
-
-  .table-wrapper { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-  thead { background: #f8fafc; }
-  th { text-align: left; padding: 0.75rem 1rem; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
-  td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
-  tr:hover { background: #fafbfd; }
-
-  .badge {
-    display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px;
-    font-size: 0.75rem; font-weight: 600;
-  }
-  .badge-green { background: #dcfce7; color: #166534; }
-  .badge-red { background: #fef2f2; color: #991b1b; }
-  .badge-yellow { background: #fef9c3; color: #854d0e; }
-  .badge-purple { background: #f3e8ff; color: #6b21a8; }
-  
-  .loading { text-align: center; color: #64748b; font-style: italic; margin: 2rem 0; }
-  .empty { text-align: center; color: #64748b; padding: 2rem 0; border: 1px dashed #cbd5e1; border-radius: 8px; }
+  .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16,1,0.3,1); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
   @media (max-width: 600px) {
     .card { padding: 1.5rem; }
-    h1 { font-size: 1.5rem; }
-    .tabs { gap: 0.25rem; }
-    .tab { padding: 0.5rem 0.8rem; font-size: 0.8rem; }
+    .tabs { gap: 0.2rem; padding: 0.25rem; }
+    .tab { padding: 0.45rem 0.7rem; font-size: 0.78rem; }
+    .banner-content { flex-direction: column; text-align: center; }
+    h1 { font-size: 1.3rem; }
   }
 </style>

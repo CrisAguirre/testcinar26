@@ -21,32 +21,58 @@
     { docente: 'María García', curso: 'Integración de IA en el Aula', fecha: '2026-09-01', estado: 'Emitido' },
     { docente: 'Carlos López', curso: 'Evaluación por Competencias', fecha: '-', estado: 'En proceso' }
   ];
+
+  const tabs = [
+    { id: 'cursos', icon: '📝', label: 'Cursos para Docentes' },
+    { id: 'certificados', icon: '🎓', label: 'Certificados' },
+    { id: 'bienvenida', icon: '🤝', label: 'Bienvenida y Onboarding' }
+  ];
 </script>
 
 <svelte:head>
   <title>Capacitaciones — Cinar Sistemas</title>
 </svelte:head>
 
-<div class="page">
-  <button class="back-btn" onclick={() => goto('/admin')}>
-    <span>←</span> Volver a Funciones Administrativas
-  </button>
-
-  <div class="hero">
-    <span class="hero-icon">🎓</span>
-    <h1>Capacitaciones</h1>
-    <p class="hero-desc">Cursos para docentes, evaluaciones y certificados institucionales</p>
+<div class="banner">
+  <div class="banner-bg"></div>
+  <div class="banner-inner">
+    <button class="back-btn" onclick={() => goto('/admin')}>
+      <span>←</span> Volver a Funciones Administrativas
+    </button>
+    <div class="banner-content">
+      <img class="banner-logo" src="/logo.png" alt="Cinar Sistemas" />
+      <div class="banner-text">
+        <span class="banner-icon">🎓</span>
+        <h1>Capacitaciones</h1>
+        <p class="banner-desc">Cursos para docentes, evaluaciones y certificados institucionales</p>
+      </div>
+    </div>
+    <div class="banner-decor">
+      <span class="code-sym sym-1">🎓</span>
+      <span class="code-sym sym-2">📚</span>
+      <span class="code-sym sym-3">📝</span>
+      <span class="code-sym sym-4">🏅</span>
+      <span class="code-sym sym-5">🤝</span>
+      <span class="code-sym sym-6">💻</span>
+      <span class="code-sym sym-7">✓</span>
+      <span class="code-sym sym-8">🌟</span>
+    </div>
   </div>
+</div>
 
+<div class="page">
   <div class="tabs">
-    <button class="tab" class:active={activeTab === 'cursos'} onclick={() => activeTab = 'cursos'}>Cursos para Docentes</button>
-    <button class="tab" class:active={activeTab === 'certificados'} onclick={() => activeTab = 'certificados'}>Certificados</button>
-    <button class="tab" class:active={activeTab === 'bienvenida'} onclick={() => activeTab = 'bienvenida'}>Bienvenida y Onboarding</button>
+    {#each tabs as tab}
+      <button class="tab" class:active={activeTab === tab.id} onclick={() => activeTab = tab.id}>
+        <span class="tab-icon">{tab.icon}</span>
+        {tab.label}
+      </button>
+    {/each}
   </div>
 
   {#if activeTab === 'cursos'}
-    <div class="card">
-      <h2>Catálogo de Cursos para Docentes</h2>
+    <div class="card fade-in">
+      <h2>📝 Catálogo de Cursos para Docentes</h2>
       <p class="card-text">Programas de formación continua disponibles para el cuerpo docente.</p>
       <div class="table-wrapper">
         <table>
@@ -74,8 +100,8 @@
   {/if}
 
   {#if activeTab === 'certificados'}
-    <div class="card">
-      <h2>Emisión de Certificados</h2>
+    <div class="card fade-in">
+      <h2>🎓 Emisión de Certificados</h2>
       <p class="card-text">Historial de certificaciones obtenidas tras culminar capacitaciones.</p>
       <div class="table-wrapper">
         <table>
@@ -107,8 +133,8 @@
   {/if}
 
   {#if activeTab === 'bienvenida'}
-    <div class="card">
-      <h2>Bienvenida a Nuevos Docentes</h2>
+    <div class="card fade-in">
+      <h2>🤝 Bienvenida a Nuevos Docentes</h2>
       <p class="card-text">Documentación esencial para la inducción de nuevos integrantes del equipo.</p>
       <ul class="doc-list">
         <li>
@@ -141,57 +167,97 @@
 </div>
 
 <style>
-  .page { max-width: 720px; margin: 0 auto; width: 100%; padding-bottom: 3rem; }
+  /* ── Banner ── */
+  .banner { position: relative; width: 100vw; margin-left: calc(-50vw + 50%); overflow: hidden; }
+  .banner-bg {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, #10B981, #059669, #047857, #059669, #10B981);
+    background-size: 400% 400%; animation: gradientShift 15s ease infinite; z-index: 0;
+  }
+  @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+  .banner-inner { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 1.5rem 1rem 2rem; }
+  .banner-content { display: flex; align-items: center; justify-content: center; gap: 1.5rem; text-align: left; }
+  .banner-logo { width: 72px; height: 72px; object-fit: contain; border-radius: 16px; filter: drop-shadow(0 0 8px rgba(255,255,255,0.15)); animation: logoFloat 4s ease-in-out infinite, logoGlow 3s ease-in-out infinite; }
+  @keyframes logoFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  @keyframes logoGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(255,255,255,0.15)); } 50% { filter: drop-shadow(0 0 18px rgba(255,255,255,0.35)); } }
+  .banner-text { flex: 1; color: white; }
+  .banner-icon { font-size: 2rem; display: block; margin-bottom: 0.35rem; animation: bannerIconFloat 3s ease-in-out infinite; filter: drop-shadow(0 0 6px rgba(255,255,255,0.2)); }
+  @keyframes bannerIconFloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-8px) scale(1.1); } }
+  h1 {
+    font-size: 1.55rem; margin: 0 0 0.35rem; font-weight: 700; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff, #a7f3d0, #6ee7b7, #fff); background-size: 300% 300%;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    animation: bannerTitleGrad 5s ease infinite; filter: drop-shadow(0 0 12px rgba(167,243,208,0.3));
+  }
+  @keyframes bannerTitleGrad { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+  .banner-desc { font-size: 0.85rem; color: rgba(255,255,255,0.75); margin: 0; animation: descFadeIn 1s 0.3s cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes descFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
   .back-btn {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    background: transparent; border: none; color: #64748b;
-    padding: 0; font-size: 0.85rem; font-weight: 500;
-    cursor: pointer; margin-bottom: 2rem; transition: color 0.2s ease;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.8); padding: 0.4rem 1rem; border-radius: 20px;
+    font-size: 0.82rem; cursor: pointer; margin-bottom: 1.25rem;
+    transition: border-color 0.2s, transform 0.15s, background 0.2s;
   }
-  .back-btn:hover { color: #0f172a; }
+  .back-btn:hover { color: white; border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.15); transform: translateX(-3px); }
 
-  .hero { margin-bottom: 2rem; }
-  .hero-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
-  h1 { font-size: 1.75rem; letter-spacing: -0.02em; margin: 0 0 0.5rem; color: #0f172a; font-weight: 600; }
-  .hero-desc { font-size: 1rem; color: #64748b; margin: 0; }
+  .banner-decor { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+  .code-sym { position: absolute; font-size: 1.2rem; opacity: 0.1; }
+  .sym-1 { top: 8%; left: 8%; animation: codeDrift 7s 0.5s ease-in-out infinite; }
+  .sym-2 { bottom: 12%; left: 20%; animation: codeDrift 8s 1.2s ease-in-out infinite; }
+  .sym-3 { top: 45%; left: 5%; animation: codeDrift 6s 2s ease-in-out infinite; }
+  .sym-4 { bottom: 20%; right: 25%; animation: codeDrift 9s 0.8s ease-in-out infinite; }
+  .sym-5 { top: 25%; right: 8%; animation: codeDrift 7.5s 1.8s ease-in-out infinite; }
+  .sym-6 { bottom: 8%; right: 35%; animation: codeDrift 8.5s 3s ease-in-out infinite; }
+  .sym-7 { top: 50%; left: 50%; animation: codeDrift 10s 0.3s ease-in-out infinite; }
+  .sym-8 { top: 15%; right: 40%; animation: codeDrift 9s 1.5s ease-in-out infinite; }
+  @keyframes codeDrift { 0%, 100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-12px) rotate(2deg); } 50% { transform: translateY(-6px) rotate(-1deg); } 75% { transform: translateY(-16px) rotate(1deg); } }
 
+  /* ── Page ── */
+  .page { max-width: 720px; margin: 0 auto; width: 100%; padding: 1.5rem 1rem 3rem; }
+
+  /* ── Tabs (premium) ── */
   .tabs {
-    display: flex; gap: 0.5rem; margin-bottom: 1.5rem;
-    border-bottom: 2px solid #e2e8f0; padding-bottom: 0;
-    overflow-x: auto;
+    display: flex; gap: 0.35rem; margin-bottom: 1.5rem; padding: 0.35rem;
+    background: #f1f5f9; border-radius: 12px; overflow-x: auto;
   }
-
   .tab {
-    padding: 0.6rem 1.2rem; border: none; background: transparent;
-    font-size: 0.85rem; font-weight: 500; color: #64748b;
-    cursor: pointer; border-bottom: 2px solid transparent;
-    margin-bottom: -2px; transition: all 0.2s ease; white-space: nowrap;
+    padding: 0.55rem 1rem; border: none; background: transparent;
+    font-size: 0.82rem; font-weight: 500; color: #64748b;
+    cursor: pointer; border-radius: 8px; transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+    white-space: nowrap; display: flex; align-items: center; gap: 0.35rem;
   }
-  .tab:hover { color: #0f172a; }
-  .tab.active { color: #7c3aed; border-bottom-color: #7c3aed; font-weight: 600; }
+  .tab:hover { color: #0f172a; background: rgba(255,255,255,0.5); }
+  .tab.active {
+    color: #059669; background: white; font-weight: 600;
+    box-shadow: 0 2px 8px rgba(5,150,105,0.12), 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .tab-icon { font-size: 0.95rem; }
 
+  /* ── Card ── */
   .card {
     background: white; border-radius: 16px; padding: 2rem;
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.025);
     border: 1px solid rgba(0,0,0,0.04);
-    animation: fadeIn 0.3s ease;
   }
-
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16,1,0.3,1); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
   .card h2 { margin: 0 0 0.5rem; font-size: 1.15rem; color: #0f172a; font-weight: 600; }
   .card-text { font-size: 0.9rem; color: #64748b; margin: 0 0 1.5rem; }
 
-  .table-wrapper { overflow-x: auto; }
+  /* ── Table ── */
+  .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #e2e8f0; }
   table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-  thead { background: #f8fafc; }
+  thead { background: linear-gradient(135deg, #f8fafc, #f1f5f9); }
   th { text-align: left; padding: 0.75rem 1rem; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
   td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
-  tr:hover { background: #fafbfd; }
+  tr { transition: background 0.15s; }
+  tr:hover { background: #f0fdf4; }
 
   .badge {
-    display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.65rem; border-radius: 999px;
     font-size: 0.75rem; font-weight: 600;
   }
   .badge-green { background: #dcfce7; color: #166534; }
@@ -216,9 +282,10 @@
 
   @media (max-width: 600px) {
     .card { padding: 1.5rem; }
-    h1 { font-size: 1.5rem; }
-    .tabs { gap: 0.25rem; }
-    .tab { padding: 0.5rem 0.8rem; font-size: 0.8rem; }
+    .tabs { gap: 0.2rem; padding: 0.25rem; }
+    .tab { padding: 0.45rem 0.7rem; font-size: 0.78rem; }
+    .banner-content { flex-direction: column; text-align: center; }
+    h1 { font-size: 1.3rem; }
     .doc-list li { flex-wrap: wrap; }
   }
 </style>

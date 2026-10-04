@@ -13,12 +13,16 @@
   let currentPeriod = $state('2026-3');
   
   let formData = $state({
+    modality: 'presencial',
+    totalHours: 24,
+    presentation: '',
+    introduction: '',
     generalObjective: '',
     specificObjectives: '',
-    contentUnits: [{ unitName: '', topics: '' }],
+    topics: [{ name: '', hours: 2, learningGoal: '' }],
     methodology: '',
-    evaluationCriteria: '',
-    bibliography: ''
+    evaluationTechniques: '',
+    resources: ''
   });
 
   onMount(loadRecord);
@@ -29,15 +33,20 @@
       const docs = await adminApi.listCourseContent({ course: currentCourse, period: currentPeriod });
       if (docs.length > 0) {
         record = docs[0];
-        formData = { ...record };
-        if (!formData.contentUnits || formData.contentUnits.length === 0) {
-          formData.contentUnits = [{ unitName: '', topics: '' }];
+        formData = { 
+          ...record,
+          specificObjectives: record.specificObjectives.join('\n'),
+          evaluationTechniques: record.evaluationTechniques.join('\n')
+        };
+        if (!formData.topics || formData.topics.length === 0) {
+          formData.topics = [{ name: '', hours: 2, learningGoal: '' }];
         }
       } else {
         record = null;
         formData = {
-          generalObjective: '', specificObjectives: '', contentUnits: [{ unitName: '', topics: '' }],
-          methodology: '', evaluationCriteria: '', bibliography: ''
+          modality: 'presencial', totalHours: 24, presentation: '', introduction: '',
+          generalObjective: '', specificObjectives: '', topics: [{ name: '', hours: 2, learningGoal: '' }],
+          methodology: '', evaluationTechniques: '', resources: ''
         };
       }
     } catch (e) {
@@ -50,12 +59,12 @@
 
   function addUnit() {
     if (record && record.status !== 'borrador' && record.status !== 'rechazado') return;
-    formData.contentUnits = [...formData.contentUnits, { unitName: '', topics: '' }];
+    formData.topics = [...formData.topics, { name: '', hours: 2, learningGoal: '' }];
   }
 
   function removeUnit(index: number) {
     if (record && record.status !== 'borrador' && record.status !== 'rechazado') return;
-    formData.contentUnits = formData.contentUnits.filter((_, i) => i !== index);
+    formData.topics = formData.topics.filter((_, i) => i !== index);
   }
 
   async function save(status = 'borrador') {
@@ -65,6 +74,8 @@
         course: currentCourse,
         period: currentPeriod,
         ...formData,
+        specificObjectives: formData.specificObjectives.split('\n').filter(Boolean),
+        evaluationTechniques: formData.evaluationTechniques.split('\n').filter(Boolean),
         status
       };
       
@@ -145,36 +156,61 @@
       {/if}
 
       <div class="form-grid">
-        <div class="form-group full-width">
-          <label>Objetivo General</label>
-          <textarea bind:value={formData.generalObjective} disabled={readonly} rows="3"></textarea>
+        <div class="form-group">
+          <label>Modalidad</label>
+          <select bind:value={formData.modality} disabled={readonly}>
+            <option value="presencial">Presencial</option>
+            <option value="virtual">Virtual</option>
+            <option value="mixta">Mixta</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Intensidad Horaria (Total)</label>
+          <input type="number" bind:value={formData.totalHours} disabled={readonly} />
         </div>
         <div class="form-group full-width">
-          <label>Objetivos Específicos</label>
+          <label>Presentación</label>
+          <textarea bind:value={formData.presentation} disabled={readonly} rows="3"></textarea>
+        </div>
+        <div class="form-group full-width">
+          <label>Introducción</label>
+          <textarea bind:value={formData.introduction} disabled={readonly} rows="3"></textarea>
+        </div>
+        <div class="form-group full-width">
+          <label>Objetivo General</label>
+          <textarea bind:value={formData.generalObjective} disabled={readonly} rows="2"></textarea>
+        </div>
+        <div class="form-group full-width">
+          <label>Objetivos Específicos (Uno por línea)</label>
           <textarea bind:value={formData.specificObjectives} disabled={readonly} rows="4"></textarea>
         </div>
       </div>
 
-      <div class="section-title">Unidades Temáticas</div>
+      <div class="section-title">Contenido y Plan de Trabajo</div>
       <div class="units-container">
-        {#each formData.contentUnits as unit, i}
+        {#each formData.topics as unit, i}
           <div class="unit-card">
             <div class="unit-header">
-              <label>Unidad {i + 1}</label>
-              {#if !readonly && formData.contentUnits.length > 1}
+              <label>Tema {i + 1}</label>
+              {#if !readonly && formData.topics.length > 1}
                 <button class="btn-icon" onclick={() => removeUnit(i)}>🗑️</button>
               {/if}
             </div>
-            <div class="form-group">
-              <input type="text" bind:value={unit.unitName} disabled={readonly} placeholder="Nombre de la unidad..." />
+            <div class="form-grid" style="grid-template-columns: 1fr 100px;">
+              <div class="form-group">
+                <input type="text" bind:value={unit.name} disabled={readonly} placeholder="Nombre del tema..." />
+              </div>
+              <div class="form-group">
+                <input type="number" bind:value={unit.hours} disabled={readonly} placeholder="Horas" />
+              </div>
             </div>
             <div class="form-group mt-2">
-              <textarea bind:value={unit.topics} disabled={readonly} rows="3" placeholder="Temas a desarrollar..."></textarea>
+              <textarea bind:value={unit.learningGoal} disabled={readonly} rows="2" placeholder="Objetivos de aprendizaje de este tema..."></textarea>
             </div>
           </div>
         {/each}
         {#if !readonly}
-          <button class="btn btn-outline btn-block mt-2" onclick={addUnit}>+ Agregar Unidad</button>
+          <button class="btn btn-outline btn-block mt-2" onclick={addUnit}>+ Agregar Tema</button>
         {/if}
       </div>
 
@@ -185,12 +221,12 @@
           <textarea bind:value={formData.methodology} disabled={readonly} rows="3"></textarea>
         </div>
         <div class="form-group full-width">
-          <label>Criterios de Evaluación</label>
-          <textarea bind:value={formData.evaluationCriteria} disabled={readonly} rows="3"></textarea>
+          <label>Técnicas de Evaluación (Una por línea)</label>
+          <textarea bind:value={formData.evaluationTechniques} disabled={readonly} rows="3"></textarea>
         </div>
         <div class="form-group full-width">
-          <label>Bibliografía Principal y Complementaria</label>
-          <textarea bind:value={formData.bibliography} disabled={readonly} rows="3"></textarea>
+          <label>Recursos Tecnológicos / Aula</label>
+          <textarea bind:value={formData.resources} disabled={readonly} rows="2"></textarea>
         </div>
       </div>
 

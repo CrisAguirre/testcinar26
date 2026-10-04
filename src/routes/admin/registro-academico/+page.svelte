@@ -177,8 +177,6 @@
     </div>
   {/if}
 
-  {/if}
-
   {#if activeTab === 'planilla-notas'}
     <div class="card fade-in" style="padding: 1.5rem;">
       <GradeSheetTable />

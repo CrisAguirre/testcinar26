@@ -13,6 +13,8 @@
   let currentPeriod = $state('2026-3');
   
   let newRecordConfig = $state({
+    year: new Date().getFullYear(),
+    shift: 'NOCHE',
     schedule: '6:30 PM a 8:30 PM',
     dayOfWeek: 'martes',
     startDate: '',
@@ -126,6 +128,19 @@
       <h4>Iniciar Control de Contenidos (F5)</h4>
       <div class="session-form">
         <div class="form-group">
+          <label>Año</label>
+          <input type="number" bind:value={newRecordConfig.year} />
+        </div>
+        <div class="form-group">
+          <label>Jornada</label>
+          <select bind:value={newRecordConfig.shift}>
+            <option value="MAÑANA">Mañana</option>
+            <option value="TARDE">Tarde</option>
+            <option value="NOCHE">Noche</option>
+            <option value="SABATINOS">Sabatinos</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label>Horario</label>
           <input type="text" bind:value={newRecordConfig.schedule} placeholder="Ej. 6:30 PM a 8:30 PM" />
         </div>
@@ -158,8 +173,8 @@
         <div class="record-info">
           <h4>Control de Contenidos — {currentCourse}</h4>
           <p class="text-sm">
-            Docente: {record.teacher?.full_name} | {record.dayOfWeek} {record.schedule} | 
-            Inicio: {record.startDate ? new Date(record.startDate).toLocaleDateString() : 'N/A'}
+            Docente: {record.teacher?.full_name} | Año: {record.year || 'N/A'} | Jornada: {record.shift || 'N/A'}<br/>
+            {record.dayOfWeek} {record.schedule} | Inicio: {record.startDate ? new Date(record.startDate).toLocaleDateString() : 'N/A'}
           </p>
         </div>
         <div class="record-actions">

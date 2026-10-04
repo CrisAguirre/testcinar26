@@ -174,6 +174,7 @@
           <thead>
             <tr>
               <th rowspan="2">No.</th>
+              <th rowspan="2">Documento</th>
               <th rowspan="2">Apellidos y Nombres</th>
               <th colspan="2" class="center group-header">Primer Parcial (40%)</th>
               <th colspan="2" class="center group-header">Examen Final (60%)</th>
@@ -190,7 +191,8 @@
             {#each record.entries as entry, i}
               <tr>
                 <td class="center text-sm">{i + 1}</td>
-                <td><strong>{entry.student?.full_name || entry.student?.username}</strong></td>
+                <td>{entry.student?.username}</td>
+                <td><strong>{entry.student?.full_name}</strong></td>
                 
                 <td class="center input-cell">
                   <input type="number" step="0.1" min="0" max="5" 

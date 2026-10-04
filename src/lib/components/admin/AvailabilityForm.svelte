@@ -14,14 +14,19 @@
 
   let formData = $state({
     period: '2026-3',
+    formatDate: new Date().toISOString().split('T')[0],
     fullName: $currentUser?.full_name || '',
     email: $currentUser?.email || '',
     documentId: '',
     profession: '',
     specialization: '',
+    address: '',
     phone: '',
+    cellphone: '',
     professionalProfile: '',
     subjectExpertise: '',
+    periodStart: '',
+    periodEnd: '',
     slots: [] as any[]
   });
 
@@ -177,12 +182,28 @@
         <input type="text" bind:value={formData.specialization} disabled={record?.status !== 'borrador'} />
       </div>
       <div class="form-group">
+        <label>Dirección</label>
+        <input type="text" bind:value={formData.address} disabled={record?.status !== 'borrador'} />
+      </div>
+      <div class="form-group">
         <label>Email</label>
         <input type="email" bind:value={formData.email} disabled={record?.status !== 'borrador'} />
       </div>
       <div class="form-group">
-        <label>Teléfono / Celular</label>
+        <label>Teléfono</label>
         <input type="text" bind:value={formData.phone} disabled={record?.status !== 'borrador'} />
+      </div>
+      <div class="form-group">
+        <label>Celular</label>
+        <input type="text" bind:value={formData.cellphone} disabled={record?.status !== 'borrador'} />
+      </div>
+      <div class="form-group">
+        <label>Iniciación de clases</label>
+        <input type="date" bind:value={formData.periodStart} disabled={record?.status !== 'borrador'} />
+      </div>
+      <div class="form-group">
+        <label>Finalización con habilitaciones</label>
+        <input type="date" bind:value={formData.periodEnd} disabled={record?.status !== 'borrador'} />
       </div>
       <div class="form-group full-width">
         <label>Perfil Profesional (Materias que domina, experiencia)</label>

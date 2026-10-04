@@ -131,3 +131,46 @@ export const enrollmentApi = {
   unenroll: (userId, course) => api('DELETE', `/enrollments/${userId}/${course}`),
   saveProjectIdea: (data) => api('POST', '/enrollments/project-idea', data)
 };
+
+export const adminApi = {
+  // Helpers
+  getEnrolledStudents: (course) => api('GET', `/admin/enrollments/${course}`),
+  
+  // F1: Contenido Temático
+  createCourseContent: (data) => api('POST', '/admin/course-content', data),
+  listCourseContent: (params) => api('GET', `/admin/course-content?${new URLSearchParams(params)}`),
+  getCourseContent: (id) => api('GET', `/admin/course-content/${id}`),
+  updateCourseContent: (id, data) => api('PUT', `/admin/course-content/${id}`, data),
+  updateCourseContentStatus: (id, data) => api('PATCH', `/admin/course-content/${id}/status`, data),
+  
+  // F2: Disponibilidad Docente
+  createAvailability: (data) => api('POST', '/admin/availability', data),
+  listAvailability: (params) => api('GET', `/admin/availability?${new URLSearchParams(params)}`),
+  updateAvailability: (id, data) => api('PUT', `/admin/availability/${id}`, data),
+  updateAvailabilityStatus: (id, data) => api('PATCH', `/admin/availability/${id}/status`, data),
+
+  // F3: Planeador de Clase
+  createClassPlan: (data) => api('POST', '/admin/class-plans', data),
+  listClassPlans: (params) => api('GET', `/admin/class-plans?${new URLSearchParams(params)}`),
+  getClassPlan: (id) => api('GET', `/admin/class-plans/${id}`),
+  updateClassPlan: (id, data) => api('PUT', `/admin/class-plans/${id}`, data),
+  updateClassPlanStatus: (id, data) => api('PATCH', `/admin/class-plans/${id}/status`, data),
+
+  // F4: Control de Asistencia
+  createAttendance: (data) => api('POST', '/admin/attendance', data),
+  listAttendance: (params) => api('GET', `/admin/attendance?${new URLSearchParams(params)}`),
+  updateAttendance: (id, data) => api('PUT', `/admin/attendance/${id}`, data),
+  closeAttendance: (id) => api('PATCH', `/admin/attendance/${id}/close`),
+
+  // F5: Control de Contenidos
+  createContentTracking: (data) => api('POST', '/admin/content-tracking', data),
+  listContentTracking: (params) => api('GET', `/admin/content-tracking?${new URLSearchParams(params)}`),
+  updateContentTracking: (id, data) => api('PUT', `/admin/content-tracking/${id}`, data),
+  signContentTracking: (id, data) => api('PATCH', `/admin/content-tracking/${id}/sign`, data),
+
+  // F6: Planilla de Notas
+  createGradeSheet: (data) => api('POST', '/admin/grade-sheets', data),
+  listGradeSheets: (params) => api('GET', `/admin/grade-sheets?${new URLSearchParams(params)}`),
+  updateGradeSheet: (id, data) => api('PUT', `/admin/grade-sheets/${id}`, data),
+  signGradeSheet: (id, data) => api('PATCH', `/admin/grade-sheets/${id}/sign`, data)
+};

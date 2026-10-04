@@ -1,6 +1,8 @@
 <script lang="ts">
   import { isAuthenticated, currentUser } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
+  import AvailabilityForm from '$lib/components/admin/AvailabilityForm.svelte';
+  import ClassPlanForm from '$lib/components/admin/ClassPlanForm.svelte';
 
   $effect(() => {
     if (!$isAuthenticated) { goto('/login'); return; }
@@ -59,6 +61,8 @@
   <div class="tabs">
     <button class="tab" class:active={activeTab === 'horario'} onclick={() => activeTab = 'horario'}>Horario / Agenda</button>
     <button class="tab" class:active={activeTab === 'tematicas'} onclick={() => activeTab = 'tematicas'}>Temáticas y Cursos</button>
+    <button class="tab" class:active={activeTab === 'disponibilidad'} onclick={() => activeTab = 'disponibilidad'}>Disponibilidad Docente</button>
+    <button class="tab" class:active={activeTab === 'planeador'} onclick={() => activeTab = 'planeador'}>Planeador de Clase</button>
     <button class="tab" class:active={activeTab === 'oferta'} onclick={() => activeTab = 'oferta'}>Oferta de Capacitaciones</button>
   </div>
 
@@ -150,6 +154,18 @@
           </tbody>
         </table>
       </div>
+    </div>
+  {/if}
+
+  {#if activeTab === 'disponibilidad'}
+    <div class="card fade-in">
+      <AvailabilityForm />
+    </div>
+  {/if}
+
+  {#if activeTab === 'planeador'}
+    <div class="card fade-in">
+      <ClassPlanForm />
     </div>
   {/if}
 </div>

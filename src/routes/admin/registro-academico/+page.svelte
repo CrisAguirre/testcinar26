@@ -3,6 +3,10 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { gradesApi } from '$lib/api';
+  import AttendanceTable from '$lib/components/admin/AttendanceTable.svelte';
+  import GradeSheetTable from '$lib/components/admin/GradeSheetTable.svelte';
+  import CourseContentForm from '$lib/components/admin/CourseContentForm.svelte';
+  import ContentTrackingTable from '$lib/components/admin/ContentTrackingTable.svelte';
 
   $effect(() => {
     if (!$isAuthenticated) { goto('/login'); return; }
@@ -65,10 +69,12 @@
   </div>
 
   <div class="tabs">
-    <button class="tab" class:active={activeTab === 'notas'} onclick={() => activeTab = 'notas'}>Notas</button>
-    <button class="tab" class:active={activeTab === 'contenidos'} onclick={() => activeTab = 'contenidos'}>Contenidos</button>
-    <button class="tab" class:active={activeTab === 'cronograma'} onclick={() => activeTab = 'cronograma'}>Cronograma</button>
+    <button class="tab" class:active={activeTab === 'notas'} onclick={() => activeTab = 'notas'}>Notas Históricas</button>
+    <button class="tab" class:active={activeTab === 'planilla-notas'} onclick={() => activeTab = 'planilla-notas'}>Planilla de Notas</button>
     <button class="tab" class:active={activeTab === 'asistencia'} onclick={() => activeTab = 'asistencia'}>Asistencia</button>
+    <button class="tab" class:active={activeTab === 'contenido-tematico'} onclick={() => activeTab = 'contenido-tematico'}>Contenido Temático</button>
+    <button class="tab" class:active={activeTab === 'control-contenidos'} onclick={() => activeTab = 'control-contenidos'}>Control de Contenidos</button>
+    <button class="tab" class:active={activeTab === 'cronograma'} onclick={() => activeTab = 'cronograma'}>Cronograma</button>
   </div>
 
   {#if activeTab === 'notas'}
@@ -171,36 +177,29 @@
     </div>
   {/if}
 
+  {/if}
+
+  {#if activeTab === 'planilla-notas'}
+    <div class="card fade-in" style="padding: 1.5rem;">
+      <GradeSheetTable />
+    </div>
+  {/if}
+
   {#if activeTab === 'asistencia'}
-    <div class="card">
-      <h2>Registro de Asistencia</h2>
-      <p class="card-text">Listado reciente de control de asistencia.</p>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Estudiante</th>
-              <th>Materia</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each asistencia as a}
-              <tr>
-                <td>{a.fecha}</td>
-                <td><strong>{a.estudiante}</strong></td>
-                <td>{a.materia}</td>
-                <td>
-                  <span class="badge {a.estado === 'Presente' ? 'badge-green' : a.estado === 'Ausente' ? 'badge-red' : 'badge-yellow'}">
-                    {a.estado}
-                  </span>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
+    <div class="card fade-in" style="padding: 1.5rem;">
+      <AttendanceTable />
+    </div>
+  {/if}
+
+  {#if activeTab === 'contenido-tematico'}
+    <div class="card fade-in" style="padding: 1.5rem;">
+      <CourseContentForm />
+    </div>
+  {/if}
+
+  {#if activeTab === 'control-contenidos'}
+    <div class="card fade-in" style="padding: 1.5rem;">
+      <ContentTrackingTable />
     </div>
   {/if}
 </div>

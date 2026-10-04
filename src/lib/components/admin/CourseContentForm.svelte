@@ -8,6 +8,7 @@
   let saving = $state(false);
   let record = $state<any>(null);
   let isPrivileged = $derived($currentUser?.role === 'admin' || $currentUser?.role === 'coordinator');
+  let readonly = $derived(record && record.status !== 'borrador' && record.status !== 'rechazado');
 
   let currentCourse = $state('algoritmos');
   let currentPeriod = $state('2026-3');
@@ -146,8 +147,6 @@
           <FormStatusBadge status="borrador" />
         {/if}
       </div>
-
-      {@const readonly = record && record.status !== 'borrador' && record.status !== 'rechazado'}
 
       {#if record?.status === 'rechazado'}
         <div class="alert alert-danger">

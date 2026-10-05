@@ -28,14 +28,14 @@ describe('categories', () => {
     expect(cat?.links.length).toBe(4);
   });
 
-  it('Documentación y Tutoriales tiene 4 enlaces', () => {
+  it('Documentación y Tutoriales tiene 6 enlaces', () => {
     const cat = categories.find(c => c.title === 'Documentación y Tutoriales');
-    expect(cat?.links.length).toBe(4);
+    expect(cat?.links.length).toBe(6);
   });
 
-  it('IA y Aprendizaje tiene 4 enlaces', () => {
+  it('IA y Aprendizaje tiene 7 enlaces', () => {
     const cat = categories.find(c => c.title === 'IA y Aprendizaje');
-    expect(cat?.links.length).toBe(4);
+    expect(cat?.links.length).toBe(7);
   });
 
   it('Herramientas y Utilidades tiene 4 enlaces', () => {
@@ -52,8 +52,8 @@ describe('categories', () => {
 describe('links', () => {
   const allLinks = getAllLinks(categories);
 
-  it('total de 20 enlaces', () => {
-    expect(allLinks.length).toBe(20);
+  it('total de 25 enlaces', () => {
+    expect(allLinks.length).toBe(25);
   });
 
   it('cada enlace tiene title, url, desc y tag', () => {
@@ -65,9 +65,9 @@ describe('links', () => {
     }
   });
 
-  it('cada URL es válida (http/https)', () => {
+  it('cada URL es válida (http/https o ruta absoluta local)', () => {
     for (const link of allLinks) {
-      expect(link.url).toMatch(/^https?:\/\//);
+      expect(link.url).toMatch(/^(https?:\/\/|\/)/);
     }
   });
 
@@ -155,8 +155,9 @@ describe('filterCategories', () => {
 
   it('filtra enlaces dentro de categorías, no elimina categorías sin match', () => {
     const result = filterCategories(categories, 'scrum');
-    expect(result.length).toBe(1);
-    expect(result[0].title).toBe('IA y Aprendizaje');
+    expect(result.length).toBe(2);
+    expect(result.some(c => c.title === 'IA y Aprendizaje')).toBe(true);
+    expect(result.some(c => c.title === 'Documentación y Tutoriales')).toBe(true);
   });
 
   it('coincidencia parcial funciona', () => {
@@ -170,8 +171,8 @@ describe('filterCategories', () => {
 });
 
 describe('getAllLinks', () => {
-  it('retorna 20 enlaces totales', () => {
-    expect(getAllLinks(categories).length).toBe(20);
+  it('retorna 25 enlaces totales', () => {
+    expect(getAllLinks(categories).length).toBe(25);
   });
 
   it('retorna arreglo vacío para categorías sin enlaces', () => {

@@ -39,17 +39,17 @@
       title: 'Instalar OpenCode y codificar',
       status: 'next',
       badge: '⏳ Próximo',
-      desc: 'Vamos a instalar OpenCode desde Dui Warp para empezar a codificar la app.',
-      items: ['Instalar OpenCode (Dui Warp)', 'Conectar repos + Atlas', 'Primer commit de la app'],
+      desc: 'Vamos a fusionar el contenido de Antigravity con Open Code para correrlo desde una terminal de Antigravity, omitiendo la instalación de Warp.',
+      items: ['Terminal de Antigravity + OpenCode', 'Conectar repos + Atlas', 'Primer commit de la app'],
       icon: '💻'
     },
     {
       n: 'Paso 4',
-      title: 'Instalar Antigravity IDE',
+      title: 'Requerimientos técnicos',
       status: 'next',
       badge: '⏳ Próximo',
-      desc: 'Vamos a instalar Antigravity IDE para el control de cambios con Git, explorador de archivos, terminal local y ayuda adicional con IAs integradas.',
-      items: ['Control de cambios con Git', 'Explorador de archivos + terminal local', 'IAs integradas: Claude y Google'],
+      desc: 'Definir únicamente los requerimientos técnicos de las aplicaciones formuladas. Consulta la sección de enlaces nuevos.',
+      items: ['Definición de requerimientos técnicos', '<a href="/algoritmos/enlaces-de-consulta" style="color:#10b981; font-weight:bold; text-decoration:underline;">Ver enlaces nuevos</a>'],
       icon: '🚀'
     },
     {
@@ -304,7 +304,7 @@
             <p class="slide-desc">{step.desc}</p>
             <ul>
               {#each step.items as item}
-                <li>{item}</li>
+                <li>{@html item}</li>
               {/each}
             </ul>
           </article>

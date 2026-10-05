@@ -35,7 +35,9 @@ export const categories: Category[] = [
       { title: 'Svelte — Documentación Oficial', url: 'https://svelte.dev/tutorial/svelte/welcome-to-svelte', desc: 'Guía oficial y tutorial interactivo de Svelte 5', tag: 'Svelte' },
       { title: 'Tutorial Completo de Svelte', url: 'https://www.youtube.com/watch?v=pze2JJj82XA&list=PLTd5ehIj0goM-5mQxXLmCr5nHZX_yc2QT', desc: 'Lista de reproducción con tutorial paso a paso de Svelte', tag: 'Video' },
       { title: 'Component Party — Svelte 5', url: 'https://component-party.dev/?f=svelte5#templating.loop', desc: 'Comparativa visual de componentes entre frameworks', tag: 'Referencia' },
-      { title: 'Opencode — Tutorial', url: 'https://www.youtube.com/watch?v=ZZq4TpNgnvg&t=900s', desc: 'Aprende a usar Opencode como asistente de desarrollo', tag: 'Video' }
+      { title: 'Opencode — Tutorial', url: 'https://www.youtube.com/watch?v=ZZq4TpNgnvg&t=900s', desc: 'Aprende a usar Opencode como asistente de desarrollo', tag: 'Video' },
+      { title: 'Guía de requerimientos', url: '/Guia%20de%20requerimientos.pdf', desc: 'Documento guía para la definición de requerimientos técnicos', tag: 'PDF' },
+      { title: 'Guía Scrum 2020', url: '/2020-Scrum-Guide-Spanish-Latin-South-American.pdf', desc: 'Guía oficial de la metodología ágil Scrum', tag: 'PDF' }
     ]
   },
   {

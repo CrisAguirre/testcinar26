@@ -51,7 +51,7 @@
         period: currentPeriod,
         ...newRecordConfig,
         sessions: [
-          { number: 1, date: newRecordConfig.startDate || new Date().toISOString().split('T')[0], topicAndGoal: '' }
+          { number: 1, date: newRecordConfig.startDate || new Date().toISOString().split('T')[0], topicAndGoal: 'Tema inicial por definir' }
         ]
       };
       record = await adminApi.createContentTracking(payload);
@@ -65,7 +65,7 @@
   function addSession() {
     if (!record || record.status === 'cerrado') return;
     const nextNum = record.sessions.length > 0 ? record.sessions[record.sessions.length - 1].number + 1 : 1;
-    record.sessions = [...record.sessions, { number: nextNum, date: '', topicAndGoal: '', teacherSigned: false, coordinatorSigned: false }];
+    record.sessions = [...record.sessions, { number: nextNum, date: '', topicAndGoal: 'Tema por definir', teacherSigned: false, coordinatorSigned: false }];
   }
 
   async function saveDraft() {

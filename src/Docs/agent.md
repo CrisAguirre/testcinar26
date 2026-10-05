@@ -180,9 +180,10 @@ Cinar/
     - **7 componentes reutilizables** en `$lib/components/admin/`: AvailabilityForm, ClassPlanForm, CourseContentForm, GradeSheetTable, AttendanceTable, ContentTrackingTable, FormStatusBadge.
     - **6 modelos MongoDB** en backend: Availability, ClassPlan, CourseContent, GradeSheet, Attendance, ContentTracking.
     - **adminController.js** con CRUD completo para los 6 formatos + flujo de estados (borrador → enviado → recibido/aprobado/rechazado).
-    - **UI Premium**: banners animados (gradient shift, logo float/glow, code symbols drift), tabs con iconos y sombras, cards con fade-in, tablas con cabeceras degradadas. Cada página con paleta de color diferenciada.
-    - **Navegación horizontal premium**: barra `admin-top-nav` con 6 botones tipo pill (🏠 Panel, 📅 Planeación, 📝 Registro, 🎓 Capacitaciones, 📜 Normativa, 🛟 Soporte) en la parte superior de cada subsección, reemplazando el botón solitario de "Volver".
-    - **Modo demostrativo**: variable `readonly` configurada como `$derived($currentUser?.role !== 'admin' && ...)` para que el admin pueda editar todos los formularios independientemente del estado (no bloquea por estado aprobado/recibido). Botones de guardar borrador y enviar siempre visibles para admin.
+    - **UI Premium y Responsiva (`max-width: 768px`)**: banners animados, tabs con iconos y sombras, cards con fade-in. Las tablas cuentan con `overflow-x: auto` (Scroll Containers) y los formularios complejos cambian de grillas pesadas a columnas simples apiladas verticalmente en móvil, optimizando el ancho de pantalla.
+    - **Navegación horizontal premium**: barra `admin-top-nav` con 6 botones tipo pill (🏠 Panel, 📅 Planeación, 📝 Registro, 🎓 Capacitaciones, 📜 Normativa, 🛟 Soporte) en la parte superior de cada subsección, reemplazando el botón solitario de "Volver" y haciendo wrap en móvil.
+    - **Modo demostrativo**: variable `readonly` en formularios configurada para que el admin pueda editarlos independientemente del estado.
+    - **Modo Edición en Tablas (Admin Toggle)**: Para planillas de notas, asistencia y seguimiento temático (`GradeSheetTable`, `AttendanceTable`, `ContentTrackingTable`) se inyectó un switch "🛠️ Modo Edición (Ignorar reglas)". Al activarlo, la variable `$derived(forceEdit)` anula los bloqueos por rol (`isPrivileged`) y por estatus (`entregado`/`cerrado`), permitiendo al usuario admin simular en vivo que es un profesor para editar celdas o firmar actas durante la demo.
     - **Build fixes Svelte 5**: resueltos errores `{@const}` (migrados a `$derived`) y `{/if}` colgante en registro-académico.
 
 12. **Auditoría 04/10/2026 (Impeccable Style + ESLint)**

@@ -304,6 +304,132 @@ let {
         description: 'En YouTube, cada video que ves en la portada es un componente. Pero para que cada uno muestre una miniatura, título y canal diferente, YouTube utiliza Props. El componente padre (la página de inicio) le pasa a la <VideoCard /> las propiedades: { thumbnail="gatos.jpg", title="Videos graciosos", views="1M" }. Así, con un solo componente se muestran infinitos videos distintos.',
         link: 'https://svelte.dev/docs/svelte/$props'
       }
+    },
+    {
+      id: 4,
+      number: 'Clase 4',
+      title: 'Integración de diseño con CSS puro y variables',
+      hours: '2 horas',
+      objective: 'Adaptar interfaces usando CSS puro (Vanilla CSS) y variables globales en un entorno Svelte.',
+      icon: '🎨',
+      color: '#ec4899',
+      concepts: [
+        { term: 'Variables CSS (Custom Properties)', desc: 'Permiten definir colores, fuentes y medidas de forma global en :root para mantener coherencia en toda la app.' },
+        { term: 'Scoped CSS en Svelte', desc: 'Svelte encapsula automáticamente los estilos por componente, pero permite estilos globales con :global() o archivos .css externos.' },
+        { term: 'Animaciones', desc: 'Uso de librerías como svelte-motion o transiciones nativas de Svelte para interactividad fluida.' },
+        { term: 'Flexbox & Grid', desc: 'Uso de CSS moderno para crear layouts responsivos sin necesidad de librerías pesadas (ej. Bootstrap).' }
+      ],
+      codeExamples: [
+        {
+          id: 'css-variables',
+          title: '🎨 Variables CSS Globales',
+          description: 'En lugar de Bootstrap, este proyecto usa CSS nativo con variables centralizadas (como en app.css):',
+          code: `/* Ejemplo de Sistema de diseño personalizado */
+:root {
+  /* Paleta de colores principal */
+  --color-bg-1: #0f172a;
+  --color-surface: #1e293b;
+  --color-accent: #3b82f6;
+  --color-text-primary: #f8fafc;
+  
+  /* Radios de borde y sombras uniformes */
+  --radius-lg: 16px;
+  --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+body {
+  background-color: var(--color-bg-1);
+  color: var(--color-text-primary);
+  font-family: 'Inter', sans-serif;
+}`,
+          file: 'CSS Base (Variables)'
+        },
+        {
+          id: 'css-scoped',
+          title: '👗 Estilos encapsulados por componente',
+          description: 'Cada componente usa esas variables globales sin afectar a otros componentes:',
+          code: `<!-- En cualquier componente .svelte -->
+\\x3Cstyle\\x3E
+  .card {
+    /* Uso de variables globales */
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    transition: transform 0.2s;
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+    /* Color dinámico desde variable global */
+    border-color: var(--color-accent); 
+  }
+\\x3C/style\\x3E`,
+          file: 'Componentes Varios (Estilos encapsulados)'
+        }
+      ],
+      externalExample: {
+        title: '🌐 Ejemplo Práctico: Spotify Web',
+        description: 'Plataformas como Spotify utilizan un sistema de diseño propio basado en Variables CSS (Custom Properties) para soportar temas (claro/oscuro) de forma nativa. Al cambiar una variable en la raíz, toda la interfaz cambia de color instantáneamente sin necesidad de cargar nuevas hojas de estilo pesadas como Bootstrap.',
+        link: 'https://developer.mozilla.org/es/docs/Web/CSS/Using_CSS_custom_properties'
+      }
+    },
+    {
+      id: 5,
+      number: 'Clase 5',
+      title: 'Buenas prácticas en organización',
+      hours: '2 horas',
+      objective: 'Identificar e implementar patrones de arquitectura limpia y estructura de directorios en SvelteKit.',
+      icon: '🏗️',
+      color: '#f59e0b',
+      concepts: [
+        { term: 'Alias de rutas ($lib)', desc: 'SvelteKit provee el alias $lib para evitar importaciones relativas confusas.' },
+        { term: 'Separación de responsabilidades', desc: 'Mantener la lógica (ts/js), la vista (html) y el estilo (css) estructurados, delegando datos a stores.' },
+        { term: 'Archivos de constantes/datos', desc: 'Extraer datos estáticos (como menús o listas) a archivos independientes en $lib/data/.' },
+        { term: 'Nombres descriptivos', desc: 'Nombrar componentes con PascalCase (SubjectCard.svelte) y funciones con camelCase.' }
+      ],
+      codeExamples: [
+        {
+          id: 'alias-lib',
+          title: '🔗 Uso del alias $lib',
+          description: 'Evitar el "infierno de los puntos" usando $lib para importar desde cualquier nivel (se ve en todos nuestros componentes):',
+          code: `// ❌ Mala práctica: Importación relativa frágil (se rompe si mueves el archivo)
+import { isAuthenticated } from '../../../../stores/auth';
+import Header from '../../components/Header.svelte';
+
+// ✅ Buena práctica: Uso de $lib en este proyecto
+import { isAuthenticated } from '$lib/stores/auth';
+import Header from '$lib/components/Header.svelte';
+
+// $lib siempre apunta a la carpeta src/lib/ sin importar dónde estés`,
+          file: 'Archivos .svelte'
+        },
+        {
+          id: 'data-separation',
+          title: '🗂️ Separación de datos y vistas',
+          description: 'En lugar de poner líneas de datos estáticos en el componente, se extraen a $lib/data/:',
+          code: `/* src/lib/data/enlacesData.ts — Solo Datos puros (TypeScript) */
+export const categories = [
+  { title: 'Documentación', links: [...] },
+  { title: 'Herramientas', links: [...] }
+];
+
+<!-- src/routes/.../enlaces-de-consulta/+page.svelte — Solo Vista -->
+\\x3Cscript\\x3E
+  // El componente queda limpio, solo se dedica a iterar y renderizar
+  import { categories } from '$lib/data/enlacesData';
+\\x3C/script\\x3E
+
+{#each categories as cat}
+  <h2>{cat.title}</h2>
+{/each}`,
+          file: 'src/lib/data/enlacesData.ts'
+        }
+      ],
+      externalExample: {
+        title: '🌐 Ejemplo Práctico: Airbnb',
+        description: 'Equipos grandes como Airbnb escalan sus aplicaciones separando estrictamente los "Componentes Tontos" (UI pura como un botón, sin lógica de negocio) de los "Contenedores" (Lógica). Además, extraen toda la configuración estática a archivos independientes. Esto permite que el equipo de diseño actualice la UI sin miedo a romper la lógica de pagos o reservas.',
+        link: 'https://es.reactjs.org/docs/faq-structure.html'
+      }
     }
   ];
 

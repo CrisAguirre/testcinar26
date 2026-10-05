@@ -108,6 +108,14 @@
     </div>
   </div>
 
+  {#if $currentUser?.role === 'admin'}
+    <div style="padding: 0.75rem 1.5rem; background: #fef3c7; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #fde68a; display: flex; justify-content: flex-end;">
+      <label style="cursor:pointer; font-weight:600; color:#b45309; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+        <input type="checkbox" bind:checked={forceEdit} /> 🛠️ Modo Edición (Permitir generar y editar como admin)
+      </label>
+    </div>
+  {/if}
+
   {#if loading}
     <p class="loading">Cargando planilla de asistencia...</p>
   {:else if !record}
@@ -160,13 +168,6 @@
     {/if}
   {:else}
     <div class="record-card">
-      {#if $currentUser?.role === 'admin'}
-      <div style="padding: 0.75rem 1.5rem; background: #fef3c7; border-bottom: 1px solid #fde68a; display: flex; justify-content: flex-end;">
-        <label style="cursor:pointer; font-weight:600; color:#b45309; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
-          <input type="checkbox" bind:checked={forceEdit} /> 🛠️ Modo Edición (Ignorar reglas)
-        </label>
-      </div>
-    {/if}
     <div class="record-header">
         <div class="record-info">
           <h4>Planilla de Asistencia — {currentCourse.toUpperCase()} ({record.courseCode || 'N/A'})</h4>

@@ -113,7 +113,10 @@
   h1 {
     font-size: 1.55rem; margin: 0 0 0.35rem; font-weight: 700; letter-spacing: -0.02em;
     background: linear-gradient(135deg, #fff, #bfdbfe, #93c5fd, #fff); background-size: 300% 300%;
-    color: #0f172a;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
     animation: bannerTitleGrad 5s ease infinite; filter: drop-shadow(0 0 12px rgba(147,197,253,0.3));
   }
   @keyframes bannerTitleGrad { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
@@ -155,7 +158,10 @@
     cursor: pointer; border-radius: 8px; transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
     white-space: nowrap; display: flex; align-items: center; gap: 0.35rem;
   }
-  .tab:hover { color: #0f172a; background: rgba(255,255,255,0.5); }
+  .tab:hover { -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent; background: rgba(255,255,255,0.5); }
   .tab.active {
     color: #2563eb; background: white; font-weight: 600;
     box-shadow: 0 2px 8px rgba(37,99,235,0.12), 0 1px 3px rgba(0,0,0,0.06);

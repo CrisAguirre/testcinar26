@@ -197,7 +197,10 @@
     color: white;
     background: linear-gradient(135deg, #fff, #93c5fd, #c4b5fd, #fff);
     background-size: 300% 300%;
-    color: #0f172a;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
     animation: bannerTitleGrad 5s ease infinite, bannerTitleSlide 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     letter-spacing: -0.02em;
     filter: drop-shadow(0 0 12px rgba(147, 197, 253, 0.3));

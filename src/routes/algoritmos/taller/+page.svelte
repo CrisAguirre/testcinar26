@@ -1,17 +1,18 @@
 <script lang="ts">
   import { selectRandomQuestions } from '$lib/data/taller_algo';
-  import { gradesApi, API_URL } from '$lib/api';
+  import { gradesApi, API_URL, apiUploadFile } from '$lib/api';
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
-  import { isStrictAdmin, EXAM_LOCK_ACTIVE } from '$lib/guards/examLock';
+  import { isStrictAdmin, isTallerAlgoLockedFor, TALLER_ALGO_OPEN, TALLER_ALGO_CLOSE } from '$lib/guards/examLock';
 
-  // Bloqueo temporal: parciales y taller solo para admin (aún no son las fechas).
-  let examLocked = $derived(EXAM_LOCK_ACTIVE && !isStrictAdmin($currentUser));
+  // Bloqueo: el taller solo se abre el 6 de octubre (o admin).
+  let tallerLocked = $derived(isTallerAlgoLockedFor($currentUser));
   $effect(() => {
     if (!$currentUser) { goto('/login'); return; }
-    if (examLocked) goto('/algoritmos');
+    if (tallerLocked) goto('/algoritmos');
   });
+
   import {
     STORAGE_KEY, TOTAL_QUESTIONS, TOTAL_TIME,
     getAttemptLabel, formatTime, getProgressPercent,
@@ -44,6 +45,12 @@
   let checkingServer = $state(false);
   let pendingSyncCount = $state(0);
   let syncingInProgress = $state(false);
+
+  // File upload state
+  let uploadedFile = $state<File | null>(null);
+  let uploadedFileName = $state('');
+  let uploadStatus = $state(''); // 'uploading' | 'success' | 'error' | ''
+  let uploadError = $state('');
 
   let isUnlimited = $derived($currentUser?.email === 'coordinacion@cinarsistemas.edu.co');
 
@@ -80,7 +87,7 @@
         all = await gradesApi.getMine();
         preloadedMyGrades.set(all);
       }
-      const examGrades = all.filter((g: any) => g.subject === 'Algoritmos - Taller Práctico');
+      const examGrades = all.filter((g: any) => g.subject === 'Algoritmos - Taller 1');
       serverGrades = examGrades;
       serverAttempts = examGrades.length;
     } catch {
@@ -125,13 +132,14 @@
     })();
 
     if (saved && saved.questions && saved.answers && Object.keys(saved.answers).length > 0) {
-      const resume = confirm(`Tienes un taller en progreso (${Object.keys(saved.answers).length} preguntas). ¿Continuar?`);
+      const resume = confirm(`Tienes un taller en progreso (${Object.keys(saved.answers).length} respuestas). ¿Continuar?`);
       if (resume) {
         questions = saved.questions;
         answers = saved.answers;
         currentIndex = saved.currentIndex || 0;
         timeLeft = saved.timeLeft || TOTAL_TIME;
         tabSwitchCount = saved.tabSwitchCount || 0;
+        if (saved.uploadedFile) uploadedFileName = saved.uploadedFile;
         started = true;
         finished = false;
         currentAttemptNumber = getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) + 1;
@@ -140,18 +148,21 @@
         return;
       }
     }
-    clearSavedAnswers();
 
-    questions = selectRandomQuestions(TOTAL_QUESTIONS);
-    started = true;
-    finished = false;
+    questions = selectRandomQuestions();
     answers = {};
     currentIndex = 0;
+    uploadedFile = null;
+    uploadedFileName = '';
+    uploadStatus = '';
+    uploadError = '';
     timeLeft = TOTAL_TIME;
     tabSwitchCount = 0;
     currentAttemptNumber = getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) + 1;
     timerInterval = setInterval(() => { timeLeft--; }, 1000);
     document.addEventListener('visibilitychange', handleVisibility);
+    started = true;
+    finished = false;
   }
 
   function handleVisibility() {
@@ -160,7 +171,15 @@
 
   function goToQuestion(index: number) {
     if (index >= 0 && index < TOTAL_QUESTIONS) {
-      if (index > currentIndex && !answers[questions[currentIndex]?.id]) return;
+      const currentQ = questions[currentIndex];
+      if (index > currentIndex) {
+        if (currentQ?.type === 'file') {
+          // File question: allow advancing if file is uploaded
+          if (!uploadedFileName) return;
+        } else {
+          if (answers[currentQ?.id] === undefined) return;
+        }
+      }
       currentIndex = index;
     }
   }
@@ -170,9 +189,53 @@
     autoSaveAnswers();
   }
 
+  function handleFileSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) return;
+    
+    if (!file.name.toLowerCase().endsWith('.dfd')) {
+      uploadError = 'Solo se permiten archivos .dfd';
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      uploadError = 'El archivo no puede superar 2 MB';
+      return;
+    }
+    
+    uploadedFile = file;
+    uploadedFileName = file.name;
+    uploadError = '';
+    uploadStatus = '';
+    // Mark this question as answered
+    answers[questions[currentIndex].id] = 'file-selected';
+    autoSaveAnswers();
+  }
+
+  async function uploadDfdFile(gradeId?: string) {
+    if (!uploadedFile) return { success: false, error: 'No hay archivo seleccionado' };
+    
+    uploadStatus = 'uploading';
+    try {
+      const attemptNum = getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) + 1;
+      const result = await apiUploadFile('/dfd/upload', uploadedFile, {
+        examType: 'taller-1',
+        period: '2026-3',
+        attemptNumber: String(attemptNum),
+        ...(gradeId ? { gradeId } : {})
+      });
+      uploadStatus = 'success';
+      return { success: true, submissionId: result.submissionId };
+    } catch (err: any) {
+      uploadStatus = 'error';
+      uploadError = err?.message || 'Error al subir el archivo';
+      return { success: false, error: uploadError };
+    }
+  }
+
   function autoSaveAnswers() {
     if (!started || finished) return;
-    saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount);
+    saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount, uploadedFileName);
   }
 
   async function processSyncQueue() {
@@ -186,10 +249,10 @@
       if (!$currentUser?.id) break;
       try {
         const res = await gradesApi.submitMine({
-          subject: 'Algoritmos - Taller Práctico',
+          subject: 'Algoritmos - Taller 1',
           score: entry.score,
           max_score: TOTAL_QUESTIONS,
-          period: '2026-2',
+          period: '2026-3',
           comments: entry.comments,
           submittedAt: entry.createdAt || Date.now()
         });
@@ -212,17 +275,21 @@
     for (let i = 0; i < maxRetries; i++) {
       try {
         const res = await gradesApi.submitMine({
-          subject: 'Algoritmos - Taller Práctico',
+          subject: 'Algoritmos - Taller 1',
           score: finalScore,
           max_score: TOTAL_QUESTIONS,
-          period: '2026-2',
-          comments: `${getAttemptLabel(attemptNumLocal)} | Score: ${finalScore}/${TOTAL_QUESTIONS} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
+          period: '2026-3',
+          comments: `${getAttemptLabel(attemptNumLocal)} | MC: ${finalScore}/${questions.filter(q => q.type !== 'file').length} | DFD: ${uploadedFileName || 'No subido'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
           submittedAt: Date.now()
         });
         const grade = res.grade || res;
         if (grade && grade._id) {
-          const examDataForServer = buildExamData(attemptNumLocal, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers);
+          const examDataForServer = buildExamData(attemptNumLocal, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileName);
           await gradesApi.updateMine(grade._id, { examData: JSON.stringify(examDataForServer) });
+          // Upload the DFD file linked to this grade
+          if (uploadedFile) {
+            await uploadDfdFile(grade._id);
+          }
           return { success: true, gradeId: grade._id };
         }
       } catch (err) {
@@ -258,8 +325,12 @@
     const res: Record<string, { correct: boolean }> = {};
 
     for (const q of questions) {
+      if (q.type === 'file') {
+        res[q.id] = { correct: !!uploadedFileName };
+        continue;
+      }
       const userAnswer = answers[q.id];
-      const isCorrect = userAnswer === q.correctAnswer;
+      const isCorrect = userAnswer === q.answer;
       if (isCorrect) score++;
       res[q.id] = { correct: isCorrect };
     }
@@ -270,7 +341,7 @@
 
     const attemptNum = getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) + 1;
     const localRecord = { date: new Date().toISOString(), score, total: TOTAL_QUESTIONS, tabSwitches: tabSwitchCount, timeUsed: TOTAL_TIME - timeLeft, gradeId: undefined as string | undefined };
-    const examData = buildExamData(attemptNum, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers);
+    const examData = buildExamData(attemptNum, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileName);
 
     let gradeId: string | undefined;
     if ($currentUser?.id) {
@@ -285,7 +356,7 @@
         saveError = `No se pudo guardar: ${result.error}. Las respuestas están guardadas localmente.`;
         addToSyncQueue({
           score, maxScore: TOTAL_QUESTIONS,
-          comments: `${getAttemptLabel(attemptNum)} | Score: ${score}/${TOTAL_QUESTIONS} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
+          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${questions.filter(q => q.type !== 'file').length} | DFD: ${uploadedFileName || 'No subido'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
           examData: JSON.stringify(examData)
         });
       }
@@ -305,7 +376,7 @@
 </script>
 
 <svelte:head>
-  <title>Taller Práctico - Algoritmos</title>
+  <title>Taller 1 - Algoritmos (Niveles 1 y 2)</title>
 </svelte:head>
 
 <div class="page">
@@ -316,9 +387,9 @@
   {#if !started && !finished}
     <div class="welcome-screen">
       <div class="welcome-card">
-        <div class="welcome-icon">⚙️</div>
-        <h1>Taller Práctico</h1>
-        <p class="welcome-subtitle">PSeInt, condicionales, ciclos y arreglos</p>
+        <div class="welcome-icon">📐</div>
+        <h1>Taller 1 — Algoritmos</h1>
+        <p class="welcome-subtitle">Diagramas de Flujo: Nivel 1 (Secuencial) y Nivel 2 (Condicionales)</p>
 
         <div class="attempts-section">
           <h2>🎯 Intentos disponibles</h2>
@@ -372,11 +443,13 @@
           <p class="loading-text">Cargando datos del servidor...</p>
         {:else if slots.remaining > 0}
           <div class="recommendations">
-            <h2>📌 Recomendaciones importantes</h2>
+            <h2>📌 Instrucciones del Taller</h2>
             <ul>
-              <li><strong>⏱ Tiempo límite:</strong> Dispones de <strong>30 minutos</strong> para completar el taller.</li>
-              <li><strong>✅ Corrección automática:</strong> Las preguntas son de selección múltiple.</li>
-              <li><strong>🚫 Sin consultas externas:</strong> No está permitido cambiar de pestaña.</li>
+              <li><strong>⏱ Tiempo límite:</strong> Dispones de <strong>90 minutos</strong> para completar el taller.</li>
+              <li><strong>📝 Parte 1 — Selección múltiple (5 preguntas):</strong> Preguntas sobre algoritmos de Nivel 1 (secuencial) y Nivel 2 (condicionales). Corrección automática.</li>
+              <li><strong>📐 Parte 2 — Ejercicio Práctico DFD (1 ejercicio):</strong> Deberás resolver un ejercicio en el editor de DFD y <strong>subir el archivo .dfd</strong> desde tu computador.</li>
+              <li><strong>🚫 Sin consultas externas:</strong> No está permitido cambiar de pestaña durante el examen.</li>
+              <li><strong>📁 Archivo .dfd:</strong> Asegúrate de guardar tu diagrama antes de subirlo. Solo se acepta formato <code>.dfd</code>.</li>
             </ul>
           </div>
 
@@ -394,7 +467,7 @@
           </button>
         {:else}
           <div class="no-attempts">
-            <p>Una vez se asigne la fecha del taller o parcial en cuestión, ya se anunciará y se habilitará el acceso.</p>
+            <p>Has completado todos tus intentos para este taller.</p>
           </div>
         {/if}
       </div>
@@ -411,13 +484,23 @@
 
         <div class="score-section">
           <div class="score-card">
-            <div class="score-value">{finalScore}/{TOTAL_QUESTIONS}</div>
-            <div class="score-label">Puntaje Final</div>
+            <div class="score-value">{finalScore}/{questions.filter(q => q.type !== 'file').length}</div>
+            <div class="score-label">Selección Múltiple</div>
+          </div>
+          <div class="score-card">
+            <div class="score-value">{uploadedFileName ? '✅' : '❌'}</div>
+            <div class="score-label">Archivo DFD</div>
           </div>
         </div>
 
         {#if saveSuccess}
-          <div class="save-success">✅ Calificación guardada exitosamente.</div>
+          <div class="save-success">✅ Calificación y archivo guardados exitosamente.</div>
+        {/if}
+        {#if isSaving}
+          <div class="save-progress">
+            <div class="spinner"></div>
+            <span>Guardando calificación y subiendo archivo DFD...</span>
+          </div>
         {/if}
         {#if saveError}
           <div class="save-error">⚠ {saveError}</div>
@@ -432,8 +515,8 @@
             <span class="summary-value">{formatTime(TOTAL_TIME - timeLeft)}</span>
           </div>
           <div class="summary-item">
-            <span class="summary-label">Intentos restantes</span>
-            <span class="summary-value">{slots.remaining}</span>
+            <span class="summary-label">Archivo subido</span>
+            <span class="summary-value">{uploadedFileName || 'Ninguno'}</span>
           </div>
         </div>
 
@@ -451,7 +534,13 @@
       <div class="exam-header">
         <div class="exam-header-left">
           <h1>{getAttemptLabel(currentAttemptNumber)}</h1>
-          <span class="question-counter">Pregunta {currentIndex + 1} de {TOTAL_QUESTIONS}</span>
+          <span class="question-counter">
+            {#if questions[currentIndex]?.type === 'file'}
+              Ejercicio Práctico (Pregunta {currentIndex + 1} de {TOTAL_QUESTIONS})
+            {:else}
+              Pregunta {currentIndex + 1} de {TOTAL_QUESTIONS}
+            {/if}
+          </span>
         </div>
         <div class="exam-header-right">
           {#if tabSwitchCount > 0}
@@ -469,30 +558,85 @@
       </div>
 
       <div class="exam-body">
-        <div class="question-card">
-          <p class="question-text">{questions[currentIndex]?.question}</p>
-          <div class="options">
-            {#each questions[currentIndex].options as option, optIndex}
-              <label class="option-label {answers[questions[currentIndex]?.id] === optIndex ? 'selected' : ''}">
+        {#if questions[currentIndex]?.type === 'file'}
+          <!-- Ejercicio práctico: subir archivo .dfd -->
+          <div class="question-card file-question">
+            <div class="file-question-header">
+              <span class="file-badge">📐 Ejercicio Práctico</span>
+            </div>
+            <div class="file-question-text">
+              {@html questions[currentIndex].question.replace(/\n/g, '<br/>')}
+            </div>
+            
+            <div class="file-upload-area">
+              <div class="upload-instructions">
+                <p>📂 <strong>Instrucciones:</strong></p>
+                <ol>
+                  <li>Abre el <a href="/algoritmos/dfd" target="_blank" rel="noopener">Editor de DFD</a> y resuelve el ejercicio que prefieras (Opción A o B).</li>
+                  <li>Guarda el diagrama desde el editor (Menú → Guardar .dfd).</li>
+                  <li>Sube el archivo <code>.dfd</code> aquí abajo.</li>
+                </ol>
+              </div>
+
+              <label class="file-drop-zone {uploadedFileName ? 'has-file' : ''}">
                 <input
-                  type="radio"
-                  name="question-{questions[currentIndex]?.id}"
-                  value={optIndex}
-                  checked={answers[questions[currentIndex]?.id] === optIndex}
-                  onchange={() => handleAnswer(optIndex)}
+                  type="file"
+                  accept=".dfd"
+                  onchange={handleFileSelect}
+                  style="display:none"
                 />
-                <span class="option-text">{option}</span>
+                {#if uploadedFileName}
+                  <div class="file-selected">
+                    <span class="file-icon">📄</span>
+                    <span class="file-name">{uploadedFileName}</span>
+                    <span class="file-check">✅</span>
+                  </div>
+                  <p class="file-hint">Haz clic para cambiar el archivo</p>
+                {:else}
+                  <div class="file-prompt">
+                    <span class="upload-icon">📤</span>
+                    <p><strong>Haz clic para seleccionar tu archivo .dfd</strong></p>
+                    <p class="file-hint">Máximo 2 MB · Solo archivos .dfd</p>
+                  </div>
+                {/if}
               </label>
-            {/each}
+
+              {#if uploadError}
+                <div class="upload-error">❌ {uploadError}</div>
+              {/if}
+            </div>
           </div>
-        </div>
+        {:else}
+          <!-- Pregunta de selección múltiple -->
+          <div class="question-card">
+            <p class="question-text">{questions[currentIndex]?.question}</p>
+            <div class="options">
+              {#each questions[currentIndex].options as option, optIndex}
+                <label class="option-label {answers[questions[currentIndex]?.id] === optIndex ? 'selected' : ''}">
+                  <input
+                    type="radio"
+                    name="question-{questions[currentIndex]?.id}"
+                    value={optIndex}
+                    checked={answers[questions[currentIndex]?.id] === optIndex}
+                    onchange={() => handleAnswer(optIndex)}
+                  />
+                  <span class="option-text">{option}</span>
+                </label>
+              {/each}
+            </div>
+          </div>
+        {/if}
 
         <div class="exam-actions">
           <button class="nav-btn" onclick={() => goToQuestion(currentIndex - 1)} disabled={currentIndex === 0}>← Anterior</button>
           {#if currentIndex < TOTAL_QUESTIONS - 1}
-            <button class="nav-btn" onclick={() => goToQuestion(currentIndex + 1)} disabled={!answers[questions[currentIndex]?.id]}>Siguiente →</button>
+            {#if questions[currentIndex]?.type === 'file'}
+              <button class="nav-btn" onclick={() => goToQuestion(currentIndex + 1)} disabled={!uploadedFileName}>Siguiente →</button>
+            {:else}
+              <button class="nav-btn" onclick={() => goToQuestion(currentIndex + 1)} disabled={answers[questions[currentIndex]?.id] === undefined}>Siguiente →</button>
+            {/if}
           {:else}
-            <button class="submit-btn" onclick={handleSubmit}>Finalizar</button>
+            <button class="submit-btn" onclick={handleSubmit}>Finalizar Taller</button>
           {/if}
         </div>
       </div>
@@ -529,6 +673,7 @@
   .recommendations h2 { font-size: 1.1rem; margin: 0 0 1rem; color: #333; }
   .recommendations ul { margin: 0; padding-left: 1.25rem; font-size: 0.9rem; color: #444; }
   .recommendations li { margin-bottom: 0.5rem; line-height: 1.5; }
+  .recommendations code { background: #e2e8f0; padding: 0.1rem 0.3rem; border-radius: 4px; font-size: 0.85rem; }
   .exam-screen { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1rem; }
   .exam-header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 1.25rem 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
   .exam-header-left h1 { font-size: 1.2rem; margin: 0 0 0.2rem; }
@@ -573,9 +718,36 @@
   .sync-btn { background: #f59e0b; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 600; cursor: pointer; }
   .save-success { background: #dcfce7; color: #166534; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 600; text-align: center; }
   .save-error { background: #fef2f2; color: #991b1b; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 600; }
+  .save-progress { display: flex; align-items: center; gap: 0.75rem; background: #eff6ff; border: 1px solid #bfdbfe; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; color: #1e40af; font-weight: 600; }
+  .spinner { width: 20px; height: 20px; border: 3px solid #bfdbfe; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .retry-btn { width: 100%; padding: 0.75rem; background: #10B981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-bottom: 1.5rem; }
   .retry-btn:disabled { opacity: 0.6; }
   .no-attempts { background: #f8fafc; border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1.5rem; }
   .loading-text { text-align: center; color: #64748b; padding: 1rem; }
   .tab-warning { text-align: center; color: #ef4444; font-size: 0.9rem; margin: 0.5rem 0; }
+
+  /* File upload styles */
+  .file-question { padding: 2rem; }
+  .file-question-header { margin-bottom: 1rem; }
+  .file-badge { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
+  .file-question-text { font-size: 1.05rem; line-height: 1.8; color: #1e293b; margin-bottom: 1.5rem; white-space: pre-wrap; }
+  .file-upload-area { margin-top: 1rem; }
+  .upload-instructions { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; }
+  .upload-instructions p { margin: 0 0 0.5rem; font-size: 0.95rem; }
+  .upload-instructions ol { margin: 0; padding-left: 1.25rem; font-size: 0.9rem; color: #15803d; }
+  .upload-instructions li { margin-bottom: 0.4rem; line-height: 1.5; }
+  .upload-instructions a { color: #2563eb; font-weight: 600; }
+  .file-drop-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; border: 3px dashed #cbd5e1; border-radius: 16px; padding: 2rem; cursor: pointer; transition: all 0.3s ease; background: #f8fafc; min-height: 120px; }
+  .file-drop-zone:hover { border-color: #6366f1; background: #f5f3ff; }
+  .file-drop-zone.has-file { border-color: #10B981; background: #f0fdf4; border-style: solid; }
+  .file-selected { display: flex; align-items: center; gap: 0.75rem; }
+  .file-icon { font-size: 2rem; }
+  .file-name { font-weight: 700; font-size: 1.1rem; color: #0f172a; }
+  .file-check { font-size: 1.5rem; }
+  .file-prompt { text-align: center; }
+  .upload-icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
+  .file-prompt p { margin: 0; color: #475569; }
+  .file-hint { font-size: 0.8rem; color: #94a3b8; margin-top: 0.5rem; }
+  .upload-error { background: #fef2f2; color: #dc2626; padding: 0.75rem; border-radius: 8px; margin-top: 0.75rem; font-weight: 600; font-size: 0.9rem; }
 </style>

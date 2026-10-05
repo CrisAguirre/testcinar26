@@ -183,8 +183,18 @@ Cinar/
     - **UI Premium y Responsiva (`max-width: 768px`)**: banners animados, tabs con iconos y sombras, cards con fade-in. Las tablas cuentan con `overflow-x: auto` (Scroll Containers) y los formularios complejos cambian de grillas pesadas a columnas simples apiladas verticalmente en móvil, optimizando el ancho de pantalla.
     - **Navegación horizontal premium**: barra `admin-top-nav` con 6 botones tipo pill (🏠 Panel, 📅 Planeación, 📝 Registro, 🎓 Capacitaciones, 📜 Normativa, 🛟 Soporte) en la parte superior de cada subsección, reemplazando el botón solitario de "Volver" y haciendo wrap en móvil.
     - **Modo demostrativo**: variable `readonly` en formularios configurada para que el admin pueda editarlos independientemente del estado.
-    - **Modo Edición en Tablas (Admin Toggle)**: Para planillas de notas, asistencia y seguimiento temático (`GradeSheetTable`, `AttendanceTable`, `ContentTrackingTable`) se inyectó un switch "🛠️ Modo Edición (Ignorar reglas)". Al activarlo, la variable `$derived(forceEdit)` anula los bloqueos por rol (`isPrivileged`) y por estatus (`entregado`/`cerrado`), permitiendo al usuario admin simular en vivo que es un profesor para editar celdas o firmar actas durante la demo.
-    - **Build fixes Svelte 5**: resueltos errores `{@const}` (migrados a `$derived`) y `{/if}` colgante en registro-académico.
+    - **Modo Edición en Tablas (Admin Toggle)**: Switch "🛠️ Modo Edición (Permitir generar y editar como admin)" ubicado permanentemente en la parte superior. Al activarlo, anula bloqueos por rol y estatus, permitiendo a los administradores generar planillas nuevas y editarlas sin restricciones.
+    - **Correcciones Recientes (04/10)**:
+      - **Vercel Proxy (Solución al 401)**: Se implementó un archivo `vercel.json` que proxifica `/api` hacia el backend en Render. Además, `API_URL` en `api.js` detecta automáticamente `import.meta.env.PROD` para enrutar el tráfico al proxy. Esto resuelve bloqueos de cookies "Third-Party" en navegadores estrictos (Cross-Site) y evita la necesidad de configurar variables de entorno manualmente.
+      - **Crash en Reactividad Svelte 5**: Corregido error crítico de tipografía (`isPrivilegedEffectiveEffective`) que crasheaba las tablas (notas, asistencia, seguimiento) dejándolas en blanco.
+      - **Validación Mongoose (Seguimiento)**: Se asignó el valor predeterminado `"Tema inicial por definir"` al campo `topicAndGoal` para cumplir la regla estricta `required: true` al crear el documento vacío.
+      - **CSS de Banners**: Se aplicaron reglas `-webkit-background-clip: text` globales mediante script en todos los `h1` de módulos y cursos, logrando un degradado de colores transparente sobre el texto sin fondos blancos intrusivos.
+13. **Taller 1 — Algoritmos (Niveles 1 y 2, habilitado 06/10/2026)**
+    - **Fecha de apertura**: Martes 6 de octubre de 2026 (todo el día, 00:00–23:59 hora Colombia). Controlado por `isTallerAlgoLockedFor()` en `examLock.js`; admin accede siempre.
+    - **Estructura del examen**: 5 preguntas de selección múltiple (2 de Nivel 1 secuencial + 3 de Nivel 2 condicionales) + 1 ejercicio práctico DFD con subida de archivo `.dfd`.
+    - **Banco de preguntas** (`taller_algo.js`): Ejercicios inéditos, NO vistos en clase ni en el módulo DFD.
+    - **Configuración** (`exam_taller_algo.js`): 6 preguntas total, 90 minutos, 2 intentos.
+    - **Subida de archivos DFD**: Nuevo modelo `DfdSubmission.js` en MongoDB, ruta backend `POST /api/dfd/upload`. Frontend con `apiUploadFile()`.
 
 12. **Auditoría 04/10/2026 (Impeccable Style + ESLint)**
     - **Frontend (Impeccable Style)**: 37 hallazgos iniciales → 17 residuales (en HTML estáticos de `src/Docs/`).

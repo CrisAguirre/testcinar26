@@ -7,12 +7,12 @@
   const schedule = [
     {
       week: 1,
-      title: 'Semana 1: Base y acuerdos',
+      title: 'Semana 1: Tareas semanales iniciales',
       tasks: [
-        'Jeison (analista): definir los requerimientos de la app de manera general — entrega miércoles 30 de septiembre.',
-        'Definir el modelo de datos, los endpoints de la API y los wireframes de las pantallas clave.',
-        'Repartir equipos por módulo y dejar el repositorio, la base de datos y la estructura del proyecto listos.',
-        'Acordar convenciones: ramas, estilos, formato de respuestas de la API.'
+        'Frontend: proponer logos, logotipos, paleta de colores e interfaz de dashboard.',
+        'Backend: proponer plan de trabajo de acuerdo a lista consolidada de requerimientos.',
+        'Testing: investigar librerías para auditoría frontend y backend.',
+        'Requerimientos: consolidar lista de requerimientos funcionales y no funcionales.'
       ]
     },
     {

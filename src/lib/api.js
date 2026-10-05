@@ -132,6 +132,45 @@ export const enrollmentApi = {
   saveProjectIdea: (data) => api('POST', '/enrollments/project-idea', data)
 };
 
+/**
+ * Upload a file with metadata. Returns the server response JSON.
+ * @param {string} path - API path (e.g. '/grades/mine/upload-dfd')
+ * @param {File} file - The file to upload
+ * @param {Record<string, string>} fields - Additional form fields
+ */
+export async function apiUploadFile(path, file, fields = {}, { retry = true } = {}) {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append('file', file);
+  for (const [k, v] of Object.entries(fields)) {
+    formData.append(k, v);
+  }
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+      // No Content-Type header: browser sets it with boundary for FormData
+    },
+    body: formData
+  });
+  const json = await res.json();
+
+  if (!res.ok) {
+    const authError = res.status === 401 || res.status === 403;
+    if (authError && retry && path !== '/auth/refresh') {
+      const fresh = await refreshSession();
+      if (fresh) {
+        return apiUploadFile(path, file, fields, { retry: false });
+      }
+      notifySessionExpired();
+    }
+    throw new Error(json.error || 'Error al subir archivo');
+  }
+  return json;
+}
+
 export const adminApi = {
   // Helpers
   getEnrolledStudents: (course) => api('GET', `/admin/enrollments/${course}`),

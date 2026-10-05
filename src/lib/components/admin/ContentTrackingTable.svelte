@@ -8,6 +8,9 @@
   let saving = $state(false);
   let record = $state<any>(null);
   let isPrivileged = $derived($currentUser?.role === 'admin' || $currentUser?.role === 'coordinator');
+  let forceEdit = $state(false);
+  let isReadonlyStatus = $derived(record?.status === 'cerrado' && !forceEdit);
+  let isPrivilegedEffectiveEffective = $derived(isPrivilegedEffective && !forceEdit);
 
   let currentCourse = $state('algoritmos');
   let currentPeriod = $state('2026-3');
@@ -123,7 +126,7 @@
   {#if loading}
     <p class="loading">Cargando control...</p>
   {:else if !record}
-    {#if !isPrivileged}
+    {#if !isPrivilegedEffective}
     <div class="new-session card-inline">
       <h4>Iniciar Control de Contenidos (F5)</h4>
       <div class="session-form">
@@ -169,7 +172,14 @@
     {/if}
   {:else}
     <div class="record-card">
-      <div class="record-header">
+      {#if $currentUser?.role === 'admin'}
+      <div style="padding: 0.75rem 1.5rem; background: #fef3c7; border-bottom: 1px solid #fde68a; display: flex; justify-content: flex-end;">
+        <label style="cursor:pointer; font-weight:600; color:#b45309; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" bind:checked={forceEdit} /> 🛠️ Modo Edición (Ignorar reglas)
+        </label>
+      </div>
+    {/if}
+    <div class="record-header">
         <div class="record-info">
           <h4>Control de Contenidos — {currentCourse}</h4>
           <p class="text-sm">
@@ -179,7 +189,7 @@
         </div>
         <div class="record-actions">
           <FormStatusBadge status={record.status} />
-          {#if record.status === 'activo' && (!isPrivileged || record.teacher?._id === $currentUser?.id)}
+          {#if record.status === 'activo' && (!isPrivilegedEffective || record.teacher?._id === $currentUser?.id)}
             <button class="btn btn-sm btn-outline" onclick={closeTracking} disabled={saving}>🔒 Finalizar Semestre</button>
           {/if}
         </div>
@@ -202,18 +212,18 @@
                 <td class="center"><strong>{session.number}</strong></td>
                 <td>
                   <input type="date" bind:value={session.date} 
-                         disabled={record.status === 'cerrado' || session.teacherSigned || isPrivileged} 
+                         disabled={record.status === 'cerrado' || session.teacherSigned || isPrivilegedEffective} 
                          class="w-full" />
                 </td>
                 <td>
                   <textarea bind:value={session.topicAndGoal} 
-                            disabled={record.status === 'cerrado' || session.teacherSigned || isPrivileged} 
+                            disabled={record.status === 'cerrado' || session.teacherSigned || isPrivilegedEffective} 
                             rows="2" class="w-full"></textarea>
                 </td>
                 <td class="center">
                   {#if session.teacherSigned}
                     <span class="badge badge-purple">✍️ Firmado</span>
-                  {:else if !isPrivileged && record.status !== 'cerrado'}
+                  {:else if !isPrivilegedEffective && record.status !== 'cerrado'}
                     <button class="btn btn-sm btn-outline" onclick={() => signSession(i, 'teacher')} disabled={saving || !session.date || !session.topicAndGoal}>
                       Firmar
                     </button>
@@ -224,7 +234,7 @@
                 <td class="center">
                   {#if session.coordinatorSigned}
                     <span class="badge badge-green">✅ Visto</span>
-                  {:else if isPrivileged && record.status !== 'cerrado' && session.teacherSigned}
+                  {:else if isPrivilegedEffective && record.status !== 'cerrado' && session.teacherSigned}
                     <button class="btn btn-sm btn-green" onclick={() => signSession(i, 'coordinator')} disabled={saving}>
                       Revisar
                     </button>
@@ -238,7 +248,7 @@
         </table>
       </div>
       
-      {#if record.status === 'activo' && !isPrivileged}
+      {#if record.status === 'activo' && !isPrivilegedEffective}
         <div class="record-footer">
           <button class="btn btn-outline" onclick={addSession} disabled={saving}>+ Agregar Sesión</button>
           <button class="btn btn-primary" onclick={saveDraft} disabled={saving}>💾 Guardar Cambios (Sin firmar)</button>

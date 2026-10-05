@@ -20,6 +20,9 @@
   });
 
   let isPrivileged = $derived($currentUser?.role === 'admin' || $currentUser?.role === 'coordinator');
+  let forceEdit = $state(false);
+  let isReadonlyStatus = $derived(record?.status === 'entregado' && !forceEdit);
+  let isPrivilegedEffectiveEffective = $derived(isPrivilegedEffective && !forceEdit);
 
   onMount(loadRecord);
 
@@ -108,7 +111,7 @@
   {#if loading}
     <p class="loading">Cargando planilla de asistencia...</p>
   {:else if !record}
-    {#if !isPrivileged}
+    {#if !isPrivilegedEffective}
     <div class="new-session card-inline">
       <h4>Iniciar Planilla Consolidada de Asistencia (F4)</h4>
       <div class="session-form">
@@ -157,7 +160,14 @@
     {/if}
   {:else}
     <div class="record-card">
-      <div class="record-header">
+      {#if $currentUser?.role === 'admin'}
+      <div style="padding: 0.75rem 1.5rem; background: #fef3c7; border-bottom: 1px solid #fde68a; display: flex; justify-content: flex-end;">
+        <label style="cursor:pointer; font-weight:600; color:#b45309; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" bind:checked={forceEdit} /> 🛠️ Modo Edición (Ignorar reglas)
+        </label>
+      </div>
+    {/if}
+    <div class="record-header">
         <div class="record-info">
           <h4>Planilla de Asistencia — {currentCourse.toUpperCase()} ({record.courseCode || 'N/A'})</h4>
           <div class="info-grid mt-2">
@@ -170,7 +180,7 @@
         </div>
         <div class="record-actions">
           <FormStatusBadge status={record.status} />
-          {#if record.status === 'borrador' && (!isPrivileged || record.teacher?._id === $currentUser?.id)}
+          {#if record.status === 'borrador' && (!isPrivilegedEffective || record.teacher?._id === $currentUser?.id)}
             <button class="btn btn-sm btn-outline" onclick={deliverRecord} disabled={saving}>🔒 Entregar Planilla</button>
           {/if}
         </div>
@@ -191,7 +201,7 @@
               {#each record.sessions as session, i}
                 <th class="session-col">
                   {i + 1}.0<br/>
-                  <input type="date" class="date-input" bind:value={session.date} disabled={record.status === 'entregado' || isPrivileged} />
+                  <input type="date" class="date-input" bind:value={session.date} disabled={record.status === 'entregado' || isPrivilegedEffective} />
                 </th>
               {/each}
             </tr>
@@ -200,14 +210,14 @@
             {#each record.entries as entry, i}
               <tr>
                 <td class="center">{i + 1}</td>
-                <td><input type="text" class="borderless w-full" bind:value={entry.documentId} disabled={record.status === 'entregado' || isPrivileged} /></td>
+                <td><input type="text" class="borderless w-full" bind:value={entry.documentId} disabled={record.status === 'entregado' || isPrivilegedEffective} /></td>
                 <td>{entry.student?.full_name || entry.student?.username}</td>
-                <td><input type="text" class="borderless center w-full" bind:value={entry.level} disabled={record.status === 'entregado' || isPrivileged} /></td>
-                <td><input type="text" class="borderless w-full" bind:value={entry.program} disabled={record.status === 'entregado' || isPrivileged} /></td>
+                <td><input type="text" class="borderless center w-full" bind:value={entry.level} disabled={record.status === 'entregado' || isPrivilegedEffective} /></td>
+                <td><input type="text" class="borderless w-full" bind:value={entry.program} disabled={record.status === 'entregado' || isPrivilegedEffective} /></td>
                 
                 {#each Array.from({length: 12}) as _, sIdx}
                   <td class="center p-0">
-                    <select class="status-select" bind:value={entry.statuses[sIdx]} disabled={record.status === 'entregado' || isPrivileged}>
+                    <select class="status-select" bind:value={entry.statuses[sIdx]} disabled={record.status === 'entregado' || isPrivilegedEffective}>
                       <option value=""></option>
                       <option value="P">P</option>
                       <option value="X">X</option>
@@ -229,7 +239,7 @@
         <strong>Convenciones:</strong> P = Presente, X = Falta, E = Excusa, J = Permiso
       </div>
       
-      {#if record.status === 'borrador' && !isPrivileged}
+      {#if record.status === 'borrador' && !isPrivilegedEffective}
         <div class="record-footer">
           <span class="text-sm text-gray">Recuerda guardar periódicamente los cambios.</span>
           <button class="btn btn-primary" onclick={saveDraft} disabled={saving}>💾 Guardar Borrador</button>

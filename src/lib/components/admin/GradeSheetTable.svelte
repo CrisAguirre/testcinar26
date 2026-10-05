@@ -8,6 +8,9 @@
   let saving = $state(false);
   let record = $state<any>(null);
   let isPrivileged = $derived($currentUser?.role === 'admin' || $currentUser?.role === 'coordinator');
+  let forceEdit = $state(false);
+  let isReadonlyStatus = $derived(record?.status === 'entregado' && !forceEdit);
+  let isPrivilegedEffectiveEffective = $derived(isPrivilegedEffective && !forceEdit);
 
   let currentCourse = $state('algoritmos');
   let currentPeriod = $state('2026-3');
@@ -57,7 +60,7 @@
   }
 
   function handleInput(entryIndex: number, field: string, event: Event) {
-    if (!record || record.status === 'entregado' || isPrivileged) return;
+    if (!record || record.status === 'entregado' || isPrivilegedEffective) return;
     const val = (event.target as HTMLInputElement).value;
     const num = val === '' ? null : parseFloat(val);
     if (num !== null && (num < 0 || num > 5)) {
@@ -122,7 +125,7 @@
   {#if loading}
     <p class="loading">Cargando planilla...</p>
   {:else if !record}
-    {#if !isPrivileged}
+    {#if !isPrivilegedEffective}
     <div class="new-session card-inline">
       <h4>Generar Planilla Oficial (F6)</h4>
       <p class="text-sm mb-4">Se cargarán automáticamente los estudiantes inscritos en {currentCourse}.</p>
@@ -157,7 +160,14 @@
     {/if}
   {:else}
     <div class="record-card">
-      <div class="record-header">
+      {#if $currentUser?.role === 'admin'}
+      <div style="padding: 0.75rem 1.5rem; background: #fef3c7; border-bottom: 1px solid #fde68a; display: flex; justify-content: flex-end;">
+        <label style="cursor:pointer; font-weight:600; color:#b45309; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" bind:checked={forceEdit} /> 🛠️ Modo Edición (Ignorar reglas)
+        </label>
+      </div>
+    {/if}
+    <div class="record-header">
         <div class="record-info">
           <h4>Planilla de Calificaciones — {record.courseCode || currentCourse}</h4>
           <p class="text-sm">
@@ -197,7 +207,7 @@
                 <td class="center input-cell">
                   <input type="number" step="0.1" min="0" max="5" 
                          value={entry.firstPartial} 
-                         disabled={record.status === 'entregado' || isPrivileged}
+                         disabled={record.status === 'entregado' || isPrivilegedEffective}
                          oninput={(e) => handleInput(i, 'firstPartial', e)} />
                 </td>
                 <td class="center calc-cell">{entry.firstPartialPct ?? '-'}</td>
@@ -205,7 +215,7 @@
                 <td class="center input-cell">
                   <input type="number" step="0.1" min="0" max="5" 
                          value={entry.finalExam} 
-                         disabled={record.status === 'entregado' || isPrivileged}
+                         disabled={record.status === 'entregado' || isPrivilegedEffective}
                          oninput={(e) => handleInput(i, 'finalExam', e)} />
                 </td>
                 <td class="center calc-cell">{entry.finalExamPct ?? '-'}</td>
@@ -229,7 +239,7 @@
         </div>
         
         <div class="actions">
-          {#if !isPrivileged && record.status !== 'entregado'}
+          {#if !isPrivilegedEffective && record.status !== 'entregado'}
             <button class="btn btn-outline" onclick={saveGrades} disabled={saving || record.status === 'entregado'}>
               💾 Guardar Borrador (Recalcular)
             </button>
@@ -239,7 +249,7 @@
               </button>
             {/if}
           {/if}
-          {#if record.status === 'firmado' && (!isPrivileged || record.teacher?._id === $currentUser?.id)}
+          {#if record.status === 'firmado' && (!isPrivilegedEffective || record.teacher?._id === $currentUser?.id)}
             <button class="btn btn-green" onclick={() => signRecord('entregar')} disabled={saving}>
               ✅ Entregar a Coordinación
             </button>

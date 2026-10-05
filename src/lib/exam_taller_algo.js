@@ -1,6 +1,6 @@
 export const STORAGE_KEY = 'algo_taller1_attempts';
 export const DETAIL_KEY = 'algo_taller1_details';
-export const TOTAL_QUESTIONS = 6; // 5 selección múltiple + 1 ejercicio práctico DFD
+export const TOTAL_QUESTIONS = 7; // 5 selección múltiple + 2 ejercicios prácticos DFD
 export const TOTAL_TIME = 90 * 60; // 90 minutos
 
 export function getAttemptType(n) {
@@ -68,9 +68,9 @@ export function isHealthCheckRecent() {
   } catch { return false; }
 }
 
-export function saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount, uploadedFile) {
+export function saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount, uploadedFileNames) {
   try {
-    const snapshot = { questions, answers, timeLeft, currentIndex, tabSwitchCount, uploadedFile: uploadedFile || null, savedAt: Date.now() };
+    const snapshot = { questions, answers, timeLeft, currentIndex, tabSwitchCount, uploadedFileNames: uploadedFileNames || {}, savedAt: Date.now() };
     localStorage.setItem(SAVED_ANSWERS_KEY, JSON.stringify(snapshot));
   } catch {}
 }
@@ -88,19 +88,19 @@ export function calculateScore(questions, answers) {
   return score;
 }
 
-export function buildExamData(attemptNum, tabSwitches, timeUsed, questions, answers, uploadedFileName) {
+export function buildExamData(attemptNum, tabSwitches, timeUsed, questions, answers, uploadedFileNames) {
   return {
     attemptNumber: attemptNum,
     tabSwitches,
     timeUsed,
     mcScore: calculateScore(questions, answers),
     mcTotal: questions.filter(q => q.type !== 'file').length,
-    uploadedFile: uploadedFileName || null,
+    uploadedFileNames: uploadedFileNames || {},
     questions: questions.map(q => ({
       id: q.id, tema: q.tema, type: q.type, question: q.question,
       options: q.options || [],
       correctAnswer: q.type !== 'file' ? q.answer : null,
-      studentAnswer: q.type === 'file' ? (uploadedFileName || 'No subido') : answers[q.id],
+      studentAnswer: q.type === 'file' ? (uploadedFileNames && uploadedFileNames[q.id] ? uploadedFileNames[q.id] : 'No subido') : answers[q.id],
       isCorrect: q.type === 'file' ? null : answers[q.id] === q.answer
     }))
   };

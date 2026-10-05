@@ -48,8 +48,12 @@
       title: 'Requerimientos técnicos',
       status: 'next',
       badge: '⏳ Próximo',
-      desc: 'Definir únicamente los requerimientos técnicos de las aplicaciones formuladas. Consulta la sección de enlaces nuevos.',
-      items: ['Definición de requerimientos técnicos', '<a href="/algoritmos/enlaces-de-consulta" style="color:#10b981; font-weight:bold; text-decoration:underline;">Ver enlaces nuevos</a>'],
+      desc: 'Definir únicamente los requerimientos técnicos de las aplicaciones formuladas. Consulta los siguientes PDFs para guiarte:',
+      items: [
+        'Definición de requerimientos técnicos',
+        '<a href="/Guia%20de%20requerimientos.pdf" target="_blank" style="color:#10b981; font-weight:bold; text-decoration:underline;">Ver Guía de Requerimientos</a>',
+        '<a href="/2020-Scrum-Guide-Spanish-Latin-South-American.pdf" target="_blank" style="color:#10b981; font-weight:bold; text-decoration:underline;">Ver Guía Scrum 2020</a>'
+      ],
       icon: '🚀'
     },
     {
@@ -143,7 +147,7 @@
   }
 
   function withProgress(p: Omit<Project, 'progressStep'>): Project {
-    return { ...p, progressStep: 2 };
+    return { ...p, progressStep: 3 };
   }
 
   const rawProjects: Omit<Project, 'progressStep'>[] = [

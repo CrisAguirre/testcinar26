@@ -47,10 +47,10 @@
   let syncingInProgress = $state(false);
 
   // File upload state
-  let uploadedFile = $state<File | null>(null);
-  let uploadedFileName = $state('');
-  let uploadStatus = $state(''); // 'uploading' | 'success' | 'error' | ''
-  let uploadError = $state('');
+  let uploadedFiles = $state<Record<string, File>>({});
+  let uploadedFileNames = $state<Record<string, string>>({});
+  let uploadStatuses = $state<Record<string, string>>({});
+  let uploadErrors = $state<Record<string, string>>({});
 
   let isUnlimited = $derived($currentUser?.email === 'coordinacion@cinarsistemas.edu.co');
 
@@ -139,7 +139,7 @@
         currentIndex = saved.currentIndex || 0;
         timeLeft = saved.timeLeft || TOTAL_TIME;
         tabSwitchCount = saved.tabSwitchCount || 0;
-        if (saved.uploadedFile) uploadedFileName = saved.uploadedFile;
+        if (saved.uploadedFileNames) uploadedFileNames = saved.uploadedFileNames;
         started = true;
         finished = false;
         currentAttemptNumber = getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) + 1;
@@ -152,10 +152,10 @@
     questions = selectRandomQuestions();
     answers = {};
     currentIndex = 0;
-    uploadedFile = null;
-    uploadedFileName = '';
-    uploadStatus = '';
-    uploadError = '';
+    uploadedFiles = {};
+    uploadedFileNames = {};
+    uploadStatuses = {};
+    uploadErrors = {};
     timeLeft = TOTAL_TIME;
     tabSwitchCount = 0;
     currentAttemptNumber = getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) + 1;
@@ -175,7 +175,7 @@
       if (index > currentIndex) {
         if (currentQ?.type === 'file') {
           // File question: allow advancing if file is uploaded
-          if (!uploadedFileName) return;
+          if (!uploadedFileNames[currentQ.id]) return;
         } else {
           if (answers[currentQ?.id] === undefined) return;
         }
@@ -192,50 +192,57 @@
   function handleFileSelect(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input?.files?.[0];
+    const qId = questions[currentIndex].id;
     if (!file) return;
     
     if (!file.name.toLowerCase().endsWith('.dfd')) {
-      uploadError = 'Solo se permiten archivos .dfd';
+      uploadErrors[qId] = 'Solo se permiten archivos .dfd';
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      uploadError = 'El archivo no puede superar 2 MB';
+      uploadErrors[qId] = 'El archivo no puede superar 2 MB';
       return;
     }
     
-    uploadedFile = file;
-    uploadedFileName = file.name;
-    uploadError = '';
-    uploadStatus = '';
+    uploadedFiles[qId] = file;
+    uploadedFileNames[qId] = file.name;
+    uploadErrors[qId] = '';
+    uploadStatuses[qId] = '';
     // Mark this question as answered
-    answers[questions[currentIndex].id] = 'file-selected';
+    answers[qId] = 'file-selected';
     autoSaveAnswers();
   }
 
   async function uploadDfdFile(gradeId?: string) {
-    if (!uploadedFile) return { success: false, error: 'No hay archivo seleccionado' };
+    if (Object.keys(uploadedFiles).length === 0) return { success: false, error: 'No hay archivos seleccionados' };
     
-    uploadStatus = 'uploading';
-    try {
-      const attemptNum = getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) + 1;
-      const result = await apiUploadFile('/dfd/upload', uploadedFile, {
-        examType: 'taller-1',
-        period: '2026-3',
-        attemptNumber: String(attemptNum),
-        ...(gradeId ? { gradeId } : {})
-      });
-      uploadStatus = 'success';
-      return { success: true, submissionId: result.submissionId };
-    } catch (err: any) {
-      uploadStatus = 'error';
-      uploadError = err?.message || 'Error al subir el archivo';
-      return { success: false, error: uploadError };
+    let allSuccess = true;
+    let firstError = '';
+    const attemptNum = getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) + 1;
+    
+    for (const [qId, file] of Object.entries(uploadedFiles)) {
+      uploadStatuses[qId] = 'uploading';
+      try {
+        await apiUploadFile('/dfd/upload', file, {
+          examType: 'taller-1',
+          period: '2026-3',
+          attemptNumber: String(attemptNum),
+          ...(gradeId ? { gradeId } : {})
+        });
+        uploadStatuses[qId] = 'success';
+      } catch (err: any) {
+        uploadStatuses[qId] = 'error';
+        uploadErrors[qId] = err?.message || 'Error al subir el archivo';
+        if (!firstError) firstError = uploadErrors[qId];
+        allSuccess = false;
+      }
     }
+    return { success: allSuccess, error: allSuccess ? undefined : firstError };
   }
 
   function autoSaveAnswers() {
     if (!started || finished) return;
-    saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount, uploadedFileName);
+    saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount, uploadedFileNames);
   }
 
   async function processSyncQueue() {
@@ -279,15 +286,15 @@
           score: finalScore,
           max_score: TOTAL_QUESTIONS,
           period: '2026-3',
-          comments: `${getAttemptLabel(attemptNumLocal)} | MC: ${finalScore}/${questions.filter(q => q.type !== 'file').length} | DFD: ${uploadedFileName || 'No subido'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
+          comments: `${getAttemptLabel(attemptNumLocal)} | MC: ${finalScore}/${questions.filter(q => q.type !== 'file').length} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
           submittedAt: Date.now()
         });
         const grade = res.grade || res;
         if (grade && grade._id) {
-          const examDataForServer = buildExamData(attemptNumLocal, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileName);
+          const examDataForServer = buildExamData(attemptNumLocal, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileNames);
           await gradesApi.updateMine(grade._id, { examData: JSON.stringify(examDataForServer) });
           // Upload the DFD file linked to this grade
-          if (uploadedFile) {
+          if (Object.keys(uploadedFiles).length > 0) {
             await uploadDfdFile(grade._id);
           }
           return { success: true, gradeId: grade._id };
@@ -326,7 +333,7 @@
 
     for (const q of questions) {
       if (q.type === 'file') {
-        res[q.id] = { correct: !!uploadedFileName };
+        res[q.id] = { correct: !!uploadedFileNames[q.id] };
         continue;
       }
       const userAnswer = answers[q.id];
@@ -341,7 +348,7 @@
 
     const attemptNum = getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) + 1;
     const localRecord = { date: new Date().toISOString(), score, total: TOTAL_QUESTIONS, tabSwitches: tabSwitchCount, timeUsed: TOTAL_TIME - timeLeft, gradeId: undefined as string | undefined };
-    const examData = buildExamData(attemptNum, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileName);
+    const examData = buildExamData(attemptNum, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileNames);
 
     let gradeId: string | undefined;
     if ($currentUser?.id) {
@@ -356,7 +363,7 @@
         saveError = `No se pudo guardar: ${result.error}. Las respuestas están guardadas localmente.`;
         addToSyncQueue({
           score, maxScore: TOTAL_QUESTIONS,
-          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${questions.filter(q => q.type !== 'file').length} | DFD: ${uploadedFileName || 'No subido'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
+          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${questions.filter(q => q.type !== 'file').length} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
           examData: JSON.stringify(examData)
         });
       }
@@ -447,9 +454,9 @@
             <ul>
               <li><strong>⏱ Tiempo límite:</strong> Dispones de <strong>90 minutos</strong> para completar el taller.</li>
               <li><strong>📝 Parte 1 — Selección múltiple (5 preguntas):</strong> Preguntas sobre algoritmos de Nivel 1 (secuencial) y Nivel 2 (condicionales). Corrección automática.</li>
-              <li><strong>📐 Parte 2 — Ejercicio Práctico DFD (1 ejercicio):</strong> Deberás resolver un ejercicio en el editor de DFD y <strong>subir el archivo .dfd</strong> desde tu computador.</li>
+              <li><strong>📐 Parte 2 — Ejercicio Práctico DFD (2 ejercicios):</strong> Deberás resolver dos ejercicios (uno de cada nivel) en el editor de DFD y <strong>subir los archivos .dfd</strong> correspondientes desde tu computador.</li>
               <li><strong>🚫 Sin consultas externas:</strong> No está permitido cambiar de pestaña durante el examen.</li>
-              <li><strong>📁 Archivo .dfd:</strong> Asegúrate de guardar tu diagrama antes de subirlo. Solo se acepta formato <code>.dfd</code>.</li>
+              <li><strong>📁 Archivo .dfd:</strong> Asegúrate de guardar tus diagramas antes de subirlos. Solo se acepta formato <code>.dfd</code>.</li>
             </ul>
           </div>
 
@@ -488,8 +495,8 @@
             <div class="score-label">Selección Múltiple</div>
           </div>
           <div class="score-card">
-            <div class="score-value">{uploadedFileName ? '✅' : '❌'}</div>
-            <div class="score-label">Archivo DFD</div>
+            <div class="score-value">{Object.keys(uploadedFileNames).length === questions.filter(q => q.type === 'file').length ? '✅' : '❌'}</div>
+            <div class="score-label">Archivos DFD</div>
           </div>
         </div>
 
@@ -515,8 +522,8 @@
             <span class="summary-value">{formatTime(TOTAL_TIME - timeLeft)}</span>
           </div>
           <div class="summary-item">
-            <span class="summary-label">Archivo subido</span>
-            <span class="summary-value">{uploadedFileName || 'Ninguno'}</span>
+            <span class="summary-label">Archivos subidos</span>
+            <span class="summary-value">{Object.values(uploadedFileNames).join(', ') || 'Ninguno'}</span>
           </div>
         </div>
 
@@ -578,17 +585,17 @@
                 </ol>
               </div>
 
-              <label class="file-drop-zone {uploadedFileName ? 'has-file' : ''}">
+              <label class="file-drop-zone {uploadedFileNames[questions[currentIndex].id] ? 'has-file' : ''}">
                 <input
                   type="file"
                   accept=".dfd"
                   onchange={handleFileSelect}
                   style="display:none"
                 />
-                {#if uploadedFileName}
+                {#if uploadedFileNames[questions[currentIndex].id]}
                   <div class="file-selected">
                     <span class="file-icon">📄</span>
-                    <span class="file-name">{uploadedFileName}</span>
+                    <span class="file-name">{uploadedFileNames[questions[currentIndex].id]}</span>
                     <span class="file-check">✅</span>
                   </div>
                   <p class="file-hint">Haz clic para cambiar el archivo</p>
@@ -601,8 +608,8 @@
                 {/if}
               </label>
 
-              {#if uploadError}
-                <div class="upload-error">❌ {uploadError}</div>
+              {#if uploadErrors[questions[currentIndex].id]}
+                <div class="upload-error">❌ {uploadErrors[questions[currentIndex].id]}</div>
               {/if}
             </div>
           </div>
@@ -631,7 +638,7 @@
           <button class="nav-btn" onclick={() => goToQuestion(currentIndex - 1)} disabled={currentIndex === 0}>← Anterior</button>
           {#if currentIndex < TOTAL_QUESTIONS - 1}
             {#if questions[currentIndex]?.type === 'file'}
-              <button class="nav-btn" onclick={() => goToQuestion(currentIndex + 1)} disabled={!uploadedFileName}>Siguiente →</button>
+              <button class="nav-btn" onclick={() => goToQuestion(currentIndex + 1)} disabled={!uploadedFileNames[questions[currentIndex].id]}>Siguiente →</button>
             {:else}
               <button class="nav-btn" onclick={() => goToQuestion(currentIndex + 1)} disabled={answers[questions[currentIndex]?.id] === undefined}>Siguiente →</button>
             {/if}

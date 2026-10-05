@@ -7,9 +7,7 @@
   let visibleCategories = $state<Set<number>>(new Set());
   let categoryRefs = new Map<number, HTMLElement>();
   let heroGlowX = $state(50);
-  let heroGlowY = $state(50);
-
-  const categories = importedCategories.filter(c => c.title !== 'Documentación y Tutoriales' && c.title !== 'Repositorios del Proyecto');
+  const categories = importedCategories.filter(c => c.title !== 'Repositorios del Proyecto');
 
   $effect(() => {
     if (!$isAuthenticated) goto('/login');

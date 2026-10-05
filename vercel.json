@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:match*",
+      "destination": "https://testcinar26bknd.onrender.com/api/:match*"
+    }
+  ]
+}

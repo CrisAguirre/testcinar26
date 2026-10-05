@@ -493,7 +493,7 @@
     line-height: 1.5;
     color: var(--color-text-secondary);
     background: color-mix(in srgb, var(--cat-color) 8%, white);
-    border-left: 3px solid var(--cat-color);
+    border-top: 2px solid var(--cat-color, #e2e8f0);
     border-radius: 0 8px 8px 0;
   }
 

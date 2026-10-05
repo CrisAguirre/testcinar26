@@ -567,7 +567,7 @@
 
   .algo-arrow {
     font-size: 0.8rem;
-    color: #9ca3af;
+    color: #4b5563;
     transition: transform 0.2s;
     flex-shrink: 0;
   }
@@ -599,7 +599,7 @@
 
   .algo-example {
     background: #f0f7ff;
-    border-left: 1px solid var(--color-theme-1, #3b82f6);
+    border-top: 2px solid var(--cat-color, #e2e8f0);
     padding: 0.6rem 0.85rem;
     border-radius: 6px;
     font-size: 0.85rem;
@@ -846,7 +846,7 @@
     transition: all 0.2s;
   }
 
-  .btn-cancel:hover { border-color: #9ca3af; }
+  .btn-cancel:hover { border-color: #4b5563; }
   .btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .btn-submit {

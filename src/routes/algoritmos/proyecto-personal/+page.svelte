@@ -430,7 +430,7 @@
     font-size: 3.5rem;
     margin-bottom: 1rem;
     display: inline-block;
-    animation: bounce 2s infinite ease-in-out;
+    animation: fadeIn 2s infinite ease-in-out;
   }
 
   @keyframes bounce {

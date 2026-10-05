@@ -1446,7 +1446,7 @@
     width: 270px;
     flex-shrink: 0;
     background: white;
-    border-left: 1px solid rgba(0,0,0,0.06);
+    border-top: 2px solid var(--cat-color, #e2e8f0);
     padding: 1rem;
     overflow-y: auto;
     box-shadow: -4px 0 12px rgba(0,0,0,0.04);
@@ -1708,7 +1708,7 @@
   .danger-btn:hover:not(:disabled) { background: #fee2e2; }
   .bottom-panel { display: flex; gap: 0; border-top: 4px solid #3b82f6; background: #1e293b; height: 210px; }
   .bottom-panel .console { flex: 2; height: 100%; border-top: none; }
-  .variables-panel { flex: 1; min-width: 240px; max-width: 360px; background: #0f172a; border-left: 1px solid #334155; display: flex; flex-direction: column; }
+  .variables-panel { flex: 1; min-width: 240px; max-width: 360px; background: #0f172a; border-top: 2px solid var(--cat-color, #e2e8f0); display: flex; flex-direction: column; }
   .variables-header { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; color: #e2e8f0; font-size: 0.85rem; font-weight: 700; }
   .variables-body { flex: 1; overflow-y: auto; padding: 0.75rem 1rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-content: flex-start; }
   .var-chip { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; font-size: 0.78rem; font-family: monospace; padding: 0.3rem 0.6rem; border-radius: 999px; }

@@ -854,14 +854,8 @@ let {
     overflow: hidden;
   }
 
-  .external-example-card::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: var(--accent);
+  .external-example-card {
+    border-top: 2px solid var(--accent);
   }
 
   .external-header h3 {

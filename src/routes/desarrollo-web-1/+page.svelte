@@ -183,9 +183,7 @@
     color: white;
     background: linear-gradient(135deg, #fff, #93c5fd, #c4b5fd, #fff);
     background-size: 300% 300%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #0f172a;
     animation: bannerTitleGrad 5s ease infinite, bannerTitleSlide 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     letter-spacing: -0.02em;
     filter: drop-shadow(0 0 12px rgba(147, 197, 253, 0.3));
@@ -312,7 +310,7 @@
     overflow: hidden;
     box-shadow: var(--shadow-sm);
     transition:
-      transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+      transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
       box-shadow 0.3s ease,
       border-color 0.25s ease;
     animation: cardEnter 0.5s calc(var(--i, 0) * 0.12s) cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -383,7 +381,7 @@
     font-size: 1.3rem;
     position: relative;
     z-index: 1;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .card:hover .card-bounce {
@@ -402,7 +400,7 @@
     font-size: 1.1rem;
     position: relative;
     z-index: 1;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .card:hover .card-arrow {

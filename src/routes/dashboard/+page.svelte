@@ -716,7 +716,7 @@
   }
 
   .review-question.open-review {
-    border-left: 1px solid #f59e0b;
+    border-top: 2px solid var(--cat-color, #e2e8f0);
   }
 
   .review-q-header {
@@ -810,7 +810,7 @@
 
   .result-correct { color: #16a34a; }
   .result-incorrect { color: #dc2626; }
-  .result-unanswered { color: #9ca3af; }
+  .result-unanswered { color: #4b5563; }
 
   .review-open-answer {
     margin-bottom: 0.75rem;

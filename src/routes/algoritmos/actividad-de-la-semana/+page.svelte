@@ -180,7 +180,7 @@
     font-size: 2.8rem;
     display: block;
     margin-bottom: 0.5rem;
-    animation: bounce 2s infinite;
+    animation: fadeIn 2s infinite;
   }
 
   @keyframes bounce {

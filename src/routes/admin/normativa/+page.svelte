@@ -187,7 +187,7 @@
   h1 {
     font-size: 1.55rem; margin: 0 0 0.35rem; font-weight: 700; letter-spacing: -0.02em;
     background: linear-gradient(135deg, #fff, #fde68a, #fcd34d, #fff); background-size: 300% 300%;
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    color: #0f172a;
     animation: bannerTitleGrad 5s ease infinite; filter: drop-shadow(0 0 12px rgba(253,230,138,0.3));
   }
   @keyframes bannerTitleGrad { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }

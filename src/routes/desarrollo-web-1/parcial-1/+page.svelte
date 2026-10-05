@@ -897,7 +897,7 @@
   }
 
   .used-badge {
-    color: #9ca3af;
+    color: #4b5563;
   }
 
   .blocked-badge {
@@ -991,7 +991,7 @@
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    border-left: 1px solid var(--color-theme-1, #3b82f6);
+    border-top: 2px solid var(--cat-color, #e2e8f0);
   }
 
   .recommendations h2 {
@@ -1413,7 +1413,7 @@
   }
 
   .review-status.unanswered {
-    color: #9ca3af;
+    color: #4b5563;
   }
 
   .review-status.correct {

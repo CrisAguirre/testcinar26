@@ -315,9 +315,7 @@
   .hero h1 span {
     color: #DC2626;
     background: linear-gradient(135deg, #DC2626, #f87171);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #0f172a;
   }
 
   .hero p {
@@ -480,7 +478,7 @@
 
   .role-card.lead {
     grid-column: 1 / -1;
-    border-left: 4px solid #DC2626;
+    border-top: 2px solid var(--cat-color, #e2e8f0);
     background: linear-gradient(to right, #fef2f2, #ffffff);
   }
 

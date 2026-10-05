@@ -535,7 +535,7 @@
   }
 
   .detail-question.open-q {
-    border-left: 1px solid var(--color-warning);
+    border-top: 2px solid var(--cat-color, #e2e8f0);
   }
 
   .detail-q-header {

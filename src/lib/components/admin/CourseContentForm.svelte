@@ -297,4 +297,14 @@
   .mt-4 { margin-top: 1.5rem; }
   .text-sm { color: #64748b; font-size: 0.85rem; margin: 0; }
   .loading { text-align: center; color: #64748b; font-style: italic; margin: 2rem 0; }
+
+  @media (max-width: 768px) {
+    .filters { flex-direction: column; }
+    .form-header { flex-direction: column; align-items: stretch; gap: 1rem; }
+    .unit-header { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+    .unit-header button { width: 100%; margin-top: 0.5rem; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .actions, .review-actions { flex-direction: column; justify-content: stretch; }
+    .actions button, .review-actions button { width: 100%; }
+  }
 </style>

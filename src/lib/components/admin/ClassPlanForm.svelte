@@ -364,4 +364,16 @@
   
   .text-sm { font-size: 0.85rem; }
   .text-gray { color: #64748b; }
+
+  @media (max-width: 768px) {
+    .classplan-container { flex-direction: column; height: auto; min-height: auto; gap: 1rem; }
+    .sidebar { width: 100%; border-right: none; padding-right: 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; }
+    .main-content { min-width: 0; }
+    .form-header { flex-direction: column; align-items: stretch; gap: 1rem; }
+    .header-actions { flex-wrap: wrap; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .checkbox-group { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .actions { flex-direction: column; }
+    .actions button { width: 100%; }
+  }
 </style>

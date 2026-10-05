@@ -301,4 +301,12 @@
   .text-sm { color: #64748b; font-size: 0.85rem; margin-top: 0; }
   .loading { text-align: center; color: #64748b; font-style: italic; margin: 2rem 0; }
   .empty { text-align: center; color: #64748b; font-style: italic; }
+
+  @media (max-width: 768px) {
+    .form-header { flex-direction: column; align-items: stretch; gap: 1rem; }
+    .grid-container { overflow-x: auto; padding-bottom: 0.5rem; }
+    .grid-header, .grid-row { min-width: 600px; }
+    .actions { flex-direction: column; }
+    .actions button { width: 100%; }
+  }
 </style>

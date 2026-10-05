@@ -292,4 +292,14 @@
   
   .text-gray { color: #94a3b8; }
   .loading, .empty { text-align: center; color: #64748b; font-style: italic; margin: 2rem 0; }
+
+  @media (max-width: 768px) {
+    .filters { flex-direction: column; }
+    .record-header { flex-direction: column; align-items: stretch; gap: 1rem; }
+    .record-actions { flex-direction: column; width: 100%; }
+    .record-actions button { width: 100%; }
+    .record-footer { flex-direction: column; align-items: stretch; gap: 1rem; }
+    .table-container { overflow-x: auto; }
+    table { min-width: 900px; }
+  }
 </style>

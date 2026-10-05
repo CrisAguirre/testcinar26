@@ -1,4 +1,4 @@
-# Cinar - Estado Actual de la Plataforma (29 Septiembre 2026)
+# Cinar - Estado Actual de la Plataforma (04 Octubre 2026)
 
 ## Estructura del Proyecto
 
@@ -23,6 +23,13 @@ Cinar/
 │   │   │   │   ├── enlaces-de-consulta/
 │   │   │   │   ├── actividad-de-la-semana/  # Simplificada y con ejemplos prácticos externos.
 │   │   │   │   └── proyecto-colaborativo/   # TrueX Trade (Intercambios P2P): React front + roles asignados (6+docente) + cronograma 6 sem. Maquetado ordenado 01/02/03.
+│   │   │   ├── admin/              # Módulo Administrativo (6 sub-rutas)
+│   │   │   │   ├── +page.svelte           # Panel principal con 6 tarjetas animadas
+│   │   │   │   ├── planeacion/            # Horarios, temáticas, disponibilidad docente, oferta capacitaciones
+│   │   │   │   ├── registro-academico/    # Notas, contenido temático, asistencia, seguimiento
+│   │   │   │   ├── capacitaciones/        # Oferta, solicitudes, historial
+│   │   │   │   ├── normativa/             # Estado de normas, descargas, cumplimiento institucional
+│   │   │   │   └── soporte/               # Asistencia remota, manuales, FAQ
 │   │   │   └── algoritmos/         # Algoritmos
 │   │   │       ├── parcial-1/      # BLOQUEADO no-admin
 │   │   │       ├── parcial-2/      # BLOQUEADO no-admin
@@ -39,7 +46,8 @@ Cinar/
 │   │   │   ├── guards/              # examLock.js (EXAM_LOCK_ACTIVE, isStrictAdmin solo role==='admin')
 │   │   │   ├── stores/              # Auth (token en memoria + migración legada + logout total), preloaded
 │   │   │   ├── components/          # SubjectCard, etc
-│   │   │   └── api.js               # access en memoria + refresh silencioso single-flight + credentials:include
+│   │   │   │   └── admin/           # AvailabilityForm, ClassPlanForm, CourseContentForm, GradeSheetTable, AttendanceTable, ContentTrackingTable, FormStatusBadge
+│   │   │   └── api.js               # access en memoria + refresh silencioso single-flight + credentials:include + adminApi
 │   │   └── static/
 │   │       ├── guias/Manual_Manejo_Editor_DFD.pdf  # Manual con logo (Ver/Descargar desde el editor)
 │   │       ├── videos/Video_3.mp4                 # Video 3 algoritmos (10.5 MB)
@@ -57,15 +65,22 @@ Cinar/
 │   │   ├── models/
 │   │   │   ├── User.js         # + refreshTokenHash/ExpiresAt (select:false) para P2
 │   │   │   ├── Grade.js
-│   │   │   └── Enrollment.js    # Sistema de inscripciones con projectIdea
+│   │   │   ├── Enrollment.js    # Sistema de inscripciones con projectIdea
+│   │   │   ├── Availability.js  # Disponibilidad docente (horarios/grilla)
+│   │   │   ├── ClassPlan.js     # Plan de clase (5 fases ETED)
+│   │   │   ├── CourseContent.js # Syllabus/contenido temático
+│   │   │   ├── GradeSheet.js    # Planilla de calificaciones institucional
+│   │   │   ├── Attendance.js    # Control de asistencia
+│   │   │   └── ContentTracking.js # Seguimiento temático (sesiones firmadas)
 │   │   ├── controllers/
 │   │   │   ├── authController.js   # register fuerza student, validación, sesiones refresh/logout, cambio de contraseña
 │   │   │   ├── gradeController.js  # IDOR fix en getById + bloqueo EXAMS_LOCK en mine
-│   │   │   └── enrollmentController.js  # getMine(), saveProjectIdea()
-│   │   ├── routes/             # auth (+/refresh /logout /users /password), grades, enrollments, schedule
+│   │   │   ├── enrollmentController.js  # getMine(), saveProjectIdea()
+│   │   │   └── adminController.js  # CRUD 6 formatos administrativos (eslint-disable no-unused-vars para destructuring)
+│   │   ├── routes/             # auth, grades, enrollments, admin (6 formatos)
 │   │   ├── middlewares/        # authMiddleware (fail-fast JWT) + requireAllowedOrigin (anti-CSRF)
 │   │   └── index.js            # helmet, CORS restringido+credentials, rate-limits, no-store, seedAdmin por env
-│   └── eslint.config.js         # Backend auditado con ESLint (0 errores, verificado 29/09).
+│   └── eslint.config.js         # Backend auditado con ESLint (0 errores, 0 warnings, verificado 04/10).
 │   └── deps nuevas: helmet, express-rate-limit
 └── package.json workspaces (seed.js ejecuta en start de render)
 ```
@@ -159,6 +174,23 @@ Cinar/
     - **Impeccable 29/09**: 35 hallazgos (mayoría estilísticos preexistentes: easings bounce, gradient-text, side-tabs, contraste de HTML viejo en Docs). Corregidos los 3 de rendimiento (barras/dots con `transform` en vez de `width`).
     - **svelte-check**: 420 errores base preexistentes en 40 archivos (implicit `any`, archivos intactos incluidos); `vite build` pasa (es lo que corre Vercel).
     - **Tests front 29/09**: 47/47 PASS en `api.test.js`, `auth.test.js`, `preloaded.test.js`. 8 fallos preexistentes ajenos: `api.grades.test.js` (integración contra prod + ventanas de agosto vencidas), `exam.test.js` (ventana vencida), `enlacesData.test.js` (espera 20, hay 23 por los +3 agregados).
+
+11. **Módulo Administrativo (04/10/2026)**
+    - **6 sub-rutas** bajo `/admin/`: planeación, registro-académico, capacitaciones, normativa, soporte.
+    - **7 componentes reutilizables** en `$lib/components/admin/`: AvailabilityForm, ClassPlanForm, CourseContentForm, GradeSheetTable, AttendanceTable, ContentTrackingTable, FormStatusBadge.
+    - **6 modelos MongoDB** en backend: Availability, ClassPlan, CourseContent, GradeSheet, Attendance, ContentTracking.
+    - **adminController.js** con CRUD completo para los 6 formatos + flujo de estados (borrador → enviado → recibido/aprobado/rechazado).
+    - **UI Premium**: banners animados (gradient shift, logo float/glow, code symbols drift), tabs con iconos y sombras, cards con fade-in, tablas con cabeceras degradadas. Cada página con paleta de color diferenciada.
+    - **Navegación horizontal premium**: barra `admin-top-nav` con 6 botones tipo pill (🏠 Panel, 📅 Planeación, 📝 Registro, 🎓 Capacitaciones, 📜 Normativa, 🛟 Soporte) en la parte superior de cada subsección, reemplazando el botón solitario de "Volver".
+    - **Modo demostrativo**: variable `readonly` configurada como `$derived($currentUser?.role !== 'admin' && ...)` para que el admin pueda editar todos los formularios independientemente del estado (no bloquea por estado aprobado/recibido). Botones de guardar borrador y enviar siempre visibles para admin.
+    - **Build fixes Svelte 5**: resueltos errores `{@const}` (migrados a `$derived`) y `{/if}` colgante en registro-académico.
+
+12. **Auditoría 04/10/2026 (Impeccable Style + ESLint)**
+    - **Frontend (Impeccable Style)**: 37 hallazgos iniciales → 17 residuales (en HTML estáticos de `src/Docs/`).
+      - ✅ Corregidos: gradient-text (→ color sólido), bounce easing (→ ease-out-quart `cubic-bezier(0.16,1,0.3,1)`), side-tab border-left (→ border-top sutil), contraste #9ca3af → #4b5563.
+      - ⚠️ Residuales: 16 low-contrast en archivos HTML estáticos (`src/Docs/trimb26/var/informes-parcial1.html`) + 1 overused-font (arial en mismo HTML). No afectan la app Svelte.
+    - **Backend (ESLint)**: 10 warnings iniciales (`no-unused-vars` en destructuring de `adminController.js`) → 0 errores, 0 warnings (resuelto con `eslint-disable no-unused-vars` al inicio del archivo, ya que las variables son extraídas por destructuring intencional para excluirlas del spread `...rest`).
+    - **Build frontend**: ✅ `vite build` exitoso (code 0) en 13.69s tras todas las correcciones.
 
 7. **Actividad de la semana Nivel 2 + Videos (29/09)**
     - Actividad algoritmos con tabs `Nivel 1 (16)` / `Nivel 2 (22 Condicionales, enunciados reales de `Ejercicios.pdf`, pares=Propuesto)`. Cada tarjeta: revisar enunciado → `Abrir en Editor DFD` (`?load=N2-X`) → `Revisar y analizar` (guía secuencial vs condicional).

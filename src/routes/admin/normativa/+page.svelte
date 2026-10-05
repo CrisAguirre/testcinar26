@@ -36,9 +36,14 @@
 <div class="banner">
   <div class="banner-bg"></div>
   <div class="banner-inner">
-    <button class="back-btn" onclick={() => goto('/admin')}>
-      <span>←</span> Volver a Funciones Administrativas
-    </button>
+    <nav class="admin-top-nav">
+      <button class="nav-btn" onclick={() => goto('/admin')}><span>🏠</span> Panel</button>
+      <button class="nav-btn" onclick={() => goto('/admin/planeacion')}><span>📅</span> Planeación</button>
+      <button class="nav-btn" onclick={() => goto('/admin/registro-academico')}><span>📝</span> Registro</button>
+      <button class="nav-btn" onclick={() => goto('/admin/capacitaciones')}><span>🎓</span> Capacitaciones</button>
+      <button class="nav-btn" onclick={() => goto('/admin/normativa')}><span>📜</span> Normativa</button>
+      <button class="nav-btn" onclick={() => goto('/admin/soporte')}><span>🛟</span> Soporte</button>
+    </nav>
     <div class="banner-content">
       <img class="banner-logo" src="/logo.png" alt="Cinar Sistemas" />
       <div class="banner-text">
@@ -189,14 +194,14 @@
   .banner-desc { font-size: 0.85rem; color: rgba(255,255,255,0.75); margin: 0; animation: descFadeIn 1s 0.3s cubic-bezier(0.16,1,0.3,1) both; }
   @keyframes descFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-  .back-btn {
-    display: inline-flex; align-items: center; gap: 0.4rem;
+  .admin-top-nav { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .nav-btn {
+    display: inline-flex; align-items: center; gap: 0.35rem;
     background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-    color: rgba(255,255,255,0.8); padding: 0.4rem 1rem; border-radius: 20px;
-    font-size: 0.82rem; cursor: pointer; margin-bottom: 1.25rem;
-    transition: border-color 0.2s, transform 0.15s, background 0.2s;
+    color: rgba(255,255,255,0.85); padding: 0.35rem 0.8rem; border-radius: 20px;
+    font-size: 0.78rem; cursor: pointer; transition: all 0.2s; font-weight: 500;
   }
-  .back-btn:hover { color: white; border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.15); transform: translateX(-3px); }
+  .nav-btn:hover { background: rgba(255,255,255,0.2); color: white; transform: translateY(-2px); border-color: rgba(255,255,255,0.5); }
 
   .banner-decor { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
   .code-sym { position: absolute; font-size: 1.2rem; opacity: 0.1; }

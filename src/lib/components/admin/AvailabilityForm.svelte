@@ -8,6 +8,7 @@
   let saving = $state(false);
   let record = $state<any>(null);
   let isPrivileged = $derived($currentUser?.role === 'admin' || $currentUser?.role === 'coordinator');
+  let readonly = $derived($currentUser?.role !== 'admin' && record && record.status !== 'borrador');
 
   const days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
   const timeSlots = ['8:00-10:00', '10:00-12:00', '12:30-14:30', '14:00-16:00', '16:00-18:00', '18:30-20:30'];
@@ -66,7 +67,7 @@
   });
 
   function toggleSlot(day: string, timeSlot: string) {
-    if (record && record.status !== 'borrador') return;
+    if (readonly) return;
     const idx = formData.slots.findIndex(s => s.day === day && s.timeSlot === timeSlot);
     if (idx >= 0) {
       formData.slots[idx].available = !formData.slots[idx].available;
@@ -167,51 +168,51 @@
     <div class="form-grid">
       <div class="form-group">
         <label>Nombre Completo</label>
-        <input type="text" bind:value={formData.fullName} disabled={record?.status !== 'borrador'} />
+        <input type="text" bind:value={formData.fullName} disabled={readonly} />
       </div>
       <div class="form-group">
         <label>Documento / C.C.</label>
-        <input type="text" bind:value={formData.documentId} disabled={record?.status !== 'borrador'} />
+        <input type="text" bind:value={formData.documentId} disabled={readonly} />
       </div>
       <div class="form-group">
         <label>Profesión</label>
-        <input type="text" bind:value={formData.profession} disabled={record?.status !== 'borrador'} placeholder="Ej. Ingeniero de Sistemas" />
+        <input type="text" bind:value={formData.profession} disabled={readonly} placeholder="Ej. Ingeniero de Sistemas" />
       </div>
       <div class="form-group">
         <label>Especialización</label>
-        <input type="text" bind:value={formData.specialization} disabled={record?.status !== 'borrador'} />
+        <input type="text" bind:value={formData.specialization} disabled={readonly} />
       </div>
       <div class="form-group">
         <label>Dirección</label>
-        <input type="text" bind:value={formData.address} disabled={record?.status !== 'borrador'} />
+        <input type="text" bind:value={formData.address} disabled={readonly} />
       </div>
       <div class="form-group">
         <label>Email</label>
-        <input type="email" bind:value={formData.email} disabled={record?.status !== 'borrador'} />
+        <input type="email" bind:value={formData.email} disabled={readonly} />
       </div>
       <div class="form-group">
         <label>Teléfono</label>
-        <input type="text" bind:value={formData.phone} disabled={record?.status !== 'borrador'} />
+        <input type="text" bind:value={formData.phone} disabled={readonly} />
       </div>
       <div class="form-group">
         <label>Celular</label>
-        <input type="text" bind:value={formData.cellphone} disabled={record?.status !== 'borrador'} />
+        <input type="text" bind:value={formData.cellphone} disabled={readonly} />
       </div>
       <div class="form-group">
         <label>Iniciación de clases</label>
-        <input type="date" bind:value={formData.periodStart} disabled={record?.status !== 'borrador'} />
+        <input type="date" bind:value={formData.periodStart} disabled={readonly} />
       </div>
       <div class="form-group">
         <label>Finalización con habilitaciones</label>
-        <input type="date" bind:value={formData.periodEnd} disabled={record?.status !== 'borrador'} />
+        <input type="date" bind:value={formData.periodEnd} disabled={readonly} />
       </div>
       <div class="form-group full-width">
         <label>Perfil Profesional (Materias que domina, experiencia)</label>
-        <textarea bind:value={formData.professionalProfile} disabled={record?.status !== 'borrador'} rows="3"></textarea>
+        <textarea bind:value={formData.professionalProfile} disabled={readonly} rows="3"></textarea>
       </div>
       <div class="form-group full-width">
         <label>Temáticas (separadas por coma)</label>
-        <input type="text" bind:value={formData.subjectExpertise} disabled={record?.status !== 'borrador'} placeholder="Java, Python, Redes, Base de datos..." />
+        <input type="text" bind:value={formData.subjectExpertise} disabled={readonly} placeholder="Java, Python, Redes, Base de datos..." />
       </div>
     </div>
 
@@ -235,7 +236,7 @@
               {#each days as day}
                 {@const isAv = isAvailable(day, slot)}
                 <td 
-                  class="slot-cell {isAv ? 'available' : ''} {record && record.status !== 'borrador' ? 'readonly' : ''}"
+                  class="slot-cell {isAv ? 'available' : ''} {readonly ? 'readonly' : ''}"
                   onclick={() => toggleSlot(day, slot)}
                 >
                   {isAv ? 'Sí' : 'No'}

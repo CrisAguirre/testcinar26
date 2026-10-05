@@ -8,7 +8,7 @@
   let saving = $state(false);
   let record = $state<any>(null);
   let isPrivileged = $derived($currentUser?.role === 'admin' || $currentUser?.role === 'coordinator');
-  let readonly = $derived(record && record.status !== 'borrador' && record.status !== 'rechazado');
+  let readonly = $derived($currentUser?.role !== 'admin' && record && record.status !== 'borrador' && record.status !== 'rechazado');
 
   let currentCourse = $state('algoritmos');
   let currentPeriod = $state('2026-3');
@@ -230,7 +230,7 @@
       </div>
 
       <div class="actions">
-        {#if !readonly && !isPrivileged}
+        {#if !readonly}
           <button class="btn btn-outline" onclick={() => save('borrador')} disabled={saving}>💾 Guardar Borrador</button>
           <button class="btn btn-primary" onclick={() => save('enviado')} disabled={saving}>📤 Enviar a Coordinación</button>
         {/if}

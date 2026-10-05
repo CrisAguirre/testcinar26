@@ -12,7 +12,7 @@
   let currentCourse = $state('algoritmos');
   let currentPeriod = $state('2026-3');
   let isPrivileged = $derived($currentUser?.role === 'admin' || $currentUser?.role === 'coordinator');
-  let readonly = $derived(currentRecord && currentRecord.status !== 'borrador');
+  let readonly = $derived($currentUser?.role !== 'admin' && currentRecord && currentRecord.status !== 'borrador');
 
   let formData = $state({
     level: '',
@@ -301,7 +301,7 @@
         <textarea bind:value={formData.postObservations} disabled={readonly} rows="3" placeholder="Situaciones presentadas durante la clase..."></textarea>
       </div>
 
-      {#if !readonly && !isPrivileged}
+      {#if !readonly}
         <div class="actions">
           <button class="btn btn-outline" onclick={() => save('borrador')} disabled={saving}>💾 Guardar Borrador</button>
           <button class="btn btn-primary" onclick={() => save('enviado')} disabled={saving}>📤 Enviar a Coordinación</button>

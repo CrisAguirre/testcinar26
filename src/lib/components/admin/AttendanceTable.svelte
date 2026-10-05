@@ -22,7 +22,7 @@
   let isPrivileged = $derived($currentUser?.role === 'admin' || $currentUser?.role === 'coordinator');
   let forceEdit = $state(false);
   let isReadonlyStatus = $derived(record?.status === 'entregado' && !forceEdit);
-  let isPrivilegedEffectiveEffective = $derived(isPrivilegedEffective && !forceEdit);
+  let isPrivilegedEffective = $derived(isPrivileged && !forceEdit);
 
   onMount(loadRecord);
 

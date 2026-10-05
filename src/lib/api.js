@@ -1,4 +1,4 @@
-export const API_URL = import.meta.env.VITE_API_URL || 'https://testcinar26bknd.onrender.com/api';
+export const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'https://testcinar26bknd.onrender.com/api');
 
 // P2: el access token vive solo en memoria (nunca en localStorage) para
 // reducir el impacto de un XSS. El refresh viaja en cookie httpOnly.

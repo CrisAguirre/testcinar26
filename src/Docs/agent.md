@@ -190,12 +190,14 @@ Cinar/
       - **Validación Mongoose (Seguimiento)**: Se asignó el valor predeterminado `"Tema inicial por definir"` al campo `topicAndGoal` para cumplir la regla estricta `required: true` al crear el documento vacío.
       - **CSS de Banners**: Se aplicaron reglas `-webkit-background-clip: text` globales mediante script en todos los `h1` de módulos y cursos, logrando un degradado de colores transparente sobre el texto sin fondos blancos intrusivos.
 13. **Taller 1 — Algoritmos (Niveles 1 y 2, habilitado 06/10/2026)**
-    - **Fecha de apertura**: Martes 6 de octubre de 2026 (todo el día, 00:00–23:59 hora Colombia). Controlado por `isTallerAlgoLockedFor()` en `examLock.js`; admin accede siempre.
-    - **Estructura del examen**: 5 preguntas de selección múltiple (2 de Nivel 1 secuencial + 3 de Nivel 2 condicionales) + 1 ejercicio práctico DFD con subida de archivo `.dfd`.
-    - **Banco de preguntas** (`taller_algo.js`): Ejercicios inéditos, NO vistos en clase ni en el módulo DFD.
-    - **Configuración** (`exam_taller_algo.js`): 6 preguntas total, 90 minutos, 2 intentos.
-    - **Subida de archivos DFD**: Nuevo modelo `DfdSubmission.js` en MongoDB, ruta backend `POST /api/dfd/upload`. Frontend con `apiUploadFile()`.
+    - **Fecha de apertura**: Martes 6 de octubre de 2026 (18:30 a 20:30). Controlado nativamente en `examLock.js`.
+    - **Estructura del examen**: 5 preguntas de selección múltiple inéditas y 2 ejercicios prácticos DFD nuevos (monedas y zapatería).
+    - **Subida de archivos**: Interfaz modificada para soportar subida independiente de múltiples archivos `.dfd`.
 
+14. **Actualizaciones en Actividades y Proyectos (04/10/2026)**
+    - **Proyecto Grupal DW2**: Tareas ajustadas en Semana 1 (Frontend, Backend, Testing, Requerimientos).
+    - **Proyecto Personal Algoritmos**: PDFs integrados directamente al Paso 4. Barras de progreso al 30% (Paso 3 de 10) general. PDFs visibles removiendo el filtro de categoría.
+    - **Actividad Semana DW2**: Añadidas Clases 4 y 5 adaptadas (CSS nativo, $lib, separación datos/vista) en lugar de Bootstrap, con ejemplos de Spotify y Airbnb.
 12. **Auditoría 04/10/2026 (Impeccable Style + ESLint)**
     - **Frontend (Impeccable Style)**: 37 hallazgos iniciales → 17 residuales (en HTML estáticos de `src/Docs/`).
       - ✅ Corregidos: gradient-text (→ color sólido), bounce easing (→ ease-out-quart `cubic-bezier(0.16,1,0.3,1)`), side-tab border-left (→ border-top sutil), contraste #9ca3af → #4b5563.

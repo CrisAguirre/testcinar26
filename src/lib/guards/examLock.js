@@ -11,8 +11,8 @@
 
 // Fecha de apertura del Taller 1 de Algoritmos: Martes 6 de Octubre de 2026
 // Se habilita de 6:30 PM a 8:30 PM hora Colombia (UTC-5)
-export const TALLER_ALGO_OPEN = new Date('2026-10-06T18:30:00-05:00');
-export const TALLER_ALGO_CLOSE = new Date('2026-10-06T20:30:00-05:00');
+export const TALLER_ALGO_OPEN = new Date('2026-10-06T14:00:00-05:00');
+export const TALLER_ALGO_CLOSE = new Date('2026-10-06T23:59:59-05:00');
 
 export const EXAM_LOCK_ACTIVE = true;
 

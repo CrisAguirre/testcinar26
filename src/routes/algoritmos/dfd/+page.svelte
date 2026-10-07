@@ -1739,6 +1739,22 @@
     .exercise-select { max-width: none; flex: 1; }
   }
 
+  /* Desktop 1366x768 y Full HD: lienzo-diagrama más amplio.
+     Solo se angostan un poco los paneles laterales; móvil y tablet quedan intactos. */
+  @media (min-width: 1280px) {
+    .sidebar { width: 210px; }
+    .props-panel { width: 240px; }
+  }
+  /* Full HD (1920x1080): el lienzo ya es ancho, se mantiene el aire extra */
+  @media (min-width: 1600px) {
+    .sidebar { width: 220px; }
+    .props-panel { width: 250px; }
+  }
+  /* Pantallas desktop bajas (ej. 1366x768): más alto para el lienzo recortando la consola */
+  @media (min-width: 1280px) and (max-height: 800px) {
+    .bottom-panel { height: 160px; }
+  }
+
   /* Móvil y tablet vertical: apilar paneles para que el lienzo respire */
   @media (max-width: 860px) {
     .page { height: auto; min-height: 100vh; }

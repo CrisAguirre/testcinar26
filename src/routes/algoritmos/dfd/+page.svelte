@@ -182,6 +182,7 @@
       return `⚙️ ${(node.assignments?.[0]?.variable ?? 'x')} ← ${(node.assignments?.[0]?.expression ?? '…')}`;
     if (node.type === 'decision') return `🔀 Si ${node.condition || '(falta condición)'}`;
     if (node.type === 'while') return `🔁 Mientras ${node.condition || '(falta condición)'}`;
+    if (node.type === 'newline') return '⏎ Salto de línea (línea en blanco)';
     return node.type;
   }
 
@@ -458,6 +459,7 @@
           shape.type === 'output' ? `<polygon points="0,0 ${shape.width-15},0 ${shape.width},${shape.height/2} ${shape.width-15},${shape.height} 0,${shape.height}" class="shape-output" style="${selStyle}"/>` :
           shape.type === 'decision' ? `<polygon points="${shape.width/2},0 ${shape.width},${shape.height/2} ${shape.width/2},${shape.height} 0,${shape.height/2}" class="shape-decision" style="${selStyle}"/>` :
           shape.type === 'while' ? `<polygon points="${shape.width/2},0 ${shape.width},${shape.height/2} ${shape.width/2},${shape.height} 0,${shape.height/2}" class="shape-while" style="${selStyle}"/>` :
+          shape.type === 'newline' ? `<rect width="${shape.width}" height="${shape.height}" rx="14" class="shape-newline" style="${selStyle}"/>` :
           `<rect width="${shape.width}" height="${shape.height}" rx="${rx}" class="shape-${shape.type}" style="${selStyle}"/>`
         }
         <foreignObject x="10" y="10" width="${shape.width - 20}" height="${shape.height - 20}" style="pointer-events:none;">
@@ -519,6 +521,7 @@
     if (type === 'process') return { type: 'assignment', assignments: [{ variable: 'x', expression: '0' }] };
     if (type === 'decision') return { type: 'decision', condition: 'x > 0', trueBranch: [], falseBranch: [], flag: 0 };
     if (type === 'while') return { type: 'while', condition: 'contador <= 5', body: [] };
+    if (type === 'newline') return { type: 'newline' };
     return null;
   }
 
@@ -528,6 +531,7 @@
     if (type === 'process') return 'Asignación ⚙️ (calcular)';
     if (type === 'decision') return 'Decisión 🔀 (pregunta Sí/No)';
     if (type === 'while') return 'Mientras 🔁 (repetir)';
+    if (type === 'newline') return 'Salto de línea ⏎ (línea en blanco)';
     return type;
   }
 
@@ -561,7 +565,7 @@
     isDragging = false;
     activeDropIndex = -1;
     const type = e.dataTransfer?.getData('dfd-type') || e.dataTransfer?.getData('text/plain');
-    if (!type || !['input', 'output', 'process', 'decision', 'while'].includes(type)) return;
+    if (!type || !['input', 'output', 'process', 'decision', 'while', 'newline'].includes(type)) return;
     insertNodeAt(zone.targetList, zone.index, type);
   }
 
@@ -576,7 +580,7 @@
     isDragging = false;
     activeDropIndex = -1;
     const type = e.dataTransfer?.getData('dfd-type') || e.dataTransfer?.getData('text/plain');
-    if (!type || !['input', 'output', 'process', 'decision', 'while'].includes(type)) return;
+    if (!type || !['input', 'output', 'process', 'decision', 'while', 'newline'].includes(type)) return;
     if (!ast) {
       ensureAst();
       return;
@@ -871,6 +875,7 @@
         <div class="palette-item" role="button" tabindex="0" draggable="true" ondragstart={(e) => handleDragStart(e, 'process')} ondragend={handleDragEnd} onclick={() => handlePaletteClick('process')} onkeydown={(e) => e.key === 'Enter' && handlePaletteClick('process')} title="Calcula y guarda. Ej: suma <- n1+n2"><div class="palette-shape process"></div> <span><strong>Asignación</strong><br /><small>calcula ej: suma</small></span> <span class="palette-add">+</span></div>
         <div class="palette-item" role="button" tabindex="0" draggable="true" ondragstart={(e) => handleDragStart(e, 'decision')} ondragend={handleDragEnd} onclick={() => handlePaletteClick('decision')} onkeydown={(e) => e.key === 'Enter' && handlePaletteClick('decision')} title="Pregunta con dos caminos: Sí (izquierda) / No (derecha)"><div class="palette-shape decision"></div> <span><strong>Decisión</strong><br /><small>pregunta Sí/No</small></span> <span class="palette-add">+</span></div>
         <div class="palette-item" role="button" tabindex="0" draggable="true" ondragstart={(e) => handleDragStart(e, 'while')} ondragend={handleDragEnd} onclick={() => handlePaletteClick('while')} onkeydown={(e) => e.key === 'Enter' && handlePaletteClick('while')} title="Repite mientras se cumpla la condición"><div class="palette-shape while"></div> <span><strong>Mientras</strong><br /><small>repite ej: i&lt;=5</small></span> <span class="palette-add">+</span></div>
+        <div class="palette-item" role="button" tabindex="0" draggable="true" ondragstart={(e) => handleDragStart(e, 'newline')} ondragend={handleDragEnd} onclick={() => handlePaletteClick('newline')} onkeydown={(e) => e.key === 'Enter' && handlePaletteClick('newline')} title="Imprime una línea en blanco. Útil para separar resultados (ej: Dólares / Euros / Yenes)"><div class="palette-shape newline">⏎</div> <span><strong>Salto de línea</strong><br /><small>línea en blanco</small></span> <span class="palette-add">+</span></div>
       </div>
 
       <div class="canvas-actions">
@@ -1046,6 +1051,7 @@
             {:else if selectedNode.type === 'assignment'}⚙️ Asignación — calcular
             {:else if selectedNode.type === 'decision'}🔀 Decisión — pregunta Sí/No
             {:else if selectedNode.type === 'while'}🔁 Mientras — repetir
+            {:else if selectedNode.type === 'newline'}⏎ Salto de línea — línea en blanco
             {:else}🧩 Componente{/if}
           </strong>
           <button class="icon-btn" onclick={() => selectedPath = null} aria-label="Cerrar propiedades">✕</button>
@@ -1091,6 +1097,8 @@
           <label class="props-label" for="prop-while-cond">1) ¿Cuándo debe repetirse?</label>
           <input id="prop-while-cond" class="props-input" value={selectedNode.condition || ''} onfocus={armEdit} oninput={(e) => { selectedNode.condition = e.currentTarget.value; commitEdit(); }} placeholder="ej: contador <= 5" />
           <p class="props-example">✍️ Ej: <code>contador &lt;= 5</code>. Todo lo que arrastres al cuerpo azul se repetirá. ¡No olvides aumentar el contador dentro o será infinito!</p>
+        {:else if selectedNode.type === 'newline'}
+          <p class="props-example">⏎ Este componente imprime una <strong>línea en blanco</strong> al ejecutar. No necesita configuración: úsalo entre dos Salidas para separar resultados (ej: Dólares / Euros / Yenes). En pseudocódigo es <code>Escribir '' // salto de línea</code>.</p>
         {/if}
         <div class="props-actions">
           <button class="mini-btn" onclick={() => handleMoveSelected(-1)} title="Subir dentro de su lista">↑ Subir</button>
@@ -1373,6 +1381,7 @@
   .palette-shape.input { transform: skewX(-15deg); background: #f3e8ff; border-color: #c084fc; }
   .palette-shape.output { background: #fed7aa; border-color: #f97316; }
   .palette-shape.process { background: #bae6fd; border-color: #38bdf8; }
+  .palette-shape.newline { border-radius: 8px; background: #f1f5f9; border: 2px dashed #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #64748b; font-weight: 800; }
 
   .palette-item:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
   .palette-static { cursor: default; opacity: 0.8; }
@@ -1575,6 +1584,7 @@
   :global(.shape-output) { fill: #fed7aa; stroke: #f97316; stroke-width: 2; }
   :global(.shape-decision) { fill: #fef08a; stroke: #eab308; stroke-width: 2; }
   :global(.shape-while) { fill: #ddd6fe; stroke: #8b5cf6; stroke-width: 2; }
+  :global(.shape-newline) { fill: #f8fafc; stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 6 4; }
   :global(.link-label) { font-size: 11px; fill: #64748b; font-weight: bold; font-family: sans-serif; }
 
   .console {

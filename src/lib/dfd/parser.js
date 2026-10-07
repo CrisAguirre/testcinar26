@@ -165,7 +165,7 @@ function parseFlowNodes(state) {
         state.pos++;
         return nodes;
 
-      case 12: { // Function call
+      case 12: { // Function call (o Salto de línea virtual)
         state.pos++; // skip 12
         // Parse function call structure
         state.pos++; // skip flag
@@ -181,7 +181,12 @@ function parseFlowNodes(state) {
           if ([1, 2, 3, 4, 5, 6, 7, 9, 11, 12, 13].includes(peek)) break;
           state.pos++;
         }
-        nodes.push({ type: 'call', funcName, params });
+        // Salto de línea: se guarda como llamada SaltoLinea para no romper FreeDFD
+        if ((funcName || '').toLowerCase() === 'saltolinea') {
+          nodes.push({ type: 'newline' });
+        } else {
+          nodes.push({ type: 'call', funcName, params });
+        }
         break;
       }
 
@@ -261,6 +266,12 @@ function serializeNodes(nodes, lines) {
         const fname = node.funcName || 'func';
         const params = node.params || '';
         lines.push('12', '1', String(fname.length), fname, '1', String(params.length), params);
+        break;
+      }
+      case 'newline': {
+        // Salto de línea: llamada SaltoLinea con param '0' (las líneas vacías se filtran al parsear).
+        // FreeDFD lo ve como una llamada inofensiva; nuestro editor lo muestra como ⏎.
+        lines.push('12', '1', '10', 'SaltoLinea', '1', '1', '0');
         break;
       }
       case 'merge':

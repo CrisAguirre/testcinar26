@@ -326,6 +326,11 @@ export class DfdExecutor {
         break;
       }
 
+      case 'newline': {
+        await this.onOutput('');
+        break;
+      }
+
       case 'decision': {
         const conditionResult = this.evaluateExpression(node.condition);
         if (conditionResult) {

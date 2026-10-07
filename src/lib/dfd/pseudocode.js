@@ -77,6 +77,11 @@ function genNodes(nodes, level, lines) {
         break;
       }
 
+      case 'newline': {
+        lines.push(`${pad}Escribir '' // salto de línea`);
+        break;
+      }
+
       default:
         break;
     }

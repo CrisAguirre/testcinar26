@@ -27,6 +27,7 @@ function labelFor(node) {
   if (node.type === 'decision')   return node.condition || '';
   if (node.type === 'while')      return node.condition || '';
   if (node.type === 'call')       return `${node.funcName}(${node.params})`;
+  if (node.type === 'newline')    return '⏎ Salto de línea';
   return '';
 }
 
@@ -211,6 +212,7 @@ function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId, baseP
       if (node.type === 'output')     shapeType = 'output';
       if (node.type === 'input')      shapeType = 'input';
       if (node.type === 'call')       shapeType = 'call';
+      if (node.type === 'newline')    shapeType = 'newline';
 
       shapes.push({ id, type: shapeType, text: label, x: cx, y, width: w, height: NODE_H, path: nodePath });
       if (prevId) links.push(makeLink(prevId, id, shapes));

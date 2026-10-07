@@ -14,6 +14,11 @@ describe('layout desktop del editor DFD', () => {
     expect(src).toMatch(/@media\s*\(min-width:\s*1280px\)\s*and\s*\(max-height:\s*800px\)/);
   });
 
+  it('aumenta ~30% la altura del lienzo solo en desktop', () => {
+    expect(src).toMatch(/\.layout\s*\{\s*min-height:\s*60vh/);
+    expect(src).toMatch(/\.layout\s*\{\s*min-height:\s*72vh/);
+  });
+
   it('conserva los anchos base de los paneles', () => {
     expect(src).toMatch(/\.sidebar\s*\{\s*width:\s*240px/);
     expect(src).toMatch(/\.props-panel\s*\{\s*width:\s*270px/);

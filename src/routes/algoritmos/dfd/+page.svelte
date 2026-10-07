@@ -1744,11 +1744,15 @@
   @media (min-width: 1280px) {
     .sidebar { width: 210px; }
     .props-panel { width: 240px; }
+    /* Lienzo ~30% más alto en desktop (la página crece y hace scroll si hace falta) */
+    .layout { min-height: 60vh; }
   }
   /* Full HD (1920x1080): el lienzo ya es ancho, se mantiene el aire extra */
   @media (min-width: 1600px) {
     .sidebar { width: 220px; }
     .props-panel { width: 250px; }
+    /* Lienzo ~30% más alto también en Full HD */
+    .layout { min-height: 72vh; }
   }
   /* Pantallas desktop bajas (ej. 1366x768): más alto para el lienzo recortando la consola */
   @media (min-width: 1280px) and (max-height: 800px) {

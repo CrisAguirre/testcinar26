@@ -109,6 +109,23 @@ describe('buildExamData', () => {
   });
 });
 
+describe('modo solo-teoría (exento DFD, ej. Julián)', () => {
+  const mcOnly = questionBank.filter((q) => q.type !== 'file');
+
+  it('son 5 preguntas sin file', () => {
+    expect(mcOnly.length).toBe(5);
+  });
+
+  it('califica sobre 5 y el progreso llega a 100% con 5 respuestas', () => {
+    const answers = { 1: 1, 2: 2, 3: 1, 4: 2, 5: 2 };
+    expect(calculateScore(mcOnly, answers)).toBe(5);
+    expect(getProgressPercent(5)).toBeCloseTo((5 / 7) * 100); // base 7, el componente usa examTotal=5
+    const data = buildExamData(1, 0, 60, mcOnly, answers, {});
+    expect(data.mcTotal).toBe(5);
+    expect(data.questions.every((q) => q.type === 'mc')).toBe(true);
+  });
+});
+
 describe('sync queue (localStorage)', () => {
   beforeEach(() => mockLocalStorage());
 

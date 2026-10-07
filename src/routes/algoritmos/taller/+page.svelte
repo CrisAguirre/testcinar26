@@ -57,6 +57,11 @@
 
   let isUnlimited = $derived($currentUser?.email === 'coordinacion@cinarsistemas.edu.co');
 
+  // Exentos de DFD (ya presentaron Ej. 6 y 7 en clase): solo responden P1-P5 teóricas.
+  const MCQ_ONLY_EMAILS = ['jd.reina@cinar.edu.co'];
+  let isMcqOnly = $derived(MCQ_ONLY_EMAILS.includes(($currentUser?.email || '').toLowerCase()));
+  let examTotal = $derived(questions.length > 0 ? questions.length : TOTAL_QUESTIONS);
+
   function getSlots() {
     const used = getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer);
     // Reinicio 07/10: 2 intentos frescos (claves v2). Julian presenta hoy, Jairo retoma tarde/noche.
@@ -154,7 +159,8 @@
       }
     }
 
-    questions = selectRandomQuestions();
+    const picked = selectRandomQuestions();
+    questions = isMcqOnly ? picked.filter((q) => q.type !== 'file') : picked;
     answers = {};
     currentIndex = 0;
     uploadedFiles = {};
@@ -175,7 +181,7 @@
   }
 
   function goToQuestion(index: number) {
-    if (index >= 0 && index < TOTAL_QUESTIONS) {
+    if (index >= 0 && index < examTotal) {
       const currentQ = questions[currentIndex];
       if (index > currentIndex) {
         if (currentQ?.type === 'file') {
@@ -286,7 +292,7 @@
         const res = await gradesApi.submitMine({
           subject: 'Algoritmos - Taller 1',
           score: entry.score,
-          max_score: TOTAL_QUESTIONS,
+          max_score: entry.maxScore ?? TOTAL_QUESTIONS,
           period: '2026-3',
           comments: entry.comments,
           submittedAt: entry.createdAt || Date.now()
@@ -309,12 +315,14 @@
 
     for (let i = 0; i < maxRetries; i++) {
       try {
+        const mcTotal = questions.filter(q => q.type !== 'file').length;
+        const dfdNote = isMcqOnly ? 'DFDs 6-7 presentados en clase (exento subida)' : `DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'}`;
         const res = await gradesApi.submitMine({
           subject: 'Algoritmos - Taller 1',
           score: finalScore,
-          max_score: TOTAL_QUESTIONS,
+          max_score: questions.length,
           period: '2026-3',
-          comments: `${getAttemptLabel(attemptNumLocal)} | MC: ${finalScore}/${questions.filter(q => q.type !== 'file').length} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
+          comments: `${getAttemptLabel(attemptNumLocal)} | MC: ${finalScore}/${mcTotal} | ${dfdNote} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
           submittedAt: Date.now()
         });
         const grade = res.grade || res;
@@ -386,7 +394,8 @@
     finished = true;
 
     const attemptNum = getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) + 1;
-    const localRecord = { date: new Date().toISOString(), score, total: TOTAL_QUESTIONS, tabSwitches: tabSwitchCount, timeUsed: TOTAL_TIME - timeLeft, gradeId: undefined as string | undefined };
+    const mcTotal = questions.filter(q => q.type !== 'file').length;
+    const localRecord = { date: new Date().toISOString(), score, total: questions.length, tabSwitches: tabSwitchCount, timeUsed: TOTAL_TIME - timeLeft, gradeId: undefined as string | undefined };
     const examData = buildExamData(attemptNum, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileNames);
 
     let gradeId: string | undefined;
@@ -410,8 +419,8 @@
           if (!up.success) dfdUploadError = `${up.error || 'Falló subida DFD'}. Guarda tus .dfd, podrás re-subirlos hoy hasta medianoche.`;
         }
         addToSyncQueue({
-          score, maxScore: TOTAL_QUESTIONS,
-          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${questions.filter(q => q.type !== 'file').length} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
+          score, maxScore: questions.length,
+          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${mcTotal} | ${isMcqOnly ? 'DFDs 6-7 presentados en clase (exento subida)' : `DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'}`} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
           examData: JSON.stringify(examData)
         });
       }
@@ -502,7 +511,11 @@
             <ul>
               <li><strong>⏱ Tiempo límite:</strong> Dispones de <strong>90 minutos</strong> para completar el taller.</li>
               <li><strong>📝 Parte 1 — Selección múltiple (5 preguntas):</strong> Preguntas sobre algoritmos de Nivel 1 (secuencial) y Nivel 2 (condicionales). Corrección automática.</li>
-              <li><strong>📐 Parte 2 — Ejercicio Práctico DFD (2 ejercicios):</strong> Deberás resolver dos ejercicios (uno de cada nivel) en el editor de DFD y <strong>subir los archivos .dfd</strong> correspondientes desde tu computador.</li>
+              {#if isMcqOnly}
+                <li><strong>✅ Solo teoría:</strong> Tus ejercicios DFD (6 y 7) ya fueron presentados en clase. Solo respondes las 5 teóricas, sobre 5 puntos.</li>
+              {:else}
+                <li><strong>📐 Parte 2 — Ejercicio Práctico DFD (2 ejercicios):</strong> Deberás resolver dos ejercicios (uno de cada nivel) en el editor de DFD y <strong>subir los archivos .dfd</strong> correspondientes desde tu computador.</li>
+              {/if}
               <li><strong>🚫 Sin consultas externas:</strong> No está permitido cambiar de pestaña durante el examen.</li>
               <li><strong>📁 Archivo .dfd:</strong> Asegúrate de guardar tus diagramas antes de subirlos. Solo se acepta formato <code>.dfd</code>.</li>
             </ul>
@@ -608,9 +621,9 @@
           <h1>{getAttemptLabel(currentAttemptNumber)}</h1>
           <span class="question-counter">
             {#if questions[currentIndex]?.type === 'file'}
-              Ejercicio Práctico (Pregunta {currentIndex + 1} de {TOTAL_QUESTIONS})
+              Ejercicio Práctico (Pregunta {currentIndex + 1} de {examTotal})
             {:else}
-              Pregunta {currentIndex + 1} de {TOTAL_QUESTIONS}
+              Pregunta {currentIndex + 1} de {examTotal}
             {/if}
           </span>
         </div>
@@ -626,7 +639,7 @@
       </div>
 
       <div class="progress-bar-container">
-        <div class="progress-bar" style="transform: scaleX({getProgressPercent(Object.keys(answers).length) / 100})"></div>
+        <div class="progress-bar" style="transform: scaleX({((Object.keys(answers).length / examTotal))})"></div>
       </div>
 
       <div class="exam-body">
@@ -701,7 +714,7 @@
 
         <div class="exam-actions">
           <button class="nav-btn" onclick={() => goToQuestion(currentIndex - 1)} disabled={currentIndex === 0}>← Anterior</button>
-          {#if currentIndex < TOTAL_QUESTIONS - 1}
+          {#if currentIndex < examTotal - 1}
             {#if questions[currentIndex]?.type === 'file'}
               <button class="nav-btn" onclick={() => goToQuestion(currentIndex + 1)} disabled={!uploadedFileNames[questions[currentIndex].id]}>Siguiente →</button>
             {:else}

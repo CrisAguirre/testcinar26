@@ -59,9 +59,8 @@
 
   function getSlots() {
     const used = getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer);
-    // Horario extra 07/10: total 3 para garantizar 1 intento disponible sin borrar historial.
-    // Ayer falló el backend (403), server=0 pero local=1-2. Con total 3 todos quedan con >=1.
-    const total = 3;
+    // Reinicio 07/10: 2 intentos frescos (claves v2). Julian presenta hoy, Jairo retoma tarde/noche.
+    const total = 2;
     return {
       total,
       used,
@@ -453,7 +452,7 @@
             {#if isUnlimited}
               Dispones de <strong>intentos ilimitados</strong> como coordinador.
             {:else}
-              Dispones de <strong>3 intentos</strong> en total (2 originales + 1 extra 07/10 hasta medianoche).
+              Dispones de <strong>2 intentos</strong> en total (reiniciados 07/10, hasta medianoche).
             {/if}
           </p>
           <div class="attempts-grid">
@@ -474,17 +473,6 @@
               <div class="attempt-status">
                 {#if isUnlimited || getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) < 2}
                   <span class="ready-badge">Disponible</span>
-                {:else}
-                  <span class="used-badge">✓ Utilizado</span>
-                {/if}
-              </div>
-            </div>
-            <div class="attempt-card {getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) >= 3 ? 'used' : 'available'}">
-              <div class="attempt-number">{getAttemptLabel(3)}</div>
-              <div class="attempt-type-badge eval">Recuperación</div>
-              <div class="attempt-status">
-                {#if isUnlimited || getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) < 3}
-                  <span class="ready-badge">Disponible (extra 07/10)</span>
                 {:else}
                   <span class="used-badge">✓ Utilizado</span>
                 {/if}

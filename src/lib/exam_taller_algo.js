@@ -1,14 +1,15 @@
-export const STORAGE_KEY = 'algo_taller1_attempts';
-export const DETAIL_KEY = 'algo_taller1_details';
+// Reinicio 07/10: claves v2 para dar 2 intentos frescos a todos (Julian hoy, Jairo retoma).
+// Se ignoran las colas locales del 06/10 que quedaron por el 403 (el docente ya tiene esas notas manuales).
+export const STORAGE_KEY = 'algo_taller1_attempts_v2';
+export const DETAIL_KEY = 'algo_taller1_details_v2';
 export const TOTAL_QUESTIONS = 7; // 5 selección múltiple + 2 ejercicios prácticos DFD
 export const TOTAL_TIME = 90 * 60; // 90 minutos
 
-export const MAX_ATTEMPTS = 3; // 2 originales + 1 extra 07/10 (no borra historial)
+export const MAX_ATTEMPTS = 2; // Reinicio: 2 intentos frescos hasta 07/10 23:59
 
 export function getAttemptType(n) {
   if (n === 1) return 'Preparación';
-  if (n === 2) return 'Evaluación';
-  return 'Recuperación';
+  return 'Evaluación';
 }
 
 export function getAttemptLabel(n) {
@@ -31,8 +32,8 @@ export function getAttemptCount(serverAttempts, localAttempts, loadingServer) {
   return Math.max(serverAttempts, localAttempts);
 }
 
-export const SYNC_QUEUE_KEY = 'algo_taller1_sync_queue';
-export const SAVED_ANSWERS_KEY = 'algo_taller1_saved_answers';
+export const SYNC_QUEUE_KEY = 'algo_taller1_sync_queue_v2';
+export const SAVED_ANSWERS_KEY = 'algo_taller1_saved_answers_v2';
 export const HEALTH_CHECK_KEY = 'algo_taller1_last_health_check';
 
 export function getLocalAttempts() {

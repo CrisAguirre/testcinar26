@@ -6,7 +6,7 @@
   import { goto } from '$app/navigation';
   import { isStrictAdmin, isTallerAlgoLockedFor, TALLER_ALGO_OPEN, TALLER_ALGO_CLOSE } from '$lib/guards/examLock';
 
-  // Bloqueo: el taller solo se abre el 6 de octubre (o admin).
+  // Ventana 06/10 + extra 07/10 hasta medianoche (o admin). No borra historial.
   let tallerLocked = $derived(isTallerAlgoLockedFor($currentUser));
   $effect(() => {
     if (!$currentUser) { goto('/login'); return; }
@@ -46,21 +46,27 @@
   let pendingSyncCount = $state(0);
   let syncingInProgress = $state(false);
 
-  // File upload state
+  // File upload state (independiente del Grade: puede reintentarse sin gradeId)
   let uploadedFiles = $state<Record<string, File>>({});
   let uploadedFileNames = $state<Record<string, string>>({});
   let uploadStatuses = $state<Record<string, string>>({});
   let uploadErrors = $state<Record<string, string>>({});
+  let lastGradeId = $state<string | undefined>(undefined);
+  let dfdUploadError = $state('');
+  let isUploadingDfd = $state(false);
 
   let isUnlimited = $derived($currentUser?.email === 'coordinacion@cinarsistemas.edu.co');
 
   function getSlots() {
     const used = getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer);
+    // Horario extra 07/10: total 3 para garantizar 1 intento disponible sin borrar historial.
+    // Ayer falló el backend (403), server=0 pero local=1-2. Con total 3 todos quedan con >=1.
+    const total = 3;
     return {
-      total: 2,
+      total,
       used,
-      remaining: Math.max(0, 2 - used),
-      enabled: used < 2
+      remaining: Math.max(0, total - used),
+      enabled: used < total
     };
   }
   let slots = $derived.by(() => getSlots());
@@ -214,30 +220,53 @@
   }
 
   async function uploadDfdFile(gradeId?: string) {
-    if (Object.keys(uploadedFiles).length === 0) return { success: false, error: 'No hay archivos seleccionados' };
-    
+    if (Object.keys(uploadedFiles).length === 0) return { success: false, error: 'No hay archivos seleccionados. Vuelve a seleccionarlos (.dfd) e intenta de nuevo.' };
+
     let allSuccess = true;
     let firstError = '';
     const attemptNum = getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) + 1;
-    
+
     for (const [qId, file] of Object.entries(uploadedFiles)) {
       uploadStatuses[qId] = 'uploading';
-      try {
-        await apiUploadFile('/dfd/upload', file, {
-          examType: 'taller-1',
-          period: '2026-3',
-          attemptNumber: String(attemptNum),
-          ...(gradeId ? { gradeId } : {})
-        });
-        uploadStatuses[qId] = 'success';
-      } catch (err: any) {
+      uploadErrors[qId] = '';
+      // 3 intentos por archivo con backoff: Render free se duerme y el primer POST suele dar timeout
+      let ok = false;
+      let lastErr = '';
+      for (let r = 0; r < 3 && !ok; r++) {
+        try {
+          await apiUploadFile('/dfd/upload', file, {
+            examType: 'taller-1',
+            period: '2026-3',
+            attemptNumber: String(gradeId ? attemptNum : currentAttemptNumber || attemptNum),
+            ...(gradeId || lastGradeId ? { gradeId: gradeId || lastGradeId } : {})
+          });
+          uploadStatuses[qId] = 'success';
+          ok = true;
+        } catch (err: any) {
+          lastErr = err?.message || 'Error al subir el archivo';
+          if (r < 2) await new Promise(res => setTimeout(res, 2000 * (r + 1)));
+        }
+      }
+      if (!ok) {
         uploadStatuses[qId] = 'error';
-        uploadErrors[qId] = err?.message || 'Error al subir el archivo';
-        if (!firstError) firstError = uploadErrors[qId];
+        uploadErrors[qId] = lastErr;
+        if (!firstError) firstError = lastErr;
         allSuccess = false;
       }
     }
     return { success: allSuccess, error: allSuccess ? undefined : firstError };
+  }
+
+  async function retryDfdUpload() {
+    dfdUploadError = '';
+    if (Object.keys(uploadedFiles).length === 0) {
+      dfdUploadError = 'No hay archivos en memoria. Reabre el taller, selecciona de nuevo tus .dfd (preguntas 6 y 7) y reintenta. Tus archivos .dfd siguen en tu computador.';
+      return;
+    }
+    isUploadingDfd = true;
+    const res = await uploadDfdFile(lastGradeId);
+    isUploadingDfd = false;
+    if (!res.success) dfdUploadError = res.error || 'Error al subir DFDs';
   }
 
   function autoSaveAnswers() {
@@ -292,12 +321,18 @@
         const grade = res.grade || res;
         if (grade && grade._id) {
           const examDataForServer = buildExamData(attemptNumLocal, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileNames);
-          await gradesApi.updateMine(grade._id, { examData: JSON.stringify(examDataForServer) });
-          // Upload the DFD file linked to this grade
+          try {
+            await gradesApi.updateMine(grade._id, { examData: JSON.stringify(examDataForServer) });
+          } catch {}
+          // Subida DFD independiente: no bloquea la nota. Si falla, queda reintentable desde la pantalla final.
+          let dfdSuccess = true;
+          let dfdError: string | undefined;
           if (Object.keys(uploadedFiles).length > 0) {
-            await uploadDfdFile(grade._id);
+            const up = await uploadDfdFile(grade._id);
+            dfdSuccess = up.success;
+            dfdError = up.error;
           }
-          return { success: true, gradeId: grade._id };
+          return { success: true, gradeId: grade._id, dfdSuccess, dfdError };
         }
       } catch (err) {
         if (i < maxRetries - 1) await new Promise(r => setTimeout(r, 3000 * (i + 1)));
@@ -309,12 +344,17 @@
 
   async function retrySave() {
     saveError = '';
+    dfdUploadError = '';
     saveSuccess = false;
     isSaving = true;
     const result = await attemptSubmitWithRetry(3);
     isSaving = false;
     if (result.success) {
       saveSuccess = true;
+      lastGradeId = result.gradeId;
+      if (result.dfdSuccess === false) {
+        dfdUploadError = result.dfdError || 'La nota se guardó pero los DFDs fallaron. Usa “Reintentar subida DFD”.';
+      }
       await loadServerAttempts();
     } else {
       saveError = result.error || 'Error al guardar';
@@ -357,10 +397,19 @@
       isSaving = false;
       if (result.success) {
         gradeId = result.gradeId;
+        lastGradeId = result.gradeId;
         localRecord.gradeId = result.gradeId;
         saveSuccess = true;
+        if (result.dfdSuccess === false) {
+          dfdUploadError = `${result.dfdError || 'Falló la subida DFD'}. La nota sí quedó guardada. Reintenta abajo sin perder el intento.`;
+        }
       } else {
         saveError = `No se pudo guardar: ${result.error}. Las respuestas están guardadas localmente.`;
+        // Aunque falle la nota, intenta dejar los DFDs subidos (quedan huérfanos pero recuperables por email/fecha).
+        if (Object.keys(uploadedFiles).length > 0) {
+          const up = await uploadDfdFile(undefined);
+          if (!up.success) dfdUploadError = `${up.error || 'Falló subida DFD'}. Guarda tus .dfd, podrás re-subirlos hoy hasta medianoche.`;
+        }
         addToSyncQueue({
           score, maxScore: TOTAL_QUESTIONS,
           comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${questions.filter(q => q.type !== 'file').length} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
@@ -404,7 +453,7 @@
             {#if isUnlimited}
               Dispones de <strong>intentos ilimitados</strong> como coordinador.
             {:else}
-              Dispones de <strong>2 intentos</strong> en total.
+              Dispones de <strong>3 intentos</strong> en total (2 originales + 1 extra 07/10 hasta medianoche).
             {/if}
           </p>
           <div class="attempts-grid">
@@ -425,6 +474,17 @@
               <div class="attempt-status">
                 {#if isUnlimited || getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) < 2}
                   <span class="ready-badge">Disponible</span>
+                {:else}
+                  <span class="used-badge">✓ Utilizado</span>
+                {/if}
+              </div>
+            </div>
+            <div class="attempt-card {getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) >= 3 ? 'used' : 'available'}">
+              <div class="attempt-number">{getAttemptLabel(3)}</div>
+              <div class="attempt-type-badge eval">Recuperación</div>
+              <div class="attempt-status">
+                {#if isUnlimited || getAttemptCount(serverAttempts, getLocalAttempts().length, loadingServer) < 3}
+                  <span class="ready-badge">Disponible (extra 07/10)</span>
                 {:else}
                   <span class="used-badge">✓ Utilizado</span>
                 {/if}
@@ -501,18 +561,35 @@
         </div>
 
         {#if saveSuccess}
-          <div class="save-success">✅ Calificación y archivo guardados exitosamente.</div>
+          <div class="save-success">✅ Calificación guardada exitosamente.</div>
         {/if}
         {#if isSaving}
           <div class="save-progress">
             <div class="spinner"></div>
-            <span>Guardando calificación y subiendo archivo DFD...</span>
+            <span>Guardando calificación y subiendo archivos DFD (6 y 7)...</span>
           </div>
         {/if}
         {#if saveError}
           <div class="save-error">⚠ {saveError}</div>
           <button onclick={retrySave} disabled={isSaving} class="retry-btn">
             {isSaving ? 'Guardando...' : '🔄 Reintentar guardado'}
+          </button>
+        {/if}
+        {#if dfdUploadError}
+          <div class="save-error">📐 {dfdUploadError}</div>
+        {/if}
+        {#if Object.keys(uploadedFileNames).length > 0}
+          <div class="summary" style="margin-bottom:1rem">
+            {#each Object.entries(uploadStatuses) as [qid, st]}
+              <div class="summary-item">
+                <span class="summary-label">Pregunta {qid} — {uploadedFileNames[qid] || ''}</span>
+                <span class="summary-value">{st === 'success' ? '✅ Subido' : st === 'uploading' || isUploadingDfd ? '⏳ Subiendo...' : '❌ Pendiente'}</span>
+                {#if uploadErrors[qid]}<span class="summary-label">{uploadErrors[qid]}</span>{/if}
+              </div>
+            {/each}
+          </div>
+          <button onclick={retryDfdUpload} disabled={isUploadingDfd || isSaving} class="retry-btn" style="background:#6366f1">
+            {isUploadingDfd ? 'Subiendo DFDs...' : '📐 Reintentar subida DFD (no gasta intento)'}
           </button>
         {/if}
 

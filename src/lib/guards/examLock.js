@@ -9,10 +9,10 @@
  * EXCEPTO el taller de algoritmos que tiene su propia fecha de apertura.
  */
 
-// Fecha de apertura del Taller 1 de Algoritmos: Martes 6 de Octubre de 2026
-// Se habilita de 6:30 PM a 8:30 PM hora Colombia (UTC-5)
+// Taller 1 Algoritmos: apertura 6 Oct 2026 + horario extra 7 Oct hasta medianoche (hora Colombia)
+// Ventana: 06/10 14:00 hasta 07/10 23:59:59. No borrar historial de intentos.
 export const TALLER_ALGO_OPEN = new Date('2026-10-06T14:00:00-05:00');
-export const TALLER_ALGO_CLOSE = new Date('2026-10-06T23:59:59-05:00');
+export const TALLER_ALGO_CLOSE = new Date('2026-10-07T23:59:59-05:00');
 
 export const EXAM_LOCK_ACTIVE = true;
 
@@ -35,7 +35,7 @@ export function isExamLockedFor(user) {
 
 /**
  * Verifica si el taller de algoritmos está bloqueado para un usuario.
- * Admin siempre puede acceder. Estudiantes solo el 6 de octubre.
+ * Admin siempre puede acceder. Estudiantes 6-7 octubre (incluye extra hasta medianoche del 7).
  * @param {{ role?: string } | null | undefined} user
  */
 export function isTallerAlgoLockedFor(user) {

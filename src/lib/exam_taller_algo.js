@@ -3,8 +3,12 @@ export const DETAIL_KEY = 'algo_taller1_details';
 export const TOTAL_QUESTIONS = 7; // 5 selección múltiple + 2 ejercicios prácticos DFD
 export const TOTAL_TIME = 90 * 60; // 90 minutos
 
+export const MAX_ATTEMPTS = 3; // 2 originales + 1 extra 07/10 (no borra historial)
+
 export function getAttemptType(n) {
-  return n === 1 ? 'Preparación' : 'Evaluación';
+  if (n === 1) return 'Preparación';
+  if (n === 2) return 'Evaluación';
+  return 'Recuperación';
 }
 
 export function getAttemptLabel(n) {

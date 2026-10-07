@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { fade, slide } from 'svelte/transition';
+  import { TRUEX_RF, TRUEX_RNF } from '$lib/data/truex_reqs';
 
   let activeWeek = $state<number | null>(1);
 
@@ -255,6 +256,33 @@
       </div>
     </aside>
   </div>
+
+  <section class="block">
+    <span class="eyebrow">04 — Requerimientos</span>
+    <h2>Lista consolidada del analista</h2>
+    <p class="roles-intro">
+      Levantamiento de Jeison (semana 1): {TRUEX_RF.length} funcionales y {TRUEX_RNF.length} no funcionales.
+      Se conservan los números originales del documento del equipo.
+    </p>
+    <div class="req-grid">
+      <div class="req-col">
+        <h3>⚙️ Funcionales ({TRUEX_RF.length})</h3>
+        <ul class="req-list">
+          {#each TRUEX_RF as r}
+            <li><span class="req-id">RF-{String(r.id).padStart(2, '0')}</span> <strong>{r.title}:</strong> {r.detail}</li>
+          {/each}
+        </ul>
+      </div>
+      <div class="req-col">
+        <h3>🧩 No funcionales ({TRUEX_RNF.length})</h3>
+        <ul class="req-list">
+          {#each TRUEX_RNF as r}
+            <li><span class="req-id rnf">RNF-{String(r.id).padStart(2, '0')}</span> <strong>{r.title}:</strong> {r.detail}</li>
+          {/each}
+        </ul>
+      </div>
+    </div>
+  </section>
 </div>
 
 <style>
@@ -683,5 +711,69 @@
 
   .info-card li {
     margin-bottom: 0.75rem;
+  }
+
+  .req-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 860px) {
+    .req-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .req-col {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  }
+
+  .req-col h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.05rem;
+    color: #0f172a;
+  }
+
+  .req-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .req-list li {
+    font-size: 0.88rem;
+    color: #475569;
+    line-height: 1.55;
+  }
+
+  .req-list li strong {
+    color: #1e293b;
+  }
+
+  .req-id {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #1d4ed8;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    margin-right: 0.35rem;
+    white-space: nowrap;
+  }
+
+  .req-id.rnf {
+    color: #6d28d9;
+    background: #f5f3ff;
+    border-color: #ddd6fe;
   }
 </style>

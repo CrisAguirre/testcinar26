@@ -3,6 +3,10 @@
   import { gradesApi } from '$lib/api';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
+  import { TALLER1_META, getTaller1Rows, getTaller1Avg } from '$lib/data/taller1_notas';
+
+  let taller1 = $derived(getTaller1Rows());
+  let taller1Avg = $derived(getTaller1Avg());
 
   $effect(() => {
     if (!$isAuthenticated) goto('/login');
@@ -140,6 +144,72 @@
     <div class="eval-footer">
       <span class="eval-footer-icon">💡</span>
       <span>Tu nota final será el promedio ponderado de acuerdo a estos porcentajes.</span>
+    </div>
+  </div>
+
+  <div class="header">
+    <span class="header-icon">📐</span>
+    <h1>Notas — Taller 1 (06/10/2026)</h1>
+    <p class="header-desc">P1–P5 selección múltiple (registro manual del docente) · Ej. 6 y 7 DFD en revisión manual</p>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-num">#</th>
+          <th class="col-name">Estudiante</th>
+          <th class="col-score">P1–P5</th>
+          <th class="col-pct">Ej. 6 · Monedas</th>
+          <th class="col-scale">Ej. 7 · Zapatería</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each taller1 as s, i}
+          <tr class="{s.pendingName ? 'row-missing' : ''} {i % 2 === 0 ? 'row-even' : 'row-odd'}">
+            <td class="col-num">{i + 1}</td>
+            <td class="col-name">{s.displayName}</td>
+            <td class="col-score">
+              <span class="score-value">{s.mc}</span>
+              <span class="score-divider">/</span>
+              <span class="score-max">{TALLER1_META.mcMax}</span>
+            </td>
+            <td class="col-pct">
+              {#if s.dfd6 !== null}
+                <span class="pct-badge pct-high">{s.dfd6}</span>
+              {:else}
+                <span class="review-badge">🔍 En revisión</span>
+              {/if}
+            </td>
+            <td class="col-scale">
+              {#if s.dfd7 !== null}
+                <span class="scale-badge scale-high">{s.dfd7}</span>
+              {:else}
+                <span class="review-badge">🔍 En revisión</span>
+              {/if}
+            </td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="summary-bar" style="margin-bottom: 2.5rem">
+    <div class="summary-item">
+      <span class="summary-label">Presentaron taller</span>
+      <span class="summary-value">{taller1.length}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Promedio P1–P5</span>
+      <span class="summary-value highlight">{taller1Avg.toFixed(2)} / {TALLER1_META.mcMax}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">DFD por calificar</span>
+      <span class="summary-value">{taller1.length * 2}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Nombres por confirmar</span>
+      <span class="summary-value">{taller1.filter((s) => s.pendingName).length}</span>
     </div>
   </div>
 
@@ -380,6 +450,18 @@
   .scale-low { background: #fef2f2; color: #dc2626; }
 
   .missing { color: #94a3b8; font-style: italic; font-size: 0.85rem; }
+
+  .review-badge {
+    display: inline-block;
+    padding: 0.2rem 0.7rem;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px dashed #f59e0b;
+    white-space: nowrap;
+  }
 
   .summary-bar {
     display: grid;

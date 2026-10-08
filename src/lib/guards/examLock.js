@@ -14,6 +14,25 @@
 export const TALLER_ALGO_OPEN = new Date('2026-10-06T14:00:00-05:00');
 export const TALLER_ALGO_CLOSE = new Date('2026-10-07T23:59:59-05:00');
 
+// Parcial 1 DW2: preparación desde ya hasta el 13/10 23:59 + evaluación 14/10 todo el día.
+// 20 preguntas (10 Arquitectura TrueX + 10 Svelte) del banco de 50.
+export const DW2P1_PREP_OPEN = new Date('2026-10-08T00:00:00-05:00');
+export const DW2P1_PREP_CLOSE = new Date('2026-10-13T23:59:59-05:00');
+export const DW2P1_OPEN = new Date('2026-10-14T00:00:00-05:00');
+export const DW2P1_CLOSE = new Date('2026-10-14T23:59:59-05:00');
+
+/** Verifica si el Parcial 1 de DW2 está habilitado por fecha (preparación o evaluación) */
+export function isDW2P1Open() {
+  const now = new Date();
+  return now >= DW2P1_PREP_OPEN && now <= DW2P1_CLOSE;
+}
+
+/** @param {{ role?: string } | null | undefined} user */
+export function isDW2P1LockedFor(user) {
+  if (isStrictAdmin(user)) return false;
+  return !isDW2P1Open();
+}
+
 export const EXAM_LOCK_ACTIVE = true;
 
 /** @param {{ role?: string } | null | undefined} user */

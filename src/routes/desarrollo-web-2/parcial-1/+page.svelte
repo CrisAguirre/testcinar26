@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { selectRandomQuestions } from '$lib/data/parcial1';
+  import { selectRandomQuestions } from '$lib/data/parcial1_dw2';
   import { gradesApi, authApi, API_URL, getHealthUrl } from '$lib/api';
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
-  import { isStrictAdmin, EXAM_LOCK_ACTIVE } from '$lib/guards/examLock';
+  import { isDW2P1LockedFor } from '$lib/guards/examLock';
 
-  // Bloqueo temporal: parciales y taller solo para admin (aún no son las fechas).
-  let examLocked = $derived(EXAM_LOCK_ACTIVE && !isStrictAdmin($currentUser));
+  // Parcial 1 DW2: ventana propia 15/10 18:00-20:00 (admin siempre entra).
+  let examLocked = $derived(isDW2P1LockedFor($currentUser));
   $effect(() => {
     if (!$currentUser) { goto('/login'); return; }
     if (examLocked) goto('/desarrollo-web-2');
   });
-  import { STORAGE_KEY, DETAIL_KEY, WINDOW1_END, WINDOW2_START, WINDOW2_END, TOTAL_QUESTIONS, TOTAL_TIME, TIME_PER_MC, TIME_PER_OPEN, calculateTotalTime, formatTime, getAttemptLabel, getAttemptType, calculateScore, buildExamData, SYNC_QUEUE_KEY, getSyncQueue, addToSyncQueue, removeFromSyncQueue, setHealthCheckOk, isHealthCheckRecent, SAVED_ANSWERS_KEY, saveAnswersSnapshot, clearSavedAnswers } from '$lib/exam';
+  import { STORAGE_KEY, DETAIL_KEY, DW2P1_PREP_OPEN, DW2P1_PREP_CLOSE, DW2P1_OPEN, DW2P1_CLOSE, TOTAL_QUESTIONS, TOTAL_TIME, TIME_PER_MC, TIME_PER_OPEN, calculateTotalTime, formatTime, getAttemptLabel, getAttemptType, calculateScore, buildExamData, SYNC_QUEUE_KEY, getSyncQueue, addToSyncQueue, removeFromSyncQueue, setHealthCheckOk, isHealthCheckRecent, SAVED_ANSWERS_KEY, saveAnswersSnapshot, clearSavedAnswers } from '$lib/exam';
   import { preloadedMyGrades, preloadingStatus, wakeUpStatus } from '$lib/stores/preloaded';
 
   let { data } = $props();
@@ -81,6 +81,15 @@
     }
   }
 
+  let inPrepWindow = $derived.by(() => {
+    const n = new Date();
+    return n >= DW2P1_PREP_OPEN && n <= DW2P1_PREP_CLOSE;
+  });
+  let inEvalWindow = $derived.by(() => {
+    const n = new Date();
+    return n >= DW2P1_OPEN && n <= DW2P1_CLOSE;
+  });
+
   function getAvailableSlots(): { total: number; used: number; remaining: number; windowLabel: string; enabled: boolean } {
     const now = new Date();
     const used = getAttemptCount();
@@ -89,13 +98,16 @@
       return { total: Infinity, used, remaining: Infinity, windowLabel: 'Intentos ilimitados (coordinador)', enabled: true };
     }
 
-    if (now < WINDOW1_END) {
-      return { total: 2, used: Math.min(used, 2), remaining: Math.max(0, 2 - used), windowLabel: 'Antes del examen (hasta 18:45)', enabled: used < 2 };
-    } else if (now >= WINDOW2_START && now < WINDOW2_END) {
-      const usedInWindow2 = Math.max(0, used - 2);
-      return { total: 2, used: usedInWindow2, remaining: Math.max(0, 2 - usedInWindow2), windowLabel: 'Ventana de examen (18:45 - 20:00)', enabled: used < 4 };
+    // Parcial 1 DW2: 2 de Preparación (desde ya hasta 13/10 23:59) + 2 de Evaluación (14/10 todo el día).
+    if (now < DW2P1_PREP_OPEN) {
+      return { total: 4, used, remaining: 4, windowLabel: 'La preparación abre el 08/10', enabled: false };
+    } else if (now <= DW2P1_PREP_CLOSE) {
+      return { total: 4, used, remaining: Math.max(0, 2 - used), windowLabel: 'Preparación (hasta 13/10 23:59)', enabled: used < 2 };
+    } else if (now <= DW2P1_CLOSE) {
+      const usedEval = Math.max(0, used - 2);
+      return { total: 4, used, remaining: Math.max(0, 2 - usedEval), windowLabel: 'Evaluación (14/10 todo el día)', enabled: used < 4 };
     } else {
-      return { total: 4, used, remaining: 0, windowLabel: 'Fuera de la ventana de examen', enabled: false };
+      return { total: 4, used, remaining: 0, windowLabel: 'El parcial ha finalizado', enabled: false };
     }
   }
 
@@ -122,6 +134,7 @@
   }
 
   async function startExam() {
+    if (!isUnlimited && !getAvailableSlots().enabled) return;
     const healthy = await checkBackendHealth();
     if (!healthy) {
       const proceed = confirm('El servidor no responde. Puedes comenzar, pero las respuestas se guardarán localmente y se sincronizarán después. ¿Deseas continuar?');
@@ -433,11 +446,11 @@
             {#if isUnlimited}
               Dispones de <strong>intentos ilimitados</strong> como coordinador.
             {:else}
-              Dispones de <strong>4 intentos</strong> en total: <strong>2 de Preparación</strong> (antes del examen) y <strong>2 de Evaluación</strong> (durante el examen).
+              Dispones de <strong>4 intentos</strong> en total: <strong>2 de Preparación</strong> (desde ya hasta el 13/10) y <strong>2 de Evaluación</strong> (14/10 todo el día).
             {/if}
           </p>
           <div class="attempts-grid">
-            <div class="attempt-card {isUnlimited || (slots.remaining > 0 && slots.used < 2) ? 'available' : 'used'}">
+            <div class="attempt-card {isUnlimited || (inPrepWindow && getAttemptCount() < 1) ? 'available' : (getAttemptCount() >= 1 ? 'used' : 'blocked')}">
               <div class="attempt-number">{getAttemptLabel(1)}</div>
               <div class="attempt-type-badge prep">Preparación</div>
               <div class="attempt-status">
@@ -445,14 +458,14 @@
                   <span class="ready-badge">Disponible</span>
                 {:else if getAttemptCount() >= 1}
                   <span class="used-badge">✓ Utilizado</span>
-                {:else if slots.remaining > 0 && slots.used < 2}
+                {:else if inPrepWindow}
                   <span class="ready-badge">Disponible</span>
                 {:else}
                   <span class="blocked-badge">—</span>
                 {/if}
               </div>
             </div>
-            <div class="attempt-card {isUnlimited || (slots.remaining > 0 && slots.used < 2) ? 'available' : 'used'}">
+            <div class="attempt-card {isUnlimited || (inPrepWindow && getAttemptCount() < 2) ? 'available' : (getAttemptCount() >= 2 ? 'used' : 'blocked')}">
               <div class="attempt-number">{getAttemptLabel(2)}</div>
               <div class="attempt-type-badge prep">Preparación</div>
               <div class="attempt-status">
@@ -460,14 +473,14 @@
                   <span class="ready-badge">Disponible</span>
                 {:else if getAttemptCount() >= 2}
                   <span class="used-badge">✓ Utilizado</span>
-                {:else if slots.remaining > 0 && slots.used < 2}
+                {:else if inPrepWindow}
                   <span class="ready-badge">Disponible</span>
                 {:else}
                   <span class="blocked-badge">—</span>
                 {/if}
               </div>
             </div>
-            <div class="attempt-card {isUnlimited || (slots.enabled && slots.used >= 2) ? 'available' : (getAttemptCount() >= 3 ? 'used' : 'blocked')}">
+            <div class="attempt-card {isUnlimited || (inEvalWindow && getAttemptCount() < 3) ? 'available' : (getAttemptCount() >= 3 ? 'used' : 'blocked')}">
               <div class="attempt-number">{getAttemptLabel(3)}</div>
               <div class="attempt-type-badge eval">Evaluación</div>
               <div class="attempt-status">
@@ -475,14 +488,14 @@
                   <span class="ready-badge">Disponible</span>
                 {:else if getAttemptCount() >= 3}
                   <span class="used-badge">✓ Utilizado</span>
-                {:else if slots.enabled && slots.used >= 2}
-                  <span class="ready-badge">Disponible</span>
+                {:else if inEvalWindow}
+                  <span class="ready-badge">Disponible 14/10</span>
                 {:else}
-                  <span class="blocked-badge">Bloqueado</span>
+                  <span class="blocked-badge">14/10</span>
                 {/if}
               </div>
             </div>
-            <div class="attempt-card {isUnlimited || (slots.enabled && slots.used >= 3) ? 'available' : (getAttemptCount() >= 4 ? 'used' : 'blocked')}">
+            <div class="attempt-card {isUnlimited || (inEvalWindow && getAttemptCount() < 4) ? 'available' : (getAttemptCount() >= 4 ? 'used' : 'blocked')}">
               <div class="attempt-number">{getAttemptLabel(4)}</div>
               <div class="attempt-type-badge eval">Evaluación</div>
               <div class="attempt-status">
@@ -490,18 +503,19 @@
                   <span class="ready-badge">Disponible</span>
                 {:else if getAttemptCount() >= 4}
                   <span class="used-badge">✓ Utilizado</span>
-                {:else if slots.enabled && slots.used >= 3}
-                  <span class="ready-badge">Disponible</span>
+                {:else if inEvalWindow}
+                  <span class="ready-badge">Disponible 14/10</span>
                 {:else}
-                  <span class="blocked-badge">Bloqueado</span>
+                  <span class="blocked-badge">14/10</span>
                 {/if}
               </div>
             </div>
           </div>
           {#if !isUnlimited}
           <div class="window-info">
-            <strong>📅 Ventana 1 — Preparación (Intentos 1-2):</strong> Hasta el 22 de julio, 18:45<br>
-            <strong>📅 Ventana 2 — Evaluación (Intentos 3-4):</strong> 22 de julio, 18:45 - 20:00
+            <strong>📅 Preparación (Intentos 1-2):</strong> Desde ya hasta el martes 13/10, 23:59<br>
+            <strong>📅 Evaluación (Intentos 3-4):</strong> Miércoles 14/10, todo el día<br>
+            <strong>📝 20 preguntas:</strong> 10 de Arquitectura TrueX + 10 de Svelte (Clases 1–5) · 10 abiertas + 10 selección múltiple
           </div>
           {/if}
         </div>
@@ -522,18 +536,19 @@
 
         {#if loadingServer}
           <p class="loading-text">Cargando datos del servidor...</p>
-        {:else if slots.remaining > 0}
+        {:else if slots.enabled}
           <div class="recommendations">
             <h2>📌 Recomendaciones importantes</h2>
             <ul>
               <li>
-                <strong>⏱ Tiempo límite:</strong> Dispondrás de aproximadamente <strong>1 hora</strong> para completar las 20 preguntas.
+                <strong>⏱ Tiempo límite:</strong> Dispondrás de aproximadamente <strong>1 hora y 10 minutos</strong> para completar las 20 preguntas.
                 El tiempo por pregunta es de <strong>{Math.floor(TIME_PER_MC / 60)} min</strong> para selección múltiple y <strong>{Math.floor(TIME_PER_OPEN / 60)} min</strong> para abiertas.
                 El examen se enviará automáticamente al cumplirse el tiempo.
               </li>
               <li>
-                <strong>📝 Tipos de preguntas:</strong> El examen incluye preguntas de <strong>selección múltiple</strong>
-                (con una única respuesta correcta) y preguntas <strong>abiertas</strong> (respuesta escrita).
+                <strong>📝 Tipos de preguntas:</strong> El examen incluye <strong>10 de selección múltiple</strong>
+                (5 de Arquitectura TrueX + 5 de Svelte) y <strong>10 abiertas</strong> (5 + 5). Las preguntas
+                salen de un banco de 50 y no se repiten entre estudiantes.
               </li>
               <li>
                 <strong>✅ Corrección automática (selección múltiple):</strong> Al finalizar el examen, las preguntas
@@ -581,7 +596,7 @@
           </button>
         {:else}
           <div class="no-attempts">
-            <p>Una vez se asigne la fecha del taller o parcial en cuestión, ya se anunciará y se habilitará el acceso.</p>
+            <p>{slots.windowLabel}</p>
           </div>
           <a href="/" class="back-btn">Volver al Inicio</a>
         {/if}

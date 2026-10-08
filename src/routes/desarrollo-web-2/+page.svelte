@@ -2,7 +2,7 @@
   import { isAuthenticated, currentUser } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
   import { preloadedMyEnrollments } from '$lib/stores/preloaded';
-  import { isStrictAdmin, EXAM_LOCK_ACTIVE, EXAM_LOCK_MESSAGE } from '$lib/guards/examLock';
+  import { isStrictAdmin, EXAM_LOCK_ACTIVE, EXAM_LOCK_MESSAGE, isDW2P1LockedFor } from '$lib/guards/examLock';
 
   $effect(() => {
     if (!$isAuthenticated) { goto('/login'); return; }
@@ -30,7 +30,12 @@
   let displayLinks = $derived(
     links.map((l) => {
       const isExam = l.href !== null && /parcial|taller/i.test(l.href);
-      if (isExam && examsLocked) return { ...l, href: null, disabled: true, lockLabel: '🔒 Bloqueado' };
+      if (!isExam) return l;
+      // Parcial 1 tiene ventana propia 15/10 18:00-20:00; el resto sigue el bloqueo global.
+      const locked = l.href !== null && l.href.includes('parcial-1')
+        ? isDW2P1LockedFor($currentUser)
+        : examsLocked;
+      if (locked) return { ...l, href: null, disabled: true, lockLabel: '🔒 Bloqueado' };
       return l;
     })
   );

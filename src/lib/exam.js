@@ -9,6 +9,14 @@ export const WINDOW2_END = new Date(2027, 0, 1, 0, 0);
 export const TOTAL_QUESTIONS = 20;
 export const TOTAL_TIME = 45 * 60;
 
+// Parcial 1 DW2: martes 14/10/2026 todo el día (hora Colombia).
+// Preparación (2 intentos) desde ya hasta el 13/10 23:59 + Evaluación (2 intentos) el 14/10.
+// 10 MC (2 min c/u) + 10 abiertas (5 min c/u) = 70 min de examen.
+export const DW2P1_PREP_OPEN = new Date('2026-10-08T00:00:00-05:00');
+export const DW2P1_PREP_CLOSE = new Date('2026-10-13T23:59:59-05:00');
+export const DW2P1_OPEN = new Date('2026-10-14T00:00:00-05:00');
+export const DW2P1_CLOSE = new Date('2026-10-14T23:59:59-05:00');
+
 export const TIME_PER_MC = 2 * 60;
 export const TIME_PER_OPEN = 5 * 60;
 

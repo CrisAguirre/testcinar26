@@ -66,7 +66,8 @@ describe('api', () => {
     expect(fetch).toHaveBeenCalledWith(`${API_URL}/test`, {
       method: 'GET',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      signal: expect.any(AbortSignal)
     });
     expect(result).toEqual({ data: 'ok' });
   });
@@ -81,7 +82,8 @@ describe('api', () => {
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer tok123'
-      }
+      },
+      signal: expect.any(AbortSignal)
     });
   });
 
@@ -93,7 +95,8 @@ describe('api', () => {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
+      signal: expect.any(AbortSignal)
     });
   });
 
@@ -127,7 +130,8 @@ describe('authApi', () => {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'user', password: 'pass' })
+      body: JSON.stringify({ username: 'user', password: 'pass' }),
+      signal: expect.any(AbortSignal)
     });
     expect(result).toEqual({ token: 'abc' });
   });

@@ -1,4 +1,4 @@
-# Cinar - Estado Actual de la Plataforma (04 Octubre 2026)
+# Cinar - Estado Actual de la Plataforma (08 Octubre 2026)
 
 ## Estructura del Proyecto
 
@@ -286,3 +286,44 @@ Cinar/
 ## Vulnerabilidades y Deuda Técnica
 - Existen algunas vulnerabilidades low severity en frontend por la cookie herencia de @sveltejs/kit (no crítico para producción, no forzar `npm audit fix` para no romper el workspace).
 - Tests con fallos preexistentes no tocados (29/09): `api.grades.test.js` (integración contra prod + ventanas ago-2026 vencidas), `exam.test.js` (ventana vencida), `enlacesData.test.js` (espera 20, hay 23).
+- `api.test.js` (1 fallo local): espera `API_URL` prod pero `.env` local apunta a localhost; pasa en build prod.
+- `svelte-check`: ~478 errores base preexistentes (implicit `any` en JS); `vite build` pasa (gate de Vercel).
+
+## Bitácora 06-08/10/2026 (Taller Algoritmos + Parcial DW2 + estabilidad)
+
+### 15. Falla del Taller 1 Algoritmos 06/10 (diagnóstico verificado en prod)
+- **0 notas y 0 DFDs** llegaron al servidor esa noche (verificado `GET /api/grades` + `/api/dfd/submissions`).
+- **Causa raíz:** desfase frontend/backend. El front abría el taller por fecha (`examLock.js`) pero el back seguía con `EXAMS_LOCKED=true` y rechazaba todo `POST /grades/mine` con 403. Los datos quedaron en `localStorage` (cola de sincronización) de cada portátil.
+- **Agravantes:** DFD se subía DESPUÉS de crear la nota (si fallaba la nota, jamás se subía); archivos en RAM (`multer.memoryStorage` + `Buffer` en Mongo) saturan el free de Render; `API_URL.replace('/api','')` en prod da `''` (la página misma) así que los health-checks nunca despertaban a Render (cold start medido: 52s).
+
+### 16. Parche Taller + ventana extra 07/10 (desplegado y verificado)
+- Backend: `schedule.js` con ventana propia `TALLER_ALGO 06/10 14:00 → 07/10 23:59` (`isTallerAlgoOpen`, `TALLER_ALGO_MAX_ATTEMPTS=2`); `gradeController.examLockError(user, subject, submittedAt)` exime el taller del flag global; `isSubmissionAllowed` valida contra `submittedAt`.
+- Frontend: `MAX_ATTEMPTS=2` con claves `..._v2` (reinicio fresco: Julián presentó hoy, Jairo retomó); subida DFD **independiente** de la nota con 3 reintentos por archivo + botón `Reintentar subida DFD (no gasta intento)`; modo **solo-teoría** para `jd.reina@cinar.edu.co` (filtra preguntas file, nota sobre 5, comentario de exento).
+- Notas manuales del Excel sincronizadas a BD como admin (9/10 + Julián por plataforma 4/5 en 1:20): `Algoritmos - Taller 1 / 2026-3`, P1-P5 sobre 5, Ej6/7 en revisión. Falta: nombre del `?` (4/5) y notas del 6 y 7 por estudiante.
+- Nueva sección en `/algoritmos/notas`: tabla Taller 1 debajo de la distribución %, con `taller1_notas.js` como fuente (promedio 4.36/11).
+
+### 17. Estabilidad prod (desplegado y verificado extremo a extremo)
+- `GET /api/health` público (antes de rate-limits, no consume cupo del aula).
+- `api.js`: `getHealthUrl()` (siempre vía proxy, nunca `replace`) + timeouts (45s API, 30s refresh, 120s subida) con mensaje claro.
+- Reparados los 12 health-checks (preloader + 11 páginas de examen) que en prod apuntaban a URL vacía.
+- Home con botón 🔄 Reintentar y aviso de wake-up (~1 min la primera vez).
+- Verificado con `https://examscinar2026.vercel.app`: front 200, `/api/health` 200 vía proxy, login `da.lopez` 200.
+- Operativo recomendado: ping UptimeRobot cada 5 min a `/api/health` en horario de clase.
+
+### 18. Nuevo alumno DW2 + blindaje seed
+- `da.lopez@cinar.edu.co` / Danilo Andrés Lopez Peñafiel (doc `1085303937` como contraseña inicial), inscrito en `desarrollo-web-2` con `canPresent:true`, login verificado. Accesos DW2 verificados 8/8 (serie `@cc3501`-`@cc3507` + doc).
+- `seed.js`: excluye a inscritos en DW2 de la regla "todo student → solo algoritmos" (antes un reinicio de Render le habría borrado el DW2).
+
+### 19. TrueX Trade (DW2 proyecto colaborativo)
+- Sección 04 Requerimientos: 18 RF + 11 RNF (`truex_reqs.js` + tests).
+- Equipo por pestañas (5 roles) + rol 📣 Mercadeo (Danilo, semanas 2–6). Equipo: 7 estudiantes + docente.
+
+### 20. Editor DFD
+- Nuevo componente lateral **⏎ Salto de línea** (parser como llamada `SaltoLinea` compatible FreeDFD, render punteado, pseudocódigo `Escribir ''`, ejecución en blanco con resaltado) + tests.
+- Lienzo ampliado solo desktop: paneles más angostos en ≥1280px/≥1600px y `min-height` 60vh/72vh (~+30% altura); móvil/tablet intactos.
+
+### 21. Parcial 1 DW2 — 14/10 todo el día (listo, falta push + confirmar)
+- Banco nuevo `parcial1_dw2.js`: **50 preguntas** (25 abiertas + 25 MC compuesta; 25 Arquitectura TrueX + 25 Svelte Clases 1–5). Examen: 5 por grupo = 20, MC primero, sin repetidos (pools 10–13 por grupo para 8 alumnos). Abiertas con rúbrica, MC con explicación.
+- Esquema **2+2**: Preparación (2 intentos, desde ya hasta 13/10 23:59) + Evaluación (2 intentos, 14/10 00:00–23:59). Ventana y espejo backend verificados lógicamente (5 casos).
+- La página `parcial-1` usa el banco nuevo; menú DW2 desbloquea Parcial 1 en ventana.
+- Tests 10/10 del banco; suite total con solo los 6 fallos preexistentes.

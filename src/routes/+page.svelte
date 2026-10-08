@@ -24,18 +24,15 @@
   let detailGrade: any = $state(null);
   let detailData: any = $state(null);
 
-  onMount(async () => {
-    if (!$isAuthenticated) {
-      goto('/login');
-      return;
-    }
-    if (grades.length > 0) { loading = false; return; }
+  async function loadHome() {
+    loading = true;
+    error = '';
     try {
       if (!$preloadedMyEnrollments) {
         const enrollments = await enrollmentApi.getMine();
         preloadedMyEnrollments.set(enrollments);
       }
-      
+
       const result = await gradesApi.getMine();
       grades = result;
       preloadedMyGrades.set(result);
@@ -44,6 +41,15 @@
     } finally {
       loading = false;
     }
+  }
+
+  onMount(async () => {
+    if (!$isAuthenticated) {
+      goto('/login');
+      return;
+    }
+    if (grades.length > 0) { loading = false; return; }
+    await loadHome();
   });
 
   function handleRowKeydown(e: KeyboardEvent, grade: any) {
@@ -125,9 +131,10 @@
       <h2>Mis Calificaciones</h2>
 
       {#if loading}
-        <p class="loading">Cargando...</p>
+        <p class="loading">Cargando... (si el servidor estaba dormido puede tardar ~1 min la primera vez)</p>
       {:else if error}
         <p class="error">{error}</p>
+        <button onclick={loadHome} class="close-btn" style="margin-top:0.75rem">🔄 Reintentar</button>
       {:else if grades.length === 0}
         <p class="empty">No hay calificaciones registradas.</p>
       {:else}

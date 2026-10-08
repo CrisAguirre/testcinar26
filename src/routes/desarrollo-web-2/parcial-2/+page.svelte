@@ -231,7 +231,7 @@
   async function checkBackendHealth(): Promise<boolean> {
     if (isHealthCheckRecent()) return true;
     checkingServer = true;
-    const baseUrl = API_URL.replace('/api', '');
+    const baseUrl = getHealthUrl();
     try {
       for (let i = 0; i < 3; i++) {
         try {

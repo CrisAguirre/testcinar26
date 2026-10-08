@@ -1,6 +1,6 @@
 <script lang="ts">
   import { selectRandomQuestions } from '$lib/data/taller_dw2';
-  import { gradesApi, API_URL } from '$lib/api';
+  import { gradesApi, API_URL, getHealthUrl } from '$lib/api';
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
@@ -93,7 +93,7 @@
   async function checkBackendHealth() {
     if (isHealthCheckRecent()) return true;
     checkingServer = true;
-    const baseUrl = API_URL.replace('/api', '');
+    const baseUrl = getHealthUrl();
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);

@@ -1,5 +1,28 @@
 export const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'https://testcinar26bknd.onrender.com/api');
 
+// URL del health-check público del backend.
+// OJO: en PROD '/api' es el proxy Vercel→Render, así que NO se puede usar
+// API_URL.replace('/api','') (da '' = la página misma y el "wake" nunca
+// despierta a Render). Siempre se consulta vía proxy: /api/health.
+export function getHealthUrl() {
+  return `${API_URL}/health`;
+}
+
+async function fetchWithTimeout(url, options = {}, ms = 45000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if (err?.name === 'AbortError') {
+      throw new Error('El servidor tardó demasiado (puede estar despertando). Espera unos segundos y reintenta.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 // P2: el access token vive solo en memoria (nunca en localStorage) para
 // reducir el impacto de un XSS. El refresh viaja en cookie httpOnly.
 // `getToken` conserva compatibilidad (memoria primero, legado después).
@@ -46,10 +69,10 @@ async function refreshSession() {
   if (!refreshInFlight) {
     refreshInFlight = (async () => {
       try {
-        const res = await fetch(`${API_URL}/auth/refresh`, {
+        const res = await fetchWithTimeout(`${API_URL}/auth/refresh`, {
           method: 'POST',
           credentials: 'include'
-        });
+        }, 30000);
         if (!res.ok) return null;
         const json = await res.json();
         if (json?.token) {
@@ -82,7 +105,7 @@ export async function api(method, path, data, { retry = true } = {}) {
     options.body = JSON.stringify(data);
   }
 
-  const res = await fetch(`${API_URL}${path}`, options);
+  const res = await fetchWithTimeout(`${API_URL}${path}`, options);
   const json = await res.json();
 
   if (!res.ok) {
@@ -146,7 +169,7 @@ export async function apiUploadFile(path, file, fields = {}, { retry = true } = 
     formData.append(k, v);
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetchWithTimeout(`${API_URL}${path}`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -154,7 +177,7 @@ export async function apiUploadFile(path, file, fields = {}, { retry = true } = 
       // No Content-Type header: browser sets it with boundary for FormData
     },
     body: formData
-  });
+  }, 120000);
   const json = await res.json();
 
   if (!res.ok) {

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { selectRandomQuestions } from '$lib/data/parcial1';
-  import { gradesApi, authApi, API_URL } from '$lib/api';
+  import { gradesApi, authApi, API_URL, getHealthUrl } from '$lib/api';
   import { currentUser, isAdmin } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
@@ -204,7 +204,7 @@
   async function checkBackendHealth(): Promise<boolean> {
     if (isHealthCheckRecent()) return true;
     checkingServer = true;
-    const baseUrl = API_URL.replace('/api', '');
+    const baseUrl = getHealthUrl();
     try {
       for (let i = 0; i < 3; i++) {
         try {

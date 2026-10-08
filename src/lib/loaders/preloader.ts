@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { API_URL, getToken } from '$lib/api';
+import { getHealthUrl, getToken } from '$lib/api';
 import { gradesApi, authApi, enrollmentApi } from '$lib/api';
 import { currentUser } from '$lib/stores/auth';
 import { get } from 'svelte/store';
@@ -12,7 +12,6 @@ import {
   preloadedMyEnrollments
 } from '$lib/stores/preloaded';
 
-const BASE_URL = API_URL.replace('/api', '');
 const CACHE_TTL = 5 * 60 * 1000;
 let lastFetchTime = 0;
 let wakeInProgress = false;
@@ -34,11 +33,13 @@ export async function wakeBackend(maxAttempts = 3): Promise<void> {
   for (let i = 0; i < maxAttempts; i++) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 20000);
-      await fetch(BASE_URL, { signal: controller.signal, mode: 'cors' });
+      const timeout = setTimeout(() => controller.abort(), 25000);
+      const res = await fetch(getHealthUrl(), { signal: controller.signal, mode: 'cors' });
       clearTimeout(timeout);
-      success = true;
-      break;
+      if (res.ok) {
+        success = true;
+        break;
+      }
     } catch {
       if (i < maxAttempts - 1) {
         await new Promise(r => setTimeout(r, 3000));

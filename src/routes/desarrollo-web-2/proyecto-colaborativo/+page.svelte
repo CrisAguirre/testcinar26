@@ -4,6 +4,16 @@
   import { TRUEX_RF, TRUEX_RNF } from '$lib/data/truex_reqs';
 
   let activeWeek = $state<number | null>(1);
+  let activeRole = $state(0);
+
+  const roleWeeks = [
+    'Transversal · semanas 1–6',
+    'Fuerte en semana 1, luego integración',
+    'En paralelo · semanas 2–3',
+    'En paralelo · semanas 2–4',
+    'Transversal desde semana 1',
+    'Semanas 2–6'
+  ];
 
   const schedule = [
     {
@@ -100,6 +110,14 @@
       count: '2 estudiantes · Transversal desde semana 1',
       focus: 'Plan de pruebas, integración continua y despliegues Vercel + Render + Atlas.',
       tasks: ['Pruebas y corrección desde la semana 2', 'Despliegues y datos de demostración', 'Guion de demo y estabilización semana 5']
+    },
+    {
+      icon: '📣',
+      title: 'Mercadeo y Lanzamiento',
+      who: 'Danilo Andrés Lopez Peñafiel',
+      count: '1 estudiante · Desde semana 2',
+      focus: 'Difusión, marca y demo: que TrueX Trade se entienda, se vea bien y llegue a usuarios.',
+      tasks: ['Estrategia de difusión y piezas promocionales (posts, marca)', 'Video pitch y apoyo en el guion de la demo final', 'Presentación de lanzamiento del proyecto', 'Métricas simples de la demo (visitas, registros)']
     }
   ];
 </script>
@@ -122,7 +140,7 @@
     </p>
     <div class="hero-meta">
       <span>📅 6 semanas</span>
-      <span>👥 6 estudiantes + docente PM</span>
+      <span>👥 7 estudiantes + docente PM</span>
       <span>⚛️ React · Node · MongoDB</span>
     </div>
   </header>
@@ -160,32 +178,47 @@
 
   <section class="block">
     <span class="eyebrow">02 — Equipo</span>
-    <h2>Roles (7 personas)</h2>
+    <h2>Roles (8 personas)</h2>
     <p class="roles-intro">
       Tú (docente) como Project Manager. El analista normaliza en semana 1 y luego se suma a integración;
       QA/DevOps es transversal desde el inicio para no acumular pruebas ni despliegue al final.
-      Equipo TrueX Trade (6): Diego + Harold (QA), Jeison (analista), David + Jairo (frontend), Felipe (backend).
+      Equipo TrueX Trade (7): Diego + Harold (QA), Jeison (analista), David + Jairo (frontend), Felipe (backend),
+      Danilo (mercadeo y lanzamiento).
       William David Salas Lasso queda fuera del proyecto.
     </p>
-    <div class="roles-grid">
+    <div class="role-tabs" role="tablist" aria-label="Roles del proyecto">
       {#each roles as role, ri}
-        <div class="role-card" class:lead={ri === 0}>
-          <div class="role-top">
-            <span class="role-icon">{role.icon}</span>
-            <div>
-              <h3>{role.title}</h3>
-              <span class="role-who">{role.who} · {role.count}</span>
-            </div>
-          </div>
-          <p class="role-focus">{role.focus}</p>
-          <ul>
-            {#each role.tasks as t}
-              <li>{t}</li>
-            {/each}
-          </ul>
-        </div>
+        <button
+          role="tab"
+          aria-selected={activeRole === ri}
+          class="role-tab"
+          class:active={activeRole === ri}
+          onclick={() => activeRole = ri}
+        >
+          <span class="role-tab-icon">{role.icon}</span>
+          <span class="role-tab-label">{role.title}</span>
+        </button>
       {/each}
     </div>
+    {#key activeRole}
+      {@const role = roles[activeRole]}
+      <div class="role-card role-panel" role="tabpanel" in:fade={{ duration: 180 }}>
+        <div class="role-top">
+          <span class="role-icon">{role.icon}</span>
+          <div>
+            <h3>{role.title}</h3>
+            <span class="role-who">{role.who} · {role.count}</span>
+          </div>
+          <span class="role-weeks">{roleWeeks[activeRole]}</span>
+        </div>
+        <p class="role-focus">{role.focus}</p>
+        <ul>
+          {#each role.tasks as t}
+            <li>{t}</li>
+          {/each}
+        </ul>
+      </div>
+    {/key}
   </section>
 
   <div class="main-content">
@@ -508,6 +541,59 @@
     grid-column: 1 / -1;
     border-top: 2px solid var(--cat-color, #e2e8f0);
     background: linear-gradient(to right, #fef2f2, #ffffff);
+  }
+
+  .role-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .role-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .role-tab:hover {
+    border-color: #fca5a5;
+    color: #0f172a;
+  }
+
+  .role-tab.active {
+    background: #0f172a;
+    border-color: #0f172a;
+    color: white;
+  }
+
+  .role-tab-icon {
+    font-size: 1rem;
+  }
+
+  .role-panel {
+    max-width: 720px;
+  }
+
+  .role-weeks {
+    margin-left: auto;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #1d4ed8;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    white-space: nowrap;
   }
 
   .role-top {

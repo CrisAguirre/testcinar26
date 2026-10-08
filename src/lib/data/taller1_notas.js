@@ -26,7 +26,8 @@ export const TALLER1_MCQ = [
   { short: '?', full: null, mc: 4, dfd6: null, dfd7: null, pendingName: true },
   { short: 'Jairo', full: 'Jairo Granja Bravo', mc: 4, dfd6: null, dfd7: null },
   { short: 'David Narvaez', full: 'David Felipe Narváez', mc: 3, dfd6: null, dfd7: null },
-  { short: 'Oscar Rodriguez', full: 'Oscar Alexander Rodríguez Insuasti', mc: 5, dfd6: null, dfd7: null }
+  { short: 'Oscar Rodriguez', full: 'Oscar Alexander Rodríguez Insuasti', mc: 5, dfd6: null, dfd7: null },
+  { short: 'Julián Reina', full: 'Julián David Reina Cabrera', mc: 4, dfd6: null, dfd7: null }
 ];
 
 export function getTaller1Rows() {

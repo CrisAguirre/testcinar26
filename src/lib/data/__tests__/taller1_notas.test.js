@@ -9,9 +9,10 @@ describe('TALLER1_META', () => {
   });
 });
 
-describe('TALLER1_MCQ (Excel 06/10)', () => {
-  it('tiene los 10 registros del Excel', () => {
-    expect(TALLER1_MCQ.length).toBe(10);
+describe('TALLER1_MCQ (Excel 06/10 + Julián 08/10)', () => {
+  it('tiene los 10 del Excel más Julián Reina', () => {
+    expect(TALLER1_MCQ.length).toBe(11);
+    expect(TALLER1_MCQ.find((r) => r.short === 'Julián Reina').mc).toBe(4);
   });
 
   it('todas las notas MCQ están entre 0 y 5', () => {
@@ -38,7 +39,7 @@ describe('TALLER1_MCQ (Excel 06/10)', () => {
 describe('getTaller1Rows', () => {
   it('resuelve nombre completo y marca el pendiente', () => {
     const rows = getTaller1Rows();
-    expect(rows.length).toBe(10);
+    expect(rows.length).toBe(11);
     expect(rows[0].displayName).toBe('Claudia Verónica Angulo');
     const pending = rows.find((r) => r.pendingName);
     expect(pending.displayName).toMatch(/por confirmar/);
@@ -52,7 +53,7 @@ describe('getTaller1Rows', () => {
 });
 
 describe('getTaller1Avg', () => {
-  it('promedia las 10 notas MCQ (44/10 = 4.4)', () => {
-    expect(getTaller1Avg()).toBe(4.4);
+  it('promedia las 11 notas MCQ (48/11 = 4.36)', () => {
+    expect(getTaller1Avg()).toBe(4.36);
   });
 });

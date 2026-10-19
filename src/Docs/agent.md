@@ -37,7 +37,7 @@ Cinar/
 │   │   │       ├── notas/
 │   │   │       ├── videos/         # 3 videos (Pensamiento crítico, Reto, Video 3)
 │   │   │       ├── enlaces-de-consulta/  # Usa $lib/data/enlacesData.ts (IA y Aprendizaje +3: UNAD Cisco, MongoDB University, Capacítate).
-│   │   │       ├── actividad-de-la-semana/  # Tabs Nivel 1 (16) + Nivel 2 (22) con análisis; abre en editor (?load=N1-X/N2-X).
+│   │   │       ├── actividad-de-la-semana/  # Tabs Nivel 1 (16) + Nivel 2 (22) + Nivel 3 (12) con análisis; abre en editor (?load=N1-X/N2-X/N3-X).
 │   │   │       ├── dfd/             # Editor visual DFD v2 (ver punto 5 y 7).
 │   │   │       └── proyecto-personal/       # 13 proyectos + carrusel 10 pasos + barra progreso (todos en paso 2).
 │   │   ├── lib/
@@ -358,3 +358,4 @@ Cinar/
 - Duración del Parcial 1 de Algoritmos: **2 horas (120 min) por intento**, contadas desde que el estudiante inicia el intento (`exam_algo_p1.js` `TOTAL_TIME` y `examConfig.duration` = `120 * 60`; textos de la página y tests actualizados).
 - **Exención de DFD retirada del taller**: eliminados `MCQ_ONLY_EMAILS`/`isMcqOnly` de `algoritmos/taller` (filtro de preguntas file, comentario de envío y bloque de instrucciones) y su describe en `exam_taller_algo.test.js`. Las notas ya registradas (p. ej. Julián 4/5) no se modifican.
 - Verificación: tests de los archivos afectados 20/20; `npm run build` ✓; suite completa solo con los fallos ambientales de siempre (api.grades sin backend local).
+- **Actividad de la semana (Algoritmos) con Nivel 3**: tercera pestaña "Nivel 3 — Ciclos (12)" con análisis guiado y enlaces `?load=N3-X` al editor; la página ahora importa N1/N2/N3 de `dfdExercises.js` (fuente única, sin duplicar enunciados).

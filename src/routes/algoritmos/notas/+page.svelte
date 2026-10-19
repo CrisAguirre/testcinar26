@@ -3,10 +3,11 @@
   import { gradesApi } from '$lib/api';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
-  import { TALLER1_META, getTaller1Rows, getTaller1Avg } from '$lib/data/taller1_notas';
+  import { TALLER1_META, getTaller1Rows, getTaller1Avg, getTaller1DfdStats } from '$lib/data/taller1_notas';
 
   let taller1 = $derived(getTaller1Rows());
   let taller1Avg = $derived(getTaller1Avg());
+  let dfdStats = $derived(getTaller1DfdStats());
 
   $effect(() => {
     if (!$isAuthenticated) goto('/login');
@@ -72,6 +73,13 @@
     if (val === null) return '';
     if (val >= 4.5) return 'scale-high';
     if (val >= 3.5) return 'scale-mid';
+    return 'scale-low';
+  }
+
+  function dfdClass(val: number | null): string {
+    if (val === null) return '';
+    if (val >= 4.5) return 'scale-high';
+    if (val >= 3) return 'scale-mid';
     return 'scale-low';
   }
 
@@ -150,7 +158,7 @@
   <div class="header">
     <span class="header-icon">📐</span>
     <h1>Notas — Taller 1 (06/10/2026)</h1>
-    <p class="header-desc">P1–P5 selección múltiple (registro manual del docente) · Ej. 6 y 7 DFD en revisión manual</p>
+    <p class="header-desc">P1–P5 selección múltiple · Ej. 6 y 7 DFD calificados sobre {TALLER1_META.dfdMax} (registro manual del docente)</p>
   </div>
 
   <div class="table-container">
@@ -166,7 +174,7 @@
       </thead>
       <tbody>
         {#each taller1 as s, i}
-          <tr class="{s.pendingName ? 'row-missing' : ''} {i % 2 === 0 ? 'row-even' : 'row-odd'}">
+          <tr class="{i % 2 === 0 ? 'row-even' : 'row-odd'}">
             <td class="col-num">{i + 1}</td>
             <td class="col-name">{s.displayName}</td>
             <td class="col-score">
@@ -176,14 +184,14 @@
             </td>
             <td class="col-pct">
               {#if s.dfd6 !== null}
-                <span class="pct-badge pct-high">{s.dfd6}</span>
+                <span class="scale-badge {dfdClass(s.dfd6)}">{s.dfd6} / {TALLER1_META.dfdMax}</span>
               {:else}
                 <span class="review-badge">🔍 En revisión</span>
               {/if}
             </td>
             <td class="col-scale">
               {#if s.dfd7 !== null}
-                <span class="scale-badge scale-high">{s.dfd7}</span>
+                <span class="scale-badge {dfdClass(s.dfd7)}">{s.dfd7} / {TALLER1_META.dfdMax}</span>
               {:else}
                 <span class="review-badge">🔍 En revisión</span>
               {/if}
@@ -204,12 +212,12 @@
       <span class="summary-value highlight">{taller1Avg.toFixed(2)} / {TALLER1_META.mcMax}</span>
     </div>
     <div class="summary-item">
-      <span class="summary-label">DFD por calificar</span>
-      <span class="summary-value">{taller1.length * 2}</span>
+      <span class="summary-label">DFDs calificados</span>
+      <span class="summary-value">{dfdStats.graded} / {dfdStats.total}</span>
     </div>
     <div class="summary-item">
-      <span class="summary-label">Nombres por confirmar</span>
-      <span class="summary-value">{taller1.filter((s) => s.pendingName).length}</span>
+      <span class="summary-label">DFD por calificar</span>
+      <span class="summary-value">{dfdStats.pending}</span>
     </div>
   </div>
 

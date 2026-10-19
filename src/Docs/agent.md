@@ -1,4 +1,4 @@
-# Cinar - Estado Actual de la Plataforma (08 Octubre 2026)
+# Cinar - Estado Actual de la Plataforma (19 Octubre 2026)
 
 ## Estructura del Proyecto
 
@@ -285,9 +285,9 @@ Cinar/
 
 ## Vulnerabilidades y Deuda Técnica
 - Existen algunas vulnerabilidades low severity en frontend por la cookie herencia de @sveltejs/kit (no crítico para producción, no forzar `npm audit fix` para no romper el workspace).
-- Tests con fallos preexistentes no tocados (29/09): `api.grades.test.js` (integración contra prod + ventanas ago-2026 vencidas), `exam.test.js` (ventana vencida), `enlacesData.test.js` (espera 20, hay 23).
+- Tests con fallos preexistentes (re-verificado 19/10/2026): `api.grades.test.js` (integración que exige backend vivo) y `exam.test.js` (ventana vencida placeholder 2027). `enlacesData.test.js` ya pasa.
 - `api.test.js` (1 fallo local): espera `API_URL` prod pero `.env` local apunta a localhost; pasa en build prod.
-- `svelte-check`: ~478 errores base preexistentes (implicit `any` en JS); `vite build` pasa (gate de Vercel).
+- `svelte-check`: ~519 errores base preexistentes (implicit `any` en JS legacy); los archivos nuevos del Parcial 1 Algoritmos/Nivel 3 quedaron en 0. `vite build` pasa (gate de Vercel).
 
 ## Bitácora 06-08/10/2026 (Taller Algoritmos + Parcial DW2 + estabilidad)
 
@@ -298,7 +298,7 @@ Cinar/
 
 ### 16. Parche Taller + ventana extra 07/10 (desplegado y verificado)
 - Backend: `schedule.js` con ventana propia `TALLER_ALGO 06/10 14:00 → 07/10 23:59` (`isTallerAlgoOpen`, `TALLER_ALGO_MAX_ATTEMPTS=2`); `gradeController.examLockError(user, subject, submittedAt)` exime el taller del flag global; `isSubmissionAllowed` valida contra `submittedAt`.
-- Frontend: `MAX_ATTEMPTS=2` con claves `..._v2` (reinicio fresco: Julián presentó hoy, Jairo retomó); subida DFD **independiente** de la nota con 3 reintentos por archivo + botón `Reintentar subida DFD (no gasta intento)`; modo **solo-teoría** para `jd.reina@cinar.edu.co` (filtra preguntas file, nota sobre 5, comentario de exento).
+- Frontend: `MAX_ATTEMPTS=2` con claves `..._v2` (reinicio fresco: Julián presentó hoy, Jairo retomó); subida DFD **independiente** de la nota con 3 reintentos por archivo + botón `Reintentar subida DFD (no gasta intento)`; modo **solo-teoría** para `jd.reina@cinar.edu.co` (filtra preguntas file, nota sobre 5, comentario de exento; **retirado el 19/10**, ver §26).
 - Notas manuales del Excel sincronizadas a BD como admin (9/10 + Julián por plataforma 4/5 en 1:20): `Algoritmos - Taller 1 / 2026-3`, P1-P5 sobre 5, Ej6/7 en revisión. Falta: nombre del `?` (4/5) y notas del 6 y 7 por estudiante.
 - Nueva sección en `/algoritmos/notas`: tabla Taller 1 debajo de la distribución %, con `taller1_notas.js` como fuente (promedio 4.36/11).
 
@@ -327,3 +327,34 @@ Cinar/
 - Esquema **2+2**: Preparación (2 intentos, desde ya hasta 13/10 23:59) + Evaluación (2 intentos, 14/10 00:00–23:59). Ventana y espejo backend verificados lógicamente (5 casos).
 - La página `parcial-1` usa el banco nuevo; menú DW2 desbloquea Parcial 1 en ventana.
 - Tests 10/10 del banco; suite total con solo los 6 fallos preexistentes.
+
+## Bitácora 18-19/10/2026 (Parcial 1 Algoritmos + DW2 re-habilitado + Nivel 3 DFD)
+
+### 22. DW2 Parcial 1 re-habilitado — miércoles 21/10 todo el día
+- Evaluación (intentos 3-4, esquema **2+2** intacto) movida del 14/10 al **miércoles 21/10 00:00–23:59** (hora Colombia); Preparación histórica cerrada desde el 13/10.
+- Frontend: `examLock.js` (`DW2P1_OPEN/CLOSE` = 21/10), `exam.js`, `parcial1_dw2.js` (dateLabel) y página `desarrollo-web-2/parcial-1` (rama 18–20/10: `📅 Evaluación: miércoles 21/10 (todo el día)`, tarjetas deshabilitadas, badges "Disponible 21/10"/"21/10").
+- Backend: `schedule.js` (fechas + mensajes) y `gradeController.examLockError` ("preparación hasta el 13/10 y evaluación el 21/10 todo el día"). Test `parcial1_dw2.test.js` actualizado.
+- Fix UX (heredado del taller): el botón "Realizar Intento N" de la pantalla final ahora vuelve al menú de intentos en lugar de reabrir el examen con el estado del intento anterior.
+
+### 23. Parcial 1 Algoritmos — lunes 19 y martes 20/10 (todo el día)
+- **Ventana única** 19/10 00:00 → 20/10 23:59, **2 intentos** (Intento 1 Preparación + Intento 2 Evaluación, estilo taller), **120 min (2 h)** por intento, contados desde que el estudiante lo inicia (ajuste 19/10, ver §26).
+- Banco nuevo `src/lib/data/parcial1_algo.js`: **51 teóricas** (17 por nivel; 34 de 4 opciones + 17 binarias, con explicación) + **20 prácticas DFD**. Composición del examen: **20 = 15 teóricas (5 por nivel, mezcladas) + 5 prácticas (≥1 por nivel)**; teóricas primero.
+- Módulo propio `src/lib/exam_algo_p1.js` (claves `algo_p1_*`, sin mezclar con DW1/DW2): snapshot retomable, cola de sincronización con `period: '2026-3'` y `submittedAt` del intento.
+- Página `algoritmos/parcial-1` reescrita para preguntas tipo archivo: `<input .dfd>` (valida extensión y 2 MB), subida a `POST /dfd/upload` con `examType: 'parcial-1'` (3 reintentos con backoff) **independiente de la nota** — si la nota falla, el DFD igual se sube y queda botón "Reintentar subida DFD" (no gasta intento). Nota = aciertos teóricos (0–15) con `max_score` 20; DFD revisados por el docente (espejo del taller).
+- Backend: `schedule.js` (`ALGO_P1_SUBJECT = 'Algoritmos - Parcial 1'`, `isAlgoP1Open`, `ALGO_P1_MAX_ATTEMPTS=2`) + `gradeController` (lock y gate de intentos). Menú de Algoritmos con `isAlgoP1LockedFor` (Parcial 2 sigue con el lock global).
+- Tests: `parcial1_algo.test.js` (≥50 teóricas/≥20 prácticas, ids únicos, mix 2/4 opciones, 20 por examen sin repetidos y 5 por nivel; 8/8). `notas/+page.svelte` ya lista 'Algoritmos - Parcial 1'. Exención `MCQ_ONLY_EMAILS` del taller **no** aplicada al parcial (y retirada del taller el 19/10, ver §26). Pantalla final con el mismo fix UX del botón "Realizar Intento 2" (vuelve al menú de intentos, no reabre el estado viejo).
+
+### 24. Nivel 3 — Ciclos en el editor DFD
+- `dfdExercises.js`: `problemsN3` (12 ejercicios) + `getExerciseStatement` generalizado a N1/N2/N3.
+- Editor `algoritmos/dfd`: `parseLoadParam` acepta `N3-x` (1–12) y textos compatibles; `exerciseKey`/`loadExercise` con carpeta/prefijo `N3`; optgroup "Nivel 3 — Ciclos (12)" y label "Ejercicios N1 + N2 + N3" (los links `?load=N3-5` funcionan).
+- 12 archivos `static/dfd/nivel3/Problema 1..12.dfd` generados con el serializer del propio parser (`generate-n3-dfd.mjs`, round-trip verificado) y ejecutados con `DfdExecutor` real (factorial, Fibonacci, centinela 0, clave 2026, etc.; 6/6 verificados).
+- Nota técnica: el evaluador de condiciones **no compara strings** (`'texto'` se ignora) → el ejercicio N3-10 y la práctica N2 del examen usan condiciones numéricas.
+
+### 25. Verificación final (19/10)
+- `npm test`: 244 pasan / 6 fallan / 2 saltados — los 6 son los preexistentes ambientales (api.grades sin backend local, api.test.js API_URL local, exam.test.js ventana placeholder). Bancos del día: 18/18.
+- `npm run build`: ✓. `eslint` backend: limpio. `svelte-check`: 519 errores (solo legacy; archivos nuevos del parcial y N3 en 0; CSS muerto de la página del parcial eliminado).
+
+### 26. Ajustes 19/10 (indicación del docente)
+- Duración del Parcial 1 de Algoritmos: **2 horas (120 min) por intento**, contadas desde que el estudiante inicia el intento (`exam_algo_p1.js` `TOTAL_TIME` y `examConfig.duration` = `120 * 60`; textos de la página y tests actualizados).
+- **Exención de DFD retirada del taller**: eliminados `MCQ_ONLY_EMAILS`/`isMcqOnly` de `algoritmos/taller` (filtro de preguntas file, comentario de envío y bloque de instrucciones) y su describe en `exam_taller_algo.test.js`. Las notas ya registradas (p. ej. Julián 4/5) no se modifican.
+- Verificación: tests de los archivos afectados 20/20; `npm run build` ✓; suite completa solo con los fallos ambientales de siempre (api.grades sin backend local).

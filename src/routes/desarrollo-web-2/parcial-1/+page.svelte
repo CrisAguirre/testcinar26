@@ -6,7 +6,7 @@
   import { goto } from '$app/navigation';
   import { isDW2P1LockedFor } from '$lib/guards/examLock';
 
-  // Parcial 1 DW2: ventana propia 15/10 18:00-20:00 (admin siempre entra).
+  // Parcial 1 DW2: evaluación re-habilitada para el miércoles 21/10 todo el día (admin siempre entra).
   let examLocked = $derived(isDW2P1LockedFor($currentUser));
   $effect(() => {
     if (!$currentUser) { goto('/login'); return; }
@@ -98,14 +98,17 @@
       return { total: Infinity, used, remaining: Infinity, windowLabel: 'Intentos ilimitados (coordinador)', enabled: true };
     }
 
-    // Parcial 1 DW2: 2 de Preparación (desde ya hasta 13/10 23:59) + 2 de Evaluación (14/10 todo el día).
+    // Parcial 1 DW2: 2 de Preparación (histórica, hasta el 13/10 23:59) + 2 de Evaluación
+    // re-habilitadas para el miércoles 21/10 todo el día. Máximo 4 intentos en total (esquema 2+2).
     if (now < DW2P1_PREP_OPEN) {
       return { total: 4, used, remaining: 4, windowLabel: 'La preparación abre el 08/10', enabled: false };
     } else if (now <= DW2P1_PREP_CLOSE) {
       return { total: 4, used, remaining: Math.max(0, 2 - used), windowLabel: 'Preparación (hasta 13/10 23:59)', enabled: used < 2 };
+    } else if (now < DW2P1_OPEN) {
+      return { total: 4, used, remaining: Math.max(0, 4 - used), windowLabel: '📅 Evaluación: miércoles 21/10 (todo el día)', enabled: false };
     } else if (now <= DW2P1_CLOSE) {
       const usedEval = Math.max(0, used - 2);
-      return { total: 4, used, remaining: Math.max(0, 2 - usedEval), windowLabel: 'Evaluación (14/10 todo el día)', enabled: used < 4 };
+      return { total: 4, used, remaining: Math.max(0, 2 - usedEval), windowLabel: 'Evaluación (21/10 todo el día)', enabled: used < 4 };
     } else {
       return { total: 4, used, remaining: 0, windowLabel: 'El parcial ha finalizado', enabled: false };
     }
@@ -167,7 +170,7 @@
     }
     clearSavedAnswers();
 
-    questions = selectRandomQuestions(totalQuestions);
+    questions = selectRandomQuestions();
     const dynamicTime = calculateTotalTime(questions);
     totalTime = dynamicTime;
     started = true;
@@ -446,7 +449,7 @@
             {#if isUnlimited}
               Dispones de <strong>intentos ilimitados</strong> como coordinador.
             {:else}
-              Dispones de <strong>4 intentos</strong> en total: <strong>2 de Preparación</strong> (desde ya hasta el 13/10) y <strong>2 de Evaluación</strong> (14/10 todo el día).
+              Dispones de <strong>4 intentos</strong> en total: <strong>2 de Preparación</strong> (hasta el 13/10) y <strong>2 de Evaluación</strong> (21/10 todo el día, re-habilitada).
             {/if}
           </p>
           <div class="attempts-grid">
@@ -489,9 +492,9 @@
                 {:else if getAttemptCount() >= 3}
                   <span class="used-badge">✓ Utilizado</span>
                 {:else if inEvalWindow}
-                  <span class="ready-badge">Disponible 14/10</span>
+                  <span class="ready-badge">Disponible 21/10</span>
                 {:else}
-                  <span class="blocked-badge">14/10</span>
+                  <span class="blocked-badge">21/10</span>
                 {/if}
               </div>
             </div>
@@ -504,17 +507,17 @@
                 {:else if getAttemptCount() >= 4}
                   <span class="used-badge">✓ Utilizado</span>
                 {:else if inEvalWindow}
-                  <span class="ready-badge">Disponible 14/10</span>
+                  <span class="ready-badge">Disponible 21/10</span>
                 {:else}
-                  <span class="blocked-badge">14/10</span>
+                  <span class="blocked-badge">21/10</span>
                 {/if}
               </div>
             </div>
           </div>
           {#if !isUnlimited}
           <div class="window-info">
-            <strong>📅 Preparación (Intentos 1-2):</strong> Desde ya hasta el martes 13/10, 23:59<br>
-            <strong>📅 Evaluación (Intentos 3-4):</strong> Miércoles 14/10, todo el día<br>
+            <strong>📅 Preparación (Intentos 1-2):</strong> Hasta el martes 13/10, 23:59 (finalizada)<br>
+            <strong>📅 Evaluación (Intentos 3-4):</strong> Miércoles 21/10, todo el día (re-habilitada)<br>
             <strong>📝 20 preguntas:</strong> 10 de Arquitectura TrueX + 10 de Svelte (Clases 1–5) · 10 abiertas + 10 selección múltiple
           </div>
           {/if}
@@ -678,7 +681,7 @@
         </div>
 
         {#if slots.remaining > 0}
-          <button onclick={() => { finished = false; }} class="start-btn" style="margin-bottom:0.75rem">
+          <button onclick={() => { finished = false; started = false; }} class="start-btn" style="margin-bottom:0.75rem">
             {slots.remaining > 0 ? `Realizar ${getAttemptLabel(getAttemptCount() + 1)}` : ''}
           </button>
         {/if}

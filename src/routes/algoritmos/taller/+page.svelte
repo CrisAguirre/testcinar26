@@ -57,9 +57,6 @@
 
   let isUnlimited = $derived($currentUser?.email === 'coordinacion@cinarsistemas.edu.co');
 
-  // Exentos de DFD (ya presentaron Ej. 6 y 7 en clase): solo responden P1-P5 teóricas.
-  const MCQ_ONLY_EMAILS = ['jd.reina@cinar.edu.co'];
-  let isMcqOnly = $derived(MCQ_ONLY_EMAILS.includes(($currentUser?.email || '').toLowerCase()));
   let examTotal = $derived(questions.length > 0 ? questions.length : TOTAL_QUESTIONS);
 
   function getSlots() {
@@ -159,8 +156,7 @@
       }
     }
 
-    const picked = selectRandomQuestions();
-    questions = isMcqOnly ? picked.filter((q) => q.type !== 'file') : picked;
+    questions = selectRandomQuestions();
     answers = {};
     currentIndex = 0;
     uploadedFiles = {};
@@ -316,7 +312,7 @@
     for (let i = 0; i < maxRetries; i++) {
       try {
         const mcTotal = questions.filter(q => q.type !== 'file').length;
-        const dfdNote = isMcqOnly ? 'DFDs 6-7 presentados en clase (exento subida)' : `DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'}`;
+        const dfdNote = `DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'}`;
         const res = await gradesApi.submitMine({
           subject: 'Algoritmos - Taller 1',
           score: finalScore,
@@ -420,7 +416,7 @@
         }
         addToSyncQueue({
           score, maxScore: questions.length,
-          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${mcTotal} | ${isMcqOnly ? 'DFDs 6-7 presentados en clase (exento subida)' : `DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'}`} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
+          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${mcTotal} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
           examData: JSON.stringify(examData)
         });
       }
@@ -511,11 +507,7 @@
             <ul>
               <li><strong>⏱ Tiempo límite:</strong> Dispones de <strong>90 minutos</strong> para completar el taller.</li>
               <li><strong>📝 Parte 1 — Selección múltiple (5 preguntas):</strong> Preguntas sobre algoritmos de Nivel 1 (secuencial) y Nivel 2 (condicionales). Corrección automática.</li>
-              {#if isMcqOnly}
-                <li><strong>✅ Solo teoría:</strong> Tus ejercicios DFD (6 y 7) ya fueron presentados en clase. Solo respondes las 5 teóricas, sobre 5 puntos.</li>
-              {:else}
-                <li><strong>📐 Parte 2 — Ejercicio Práctico DFD (2 ejercicios):</strong> Deberás resolver dos ejercicios (uno de cada nivel) en el editor de DFD y <strong>subir los archivos .dfd</strong> correspondientes desde tu computador.</li>
-              {/if}
+              <li><strong>📐 Parte 2 — Ejercicio Práctico DFD (2 ejercicios):</strong> Deberás resolver dos ejercicios (uno de cada nivel) en el editor de DFD y <strong>subir los archivos .dfd</strong> correspondientes desde tu computador.</li>
               <li><strong>🚫 Sin consultas externas:</strong> No está permitido cambiar de pestaña durante el examen.</li>
               <li><strong>📁 Archivo .dfd:</strong> Asegúrate de guardar tus diagramas antes de subirlos. Solo se acepta formato <code>.dfd</code>.</li>
             </ul>

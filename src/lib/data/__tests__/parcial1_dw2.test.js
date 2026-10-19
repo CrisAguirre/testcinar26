@@ -68,8 +68,8 @@ describe('selectRandomQuestions (examen de 20)', () => {
 });
 
 describe('examConfig', () => {
-  it('fecha 14/10 y 5 por grupo', () => {
+  it('fecha 21/10 (re-habilitado) y 5 por grupo', () => {
     expect(examConfig.perBucket).toBe(5);
-    expect(examConfig.dateLabel).toMatch(/14\/10/);
+    expect(examConfig.dateLabel).toMatch(/21\/10/);
   });
 });

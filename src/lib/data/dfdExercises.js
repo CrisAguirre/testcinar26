@@ -1,5 +1,5 @@
 // Enunciados de ejercicios DFD — fuente única para Actividad de la semana y Editor DFD.
-// Nivel 1: Operadores secuenciales (16) · Nivel 2: Condicionales Si/No (22)
+// Nivel 1: Operadores secuenciales (16) · Nivel 2: Condicionales Si/No (22) · Nivel 3: Ciclos (12)
 
 export const problemsN1 = [
 	{ id: 1, text: 'Pedir 2 números al usuario y sumarlos, restarlos, multiplicarlos y dividirlos.', propuesto: false },
@@ -45,22 +45,47 @@ export const problemsN2 = [
 	{ id: 22, text: 'Tomar dos números y decir si ambos son pares o impares.', propuesto: true }
 ];
 
+export const problemsN3 = [
+	{ id: 1, text: 'Mostrar en pantalla los números del 1 al 10 usando un ciclo Mientras.', propuesto: false },
+	{ id: 2, text: 'Pedir un número N y mostrar la suma de todos los números desde 1 hasta N.', propuesto: true },
+	{ id: 3, text: 'Pedir un número N y mostrar su tabla de multiplicar del 1 al 10.', propuesto: false },
+	{ id: 4, text: 'Pedir un número N y contar cuántos números pares hay entre 1 y N.', propuesto: true },
+	{ id: 5, text: 'Pedir la cantidad de notas (N) y luego N notas, para calcular e imprimir el promedio.', propuesto: false },
+	{ id: 6, text: 'Pedir un número N y calcular su factorial (N! = 1 × 2 × 3 × … × N).', propuesto: true },
+	{ id: 7, text: 'Pedir una base y un exponente, y calcular la potencia usando un ciclo de multiplicaciones.', propuesto: false },
+	{ id: 8, text: 'Pedir dos números M y K, y mostrar los K primeros múltiplos de M.', propuesto: true },
+	{ id: 9, text: 'Pedir números al usuario hasta que ingrese 0; al final mostrar la suma total ingresada.', propuesto: false },
+	{ id: 10, text: 'Pedir una clave numérica al usuario y repetir la solicitud mientras la clave sea incorrecta (la clave correcta es 2026).', propuesto: true },
+	{ id: 11, text: 'Pedir un número N y mostrar la serie de cuadrados 1, 4, 9, 16, ... hasta N.', propuesto: false },
+	{ id: 12, text: 'Pedir un número N y mostrar los primeros N términos de la serie de Fibonacci (0, 1, 1, 2, 3, 5, …).', propuesto: true }
+];
+
+/** @type {Record<string, { list: Array<{ id: number, text: string, propuesto: boolean }>, nivel: string, nivelLabel: string }>} */
+const LEVELS_CONFIG = {
+	'1': { list: problemsN1, nivel: 'nivel1', nivelLabel: 'Nivel 1 — Operadores' },
+	'2': { list: problemsN2, nivel: 'nivel2', nivelLabel: 'Nivel 2 — Condicionales' },
+	'3': { list: problemsN3, nivel: 'nivel3', nivelLabel: 'Nivel 3 — Ciclos' }
+};
+
+/**
+ * @param {string} key
+ * @returns {{ nivel: string, nivelLabel: string, id: number, text: string, propuesto: boolean, label: string } | null}
+ */
 export function getExerciseStatement(key) {
-	// key: "N1-5" | "N2-12"
+	// key: "N1-5" | "N2-12" | "N3-3"
 	if (!key || typeof key !== 'string') return null;
-	const m = key.match(/^N([12])-(\d{1,2})$/i);
+	const m = key.match(/^N([123])-(\d{1,2})$/i);
 	if (!m) return null;
-	const isN2 = m[1] === '2';
+	const level = LEVELS_CONFIG[m[1]];
 	const id = parseInt(m[2], 10);
-	const list = isN2 ? problemsN2 : problemsN1;
-	const found = list.find((p) => p.id === id);
+	const found = level.list.find((p) => p.id === id);
 	if (!found) return null;
 	return {
-		nivel: isN2 ? 'nivel2' : 'nivel1',
-		nivelLabel: isN2 ? 'Nivel 2 — Condicionales' : 'Nivel 1 — Operadores',
+		nivel: level.nivel,
+		nivelLabel: level.nivelLabel,
 		id: found.id,
 		text: found.text,
 		propuesto: found.propuesto,
-		label: isN2 ? `N2-Problema ${found.id}` : `Problema ${found.id}`
+		label: m[1] === '1' ? `Problema ${found.id}` : `N${m[1]}-Problema ${found.id}`
 	};
 }

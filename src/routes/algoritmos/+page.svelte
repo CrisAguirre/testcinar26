@@ -2,7 +2,7 @@
   import { isAuthenticated, currentUser } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
   import { preloadedMyEnrollments } from '$lib/stores/preloaded';
-  import { isStrictAdmin, EXAM_LOCK_ACTIVE, EXAM_LOCK_MESSAGE, isTallerAlgoLockedFor } from '$lib/guards/examLock';
+  import { isStrictAdmin, EXAM_LOCK_ACTIVE, EXAM_LOCK_MESSAGE, isTallerAlgoLockedFor, isAlgoP1LockedFor } from '$lib/guards/examLock';
 
   $effect(() => {
     if (!$isAuthenticated) { goto('/login'); return; }
@@ -31,9 +31,11 @@
 
   let displayLinks = $derived(
     links.map((l) => {
-      const isExam = l.href !== null && /parcial/i.test(l.href);
+      const isParcial1 = l.href === '/algoritmos/parcial-1';
+      const isParcial2 = l.href === '/algoritmos/parcial-2';
       const isTaller = l.href !== null && /taller/i.test(l.href);
-      if (isExam && examsLocked) return { ...l, href: null, disabled: true, lockLabel: '🔒 Bloqueado' };
+      if (isParcial1 && isAlgoP1LockedFor($currentUser)) return { ...l, href: null, disabled: true, lockLabel: '🔒 Abre 19/10' };
+      if (isParcial2 && examsLocked) return { ...l, href: null, disabled: true, lockLabel: '🔒 Bloqueado' };
       if (isTaller && isTallerAlgoLockedFor($currentUser)) return { ...l, href: null, disabled: true, lockLabel: '🔒 Bloqueado' };
       return l;
     })

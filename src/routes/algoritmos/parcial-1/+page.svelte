@@ -1,19 +1,26 @@
 <script lang="ts">
-  import { selectRandomQuestions } from '$lib/data/parcial1_algo';
-  import { gradesApi, authApi, API_URL, getHealthUrl } from '$lib/api';
+  import { selectRandomQuestions, examConfig } from '$lib/data/parcial1_algo';
+  import { gradesApi, apiUploadFile, getHealthUrl } from '$lib/api';
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
-  import { isStrictAdmin, EXAM_LOCK_ACTIVE } from '$lib/guards/examLock';
+  import { isAlgoP1LockedFor, ALGO_P1_OPEN, ALGO_P1_CLOSE } from '$lib/guards/examLock';
 
-  // Bloqueo temporal: parciales y taller solo para admin (aún no son las fechas).
-  let examLocked = $derived(EXAM_LOCK_ACTIVE && !isStrictAdmin($currentUser));
+  // Bloqueo temporal: Parcial 1 de Algoritmos habilitado lunes 19 y martes 20/10 (o admin).
+  let examLocked = $derived(isAlgoP1LockedFor($currentUser));
   $effect(() => {
     if (!$currentUser) { goto('/login'); return; }
     if (examLocked) goto('/algoritmos');
   });
-  import { STORAGE_KEY, DETAIL_KEY, WINDOW1_END, WINDOW2_START, WINDOW2_END, TOTAL_QUESTIONS, TOTAL_TIME, TIME_PER_MC, TIME_PER_OPEN, calculateTotalTime, formatTime, getAttemptLabel, getAttemptType, calculateScore, buildExamData, SYNC_QUEUE_KEY, getSyncQueue, addToSyncQueue, removeFromSyncQueue, setHealthCheckOk, isHealthCheckRecent, SAVED_ANSWERS_KEY, saveAnswersSnapshot, clearSavedAnswers } from '$lib/exam';
-  import { preloadedMyGrades, preloadingStatus, wakeUpStatus } from '$lib/stores/preloaded';
+  import {
+    STORAGE_KEY, TOTAL_QUESTIONS, TOTAL_TIME, MAX_ATTEMPTS,
+    getAttemptLabel, getAttemptType, formatTime,
+    getAttemptCount as getTotalAttempts, getSyncQueue,
+    addToSyncQueue, removeFromSyncQueue, setHealthCheckOk,
+    isHealthCheckRecent, SAVED_ANSWERS_KEY, saveAnswersSnapshot,
+    clearSavedAnswers, calculateScore, buildExamData, getLocalAttempts
+  } from '$lib/exam_algo_p1';
+  import { preloadedMyGrades } from '$lib/stores/preloaded';
 
   let { data } = $props();
 
@@ -23,12 +30,11 @@
   let answers = $state<Record<number, any>>({});
   let currentIndex = $state(0);
 
-  let timeLeft = $state(45 * 60);
+  let timeLeft = $state(TOTAL_TIME);
   let timerInterval: ReturnType<typeof setInterval> | null = null;
   let tabSwitchCount = $state(0);
-  let mcScore = $state(0);
+  let finalScore = $state(0);
   let mcTotal = $state(0);
-  let pendingOpen = $state(0);
   let results = $state<Record<number, { correct: boolean; userAnswer: any; correctAnswer: any }>>({});
 
   let currentAttemptNumber = $state(0);
@@ -43,24 +49,20 @@
   let pendingSyncCount = $state(0);
   let syncingInProgress = $state(false);
 
-  const totalQuestions = 20;
-  let totalTime = 45 * 60;
-  let isUnlimited = $derived($currentUser?.email === 'coordinacion@cinarsistemas.edu.co');
+  // Ejercicios prácticos DFD: subida de archivos .dfd (independiente del Grade; reintentable)
+  let uploadedFiles = $state<Record<string, File>>({});
+  let uploadedFileNames = $state<Record<string, string>>({});
+  let uploadStatuses = $state<Record<string, string>>({});
+  let uploadErrors = $state<Record<string, string>>({});
+  let lastGradeId = $state<string | undefined>(undefined);
+  let dfdUploadError = $state('');
+  let isUploadingDfd = $state(false);
 
-  function getLocalAttempts(): any[] {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) : [];
-    } catch { return []; }
-  }
+  let isUnlimited = $derived($currentUser?.email === 'coordinacion@cinarsistemas.edu.co');
+  let examTotal = $derived(questions.length > 0 ? questions.length : TOTAL_QUESTIONS);
 
   function getAttemptCount(): number {
-    if (loadingServer) return getLocalAttempts().length;
-    if (serverAttempts === 0) {
-      try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(DETAIL_KEY); } catch {}
-      return 0;
-    }
-    return Math.max(serverAttempts, getLocalAttempts().length);
+    return getTotalAttempts(serverAttempts, getLocalAttempts().length, loadingServer);
   }
 
   async function loadServerAttempts() {
@@ -82,21 +84,21 @@
   }
 
   function getAvailableSlots(): { total: number; used: number; remaining: number; windowLabel: string; enabled: boolean } {
-    const now = new Date();
     const used = getAttemptCount();
 
     if (isUnlimited) {
       return { total: Infinity, used, remaining: Infinity, windowLabel: 'Intentos ilimitados (coordinador)', enabled: true };
     }
 
-    if (now < WINDOW1_END) {
-      return { total: 2, used: Math.min(used, 2), remaining: Math.max(0, 2 - used), windowLabel: 'Antes del examen (hasta 18:45)', enabled: used < 2 };
-    } else if (now >= WINDOW2_START && now < WINDOW2_END) {
-      const usedInWindow2 = Math.max(0, used - 2);
-      return { total: 2, used: usedInWindow2, remaining: Math.max(0, 2 - usedInWindow2), windowLabel: 'Ventana de examen (18:45 - 20:00)', enabled: used < 4 };
-    } else {
-      return { total: 4, used, remaining: 0, windowLabel: 'Fuera de la ventana de examen', enabled: false };
-    }
+    const now = new Date();
+    const inWindow = now >= ALGO_P1_OPEN && now <= ALGO_P1_CLOSE;
+    return {
+      total: MAX_ATTEMPTS,
+      used,
+      remaining: Math.max(0, MAX_ATTEMPTS - used),
+      windowLabel: inWindow ? 'Habilitado: lunes 19 y martes 20/10 (todo el día)' : 'Fuera de la ventana del parcial',
+      enabled: used < MAX_ATTEMPTS
+    };
   }
 
   let slots = $derived.by(() => getAvailableSlots());
@@ -109,6 +111,7 @@
 
   onMount(() => {
     loadServerAttempts();
+    pendingSyncCount = getSyncQueue().length;
     checkBackendHealth();
   });
 
@@ -118,7 +121,12 @@
 
   function getProgressPercent(): number {
     const answered = Object.keys(answers).length;
-    return (answered / totalQuestions) * 100;
+    return (answered / examTotal) * 100;
+  }
+
+  function getLevelLabel(tema: unknown): string {
+    const labels: Record<number, string> = examConfig.levelLabels;
+    return (typeof tema === 'number' && labels[tema]) || `Tema ${tema ?? ''}`;
   }
 
   async function startExam() {
@@ -136,14 +144,14 @@
     })();
 
     if (saved && saved.questions && saved.answers && Object.keys(saved.answers).length > 0) {
-      const resume = confirm(`Tienes un examen en progreso guardado (${Object.keys(saved.answers).length} preguntas respondidas). ¿Deseas continuar?`);
+      const resume = confirm(`Tienes un parcial en progreso guardado (${Object.keys(saved.answers).length} preguntas respondidas). ¿Deseas continuar?`);
       if (resume) {
         questions = saved.questions;
         answers = saved.answers;
         currentIndex = saved.currentIndex || 0;
-        timeLeft = saved.timeLeft || calculateTotalTime(saved.questions);
+        timeLeft = saved.timeLeft || TOTAL_TIME;
         tabSwitchCount = saved.tabSwitchCount || 0;
-        totalTime = timeLeft;
+        if (saved.uploadedFileNames) uploadedFileNames = saved.uploadedFileNames;
         started = true;
         finished = false;
         currentAttemptNumber = getAttemptCount() + 1;
@@ -154,14 +162,16 @@
     }
     clearSavedAnswers();
 
-    questions = selectRandomQuestions(totalQuestions);
-    const dynamicTime = calculateTotalTime(questions);
-    totalTime = dynamicTime;
+    questions = selectRandomQuestions();
+    uploadedFiles = {};
+    uploadedFileNames = {};
+    uploadStatuses = {};
+    uploadErrors = {};
     started = true;
     finished = false;
     answers = {};
     currentIndex = 0;
-    timeLeft = dynamicTime;
+    timeLeft = TOTAL_TIME;
     tabSwitchCount = 0;
 
     currentAttemptNumber = getAttemptCount() + 1;
@@ -180,7 +190,7 @@
   }
 
   function goToQuestion(index: number) {
-    if (index >= 0 && index < totalQuestions) {
+    if (index >= 0 && index < examTotal) {
       if (index > currentIndex && !isQuestionAnswered(questions[currentIndex]?.id)) return;
       currentIndex = index;
     }
@@ -192,12 +202,90 @@
   }
 
   function isQuestionAnswered(qId: number): boolean {
+    const q = questions.find((qq) => qq.id === qId);
+    if (q?.type === 'file') return !!uploadedFileNames[String(qId)];
     return answers[qId] !== undefined && answers[qId] !== '';
   }
 
   function autoSaveAnswers() {
     if (!started || finished) return;
-    saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount);
+    saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount, uploadedFileNames);
+  }
+
+  function handleFileSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input?.files?.[0];
+    const qId = String(questions[currentIndex].id);
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.dfd')) {
+      uploadErrors[qId] = 'Solo se permiten archivos .dfd';
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      uploadErrors[qId] = 'El archivo no puede superar 2 MB';
+      return;
+    }
+
+    uploadedFiles[qId] = file;
+    uploadedFileNames[qId] = file.name;
+    uploadErrors[qId] = '';
+    uploadStatuses[qId] = '';
+    // Marca la pregunta como respondida
+    answers[questions[currentIndex].id] = 'file-selected';
+    autoSaveAnswers();
+  }
+
+  async function uploadDfdFile(gradeId?: string) {
+    if (Object.keys(uploadedFiles).length === 0) {
+      return { success: false, error: 'No hay archivos seleccionados. Vuelve a seleccionarlos (.dfd) e intenta de nuevo.' };
+    }
+
+    let allSuccess = true;
+    let firstError = '';
+    const attemptNum = currentAttemptNumber || (getAttemptCount() + 1);
+
+    for (const [qId, file] of Object.entries(uploadedFiles)) {
+      uploadStatuses[qId] = 'uploading';
+      uploadErrors[qId] = '';
+      // 3 intentos por archivo: el primer POST suele dar timeout si el servidor estaba dormido
+      let ok = false;
+      let lastErr = '';
+      for (let r = 0; r < 3 && !ok; r++) {
+        try {
+          await apiUploadFile('/dfd/upload', file, {
+            examType: 'parcial-1',
+            period: '2026-3',
+            attemptNumber: String(attemptNum),
+            ...(gradeId ? { gradeId } : {})
+          });
+          uploadStatuses[qId] = 'success';
+          ok = true;
+        } catch (err) {
+          lastErr = err instanceof Error ? err.message : 'Error al subir el archivo';
+          if (r < 2) await new Promise(res => setTimeout(res, 2000 * (r + 1)));
+        }
+      }
+      if (!ok) {
+        uploadStatuses[qId] = 'error';
+        uploadErrors[qId] = lastErr;
+        if (!firstError) firstError = lastErr;
+        allSuccess = false;
+      }
+    }
+    return { success: allSuccess, error: allSuccess ? undefined : firstError };
+  }
+
+  async function retryDfdUpload() {
+    dfdUploadError = '';
+    if (Object.keys(uploadedFiles).length === 0) {
+      dfdUploadError = 'No hay archivos en memoria. Tus .dfd siguen en tu computador: vuelve a iniciar el parcial, selecciónalos de nuevo y podrás reintentar la subida sin gastar un intento adicional.';
+      return;
+    }
+    isUploadingDfd = true;
+    const res = await uploadDfdFile(lastGradeId);
+    isUploadingDfd = false;
+    if (!res.success) dfdUploadError = res.error || 'Error al subir los DFD';
   }
 
   async function checkBackendHealth(): Promise<boolean> {
@@ -239,8 +327,9 @@
           subject: 'Algoritmos - Parcial 1',
           score: entry.score,
           max_score: entry.maxScore,
-          period: '2026-1',
-          comments: entry.comments
+          period: '2026-3',
+          comments: entry.comments,
+          submittedAt: entry.createdAt || Date.now()
         });
         const grade = res.grade || res;
         if (grade && grade._id && entry.examData) {
@@ -257,38 +346,35 @@
     if (pendingSyncCount > 0) loadServerAttempts();
   }
 
-  async function attemptSubmitWithRetry(maxRetries = 3): Promise<{ success: boolean; gradeId?: string; error?: string }> {
+  async function attemptSubmitWithRetry(maxRetries = 3): Promise<{ success: boolean; gradeId?: string; error?: string; dfdSuccess?: boolean; dfdError?: string }> {
     const attemptNumLocal = getAttemptCount() + 1;
 
     for (let i = 0; i < maxRetries; i++) {
       try {
+        const mcCount = questions.filter(q => q.type !== 'file').length;
         const res = await gradesApi.submitMine({
           subject: 'Algoritmos - Parcial 1',
-          score: mcScore,
-          max_score: mcTotal,
-          period: '2026-1',
-          comments: `${getAttemptLabel(attemptNumLocal)} | MC: ${mcScore}/${mcTotal} | Abiertas: ${pendingOpen} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`
+          score: finalScore,
+          max_score: questions.length,
+          period: '2026-3',
+          comments: `${getAttemptLabel(attemptNumLocal)} | MC: ${finalScore}/${mcCount} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
+          submittedAt: Date.now()
         });
         const grade = res.grade || res;
         if (grade && grade._id) {
           try {
-            const examDataForServer = {
-              attemptNumber: attemptNumLocal,
-              tabSwitches: tabSwitchCount,
-              timeUsed: totalTime - timeLeft,
-              mcScore, mcTotal,
-              questions: questions.map(q => ({
-                id: q.id, tema: q.tema, type: q.type, question: q.question,
-                options: q.type === 'mc' ? q.options : undefined,
-                correctAnswer: q.type === 'mc' ? q.answer : undefined,
-                studentAnswer: answers[q.id],
-                isCorrect: q.type === 'mc' ? answers[q.id] === q.answer : undefined,
-                openScore: null, openMaxScore: q.type === 'open' ? 5 : undefined
-              }))
-            };
+            const examDataForServer = buildExamData(attemptNumLocal, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileNames);
             await gradesApi.updateMine(grade._id, { examData: JSON.stringify(examDataForServer) });
           } catch {}
-          return { success: true, gradeId: grade._id };
+          // Subida DFD independiente: no bloquea la nota; si falla se puede reintentar desde la pantalla final
+          let dfdSuccess = true;
+          let dfdError: string | undefined;
+          if (Object.keys(uploadedFiles).length > 0) {
+            const up = await uploadDfdFile(grade._id);
+            dfdSuccess = up.success;
+            dfdError = up.error;
+          }
+          return { success: true, gradeId: grade._id, dfdSuccess, dfdError };
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Error de conexión';
@@ -304,16 +390,21 @@
 
   async function retrySave() {
     saveError = '';
+    dfdUploadError = '';
     saveSuccess = false;
     isSaving = true;
     const result = await attemptSubmitWithRetry(3);
     isSaving = false;
     if (result.success) {
       saveSuccess = true;
+      lastGradeId = result.gradeId;
       const localList = getLocalAttempts();
       if (localList.length > 0) {
         localList[localList.length - 1].gradeId = result.gradeId;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
+      }
+      if (result.dfdSuccess === false) {
+        dfdUploadError = result.dfdError || 'La nota se guardó, pero los DFD fallaron. Usa "Reintentar subida DFD".';
       }
       await loadServerAttempts();
     } else {
@@ -328,51 +419,27 @@
       timerInterval = null;
     }
 
-    let score = 0;
-    let totalMc = 0;
-    let openCount = 0;
+    const score = calculateScore(questions, answers);
+    mcTotal = questions.filter(q => q.type !== 'file').length;
     const res: Record<number, { correct: boolean; userAnswer: any; correctAnswer: any }> = {};
 
     for (const q of questions) {
-      if (q.type === 'mc') {
-        totalMc++;
-        const userAnswer = answers[q.id];
-        const isCorrect = userAnswer === q.answer;
-        if (isCorrect) score++;
-        res[q.id] = { correct: isCorrect, userAnswer, correctAnswer: q.answer };
-      } else {
-        openCount++;
+      if (q.type === 'file') {
+        res[q.id] = { correct: !!uploadedFileNames[String(q.id)], userAnswer: uploadedFileNames[String(q.id)] || null, correctAnswer: null };
+        continue;
       }
+      const userAnswer = answers[q.id];
+      const isCorrect = userAnswer === q.answer;
+      res[q.id] = { correct: isCorrect, userAnswer, correctAnswer: q.answer };
     }
 
-    mcScore = score;
-    mcTotal = totalMc;
-    pendingOpen = openCount;
+    finalScore = score;
     results = res;
     finished = true;
 
     const attemptNum = getAttemptCount() + 1;
-    const localRecord = { date: new Date().toISOString(), mcScore: score, mcTotal: totalMc, openCount, tabSwitches: tabSwitchCount, timeUsed: totalTime - timeLeft, gradeId: undefined as string | undefined };
-
-    const examData = {
-      attemptNumber: attemptNum,
-      tabSwitches: tabSwitchCount,
-      timeUsed: totalTime - timeLeft,
-      mcScore: score,
-      mcTotal: totalMc,
-      questions: questions.map(q => ({
-        id: q.id,
-        tema: q.tema,
-        type: q.type,
-        question: q.question,
-        options: q.type === 'mc' ? q.options : undefined,
-        correctAnswer: q.type === 'mc' ? q.answer : undefined,
-        studentAnswer: answers[q.id],
-        isCorrect: q.type === 'mc' ? answers[q.id] === q.answer : undefined,
-        openScore: null,
-        openMaxScore: q.type === 'open' ? 5 : undefined
-      }))
-    };
+    const localRecord = { date: new Date().toISOString(), score, total: questions.length, mcScore: score, mcTotal, tabSwitches: tabSwitchCount, timeUsed: TOTAL_TIME - timeLeft, gradeId: undefined as string | undefined };
+    const examData = buildExamData(attemptNum, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileNames);
 
     let gradeId: string | undefined;
     if ($currentUser?.id) {
@@ -381,13 +448,23 @@
       isSaving = false;
       if (result.success) {
         gradeId = result.gradeId;
+        lastGradeId = result.gradeId;
         localRecord.gradeId = result.gradeId;
         saveSuccess = true;
+        if (result.dfdSuccess === false) {
+          dfdUploadError = `${result.dfdError || 'Falló la subida DFD'}. La nota sí quedó guardada: reintenta la subida abajo (no gasta intento).`;
+        }
       } else {
-        saveError = `No se pudo guardar en el servidor: ${result.error}. Las respuestas están guardadas localmente. Se reintentará automáticamente.`;
+        saveError = `No se pudo guardar en el servidor: ${result.error}. Las respuestas están guardadas localmente y se reintentará automáticamente.`;
+        // Aunque falle la nota, intenta dejar los DFD subidos (quedan recuperables por estudiante/fecha)
+        if (Object.keys(uploadedFiles).length > 0) {
+          const up = await uploadDfdFile(undefined);
+          if (!up.success) dfdUploadError = `${up.error || 'Falló la subida DFD'}. Guarda tus .dfd y reintenta hoy.`;
+        }
         addToSyncQueue({
-          score, maxScore: totalMc, openCount,
-          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${totalMc} | Abiertas: ${openCount} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`,
+          score,
+          maxScore: questions.length,
+          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${mcTotal} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
           examData: JSON.stringify(examData)
         });
       }
@@ -425,7 +502,7 @@
       <div class="welcome-card">
         <div class="welcome-icon">📋</div>
         <h1>Parcial 1 - Algoritmos</h1>
-        <p class="welcome-subtitle">Evaluación de conocimientos</p>
+        <p class="welcome-subtitle">Niveles 1, 2 y 3 — Teoría + Ejercicios DFD</p>
 
         <div class="attempts-section">
           <h2>🎯 Intentos disponibles</h2>
@@ -433,75 +510,37 @@
             {#if isUnlimited}
               Dispones de <strong>intentos ilimitados</strong> como coordinador.
             {:else}
-              Dispones de <strong>4 intentos</strong> en total: <strong>2 de Preparación</strong> (antes del examen) y <strong>2 de Evaluación</strong> (durante el examen).
+              Dispones de <strong>2 intentos</strong> en total: <strong>Intento 1 de Preparación</strong> e <strong>Intento 2 de Evaluación</strong>.
             {/if}
           </p>
           <div class="attempts-grid">
-            <div class="attempt-card {isUnlimited || (slots.remaining > 0 && slots.used < 2) ? 'available' : 'used'}">
+            <div class="attempt-card {isUnlimited || getAttemptCount() < 1 ? 'available' : 'used'}">
               <div class="attempt-number">{getAttemptLabel(1)}</div>
               <div class="attempt-type-badge prep">Preparación</div>
               <div class="attempt-status">
-                {#if isUnlimited}
-                  <span class="ready-badge">Disponible</span>
-                {:else if getAttemptCount() >= 1}
-                  <span class="used-badge">✓ Utilizado</span>
-                {:else if slots.remaining > 0 && slots.used < 2}
+                {#if isUnlimited || getAttemptCount() < 1}
                   <span class="ready-badge">Disponible</span>
                 {:else}
-                  <span class="blocked-badge">—</span>
+                  <span class="used-badge">✓ Utilizado</span>
                 {/if}
               </div>
             </div>
-            <div class="attempt-card {isUnlimited || (slots.remaining > 0 && slots.used < 2) ? 'available' : 'used'}">
+            <div class="attempt-card {isUnlimited || getAttemptCount() < 2 ? 'available' : 'used'}">
               <div class="attempt-number">{getAttemptLabel(2)}</div>
-              <div class="attempt-type-badge prep">Preparación</div>
-              <div class="attempt-status">
-                {#if isUnlimited}
-                  <span class="ready-badge">Disponible</span>
-                {:else if getAttemptCount() >= 2}
-                  <span class="used-badge">✓ Utilizado</span>
-                {:else if slots.remaining > 0 && slots.used < 2}
-                  <span class="ready-badge">Disponible</span>
-                {:else}
-                  <span class="blocked-badge">—</span>
-                {/if}
-              </div>
-            </div>
-            <div class="attempt-card {isUnlimited || (slots.enabled && slots.used >= 2) ? 'available' : (getAttemptCount() >= 3 ? 'used' : 'blocked')}">
-              <div class="attempt-number">{getAttemptLabel(3)}</div>
               <div class="attempt-type-badge eval">Evaluación</div>
               <div class="attempt-status">
-                {#if isUnlimited}
-                  <span class="ready-badge">Disponible</span>
-                {:else if getAttemptCount() >= 3}
-                  <span class="used-badge">✓ Utilizado</span>
-                {:else if slots.enabled && slots.used >= 2}
+                {#if isUnlimited || getAttemptCount() < 2}
                   <span class="ready-badge">Disponible</span>
                 {:else}
-                  <span class="blocked-badge">Bloqueado</span>
-                {/if}
-              </div>
-            </div>
-            <div class="attempt-card {isUnlimited || (slots.enabled && slots.used >= 3) ? 'available' : (getAttemptCount() >= 4 ? 'used' : 'blocked')}">
-              <div class="attempt-number">{getAttemptLabel(4)}</div>
-              <div class="attempt-type-badge eval">Evaluación</div>
-              <div class="attempt-status">
-                {#if isUnlimited}
-                  <span class="ready-badge">Disponible</span>
-                {:else if getAttemptCount() >= 4}
                   <span class="used-badge">✓ Utilizado</span>
-                {:else if slots.enabled && slots.used >= 3}
-                  <span class="ready-badge">Disponible</span>
-                {:else}
-                  <span class="blocked-badge">Bloqueado</span>
                 {/if}
               </div>
             </div>
           </div>
           {#if !isUnlimited}
           <div class="window-info">
-            <strong>📅 Ventana 1 — Preparación (Intentos 1-2):</strong> Hasta el 22 de julio, 18:45<br>
-            <strong>📅 Ventana 2 — Evaluación (Intentos 3-4):</strong> 22 de julio, 18:45 - 20:00
+            <strong>📅 Ventana única (Intentos 1-2):</strong> Lunes 19 y martes 20 de octubre, todo el día<br>
+            <strong>📝 20 preguntas:</strong> 15 teóricas (5 por nivel) + 5 ejercicios prácticos DFD · <strong>⏱ 2 horas</strong>
           </div>
           {/if}
         </div>
@@ -527,21 +566,20 @@
             <h2>📌 Recomendaciones importantes</h2>
             <ul>
               <li>
-                <strong>⏱ Tiempo límite:</strong> Dispondrás de aproximadamente <strong>1 hora</strong> para completar las 20 preguntas.
-                El tiempo por pregunta es de <strong>{Math.floor(TIME_PER_MC / 60)} min</strong> para selección múltiple y <strong>{Math.floor(TIME_PER_OPEN / 60)} min</strong> para abiertas.
-                El examen se enviará automáticamente al cumplirse el tiempo.
+                <strong>⏱ Tiempo límite:</strong> Dispondrás de <strong>2 horas (120 minutos)</strong> para completar las 20 preguntas
+                (15 teóricas + 5 prácticas), contadas desde que inicies el intento. El examen se enviará automáticamente al cumplirse el tiempo.
               </li>
               <li>
-                <strong>📝 Tipos de preguntas:</strong> El examen incluye preguntas de <strong>selección múltiple</strong>
-                (con una única respuesta correcta) y preguntas <strong>abiertas</strong> (respuesta escrita).
+                <strong>📝 Parte 1 — Teóricas (15 preguntas):</strong> Selección única sobre los 3 niveles:
+                Operadores, Condicionales y Ciclos. Corrección automática al finalizar.
               </li>
               <li>
-                <strong>✅ Corrección automática (selección múltiple):</strong> Al finalizar el examen, las preguntas
-                de selección múltiple se calificarán automáticamente y verás tu resultado de inmediato.
+                <strong>📐 Parte 2 — Prácticas DFD (5 ejercicios):</strong> Resuelve cada ejercicio en el
+                <a href="/algoritmos/dfd" target="_blank" rel="noopener">Editor de DFD</a> y sube el archivo <code>.dfd</code>
+                (máximo 2 MB) desde tu computador. Serán revisados por el docente.
               </li>
               <li>
-                <strong>⏳ Revisión manual (abiertas):</strong> Las preguntas abiertas serán revisadas y calificadas
-                posteriormente por el administrador del sitio.
+                <strong>✅ Corrección automática (teóricas):</strong> Al finalizar verás de inmediato tu resultado en la parte teórica.
               </li>
               <li>
                 <strong>🚫 Sin consultas externas:</strong> No está permitido cambiar de pestaña o ventana para consultar
@@ -552,11 +590,8 @@
                 Puedes volver atrás con el botón Anterior.
               </li>
               <li>
-                <strong>📊 Progreso:</strong> Revisa la barra de progreso para saber cuántas preguntas has respondido.
-              </li>
-              <li>
                 <strong>💾 Auto-guardado:</strong> Tus respuestas se guardan automáticamente al responder cada pregunta.
-                Si cierras el examen sin terminar, podrás retomarlo.
+                Si cierras el examen sin terminar, podrás retomarlo (los .dfd deberás seleccionarlos de nuevo).
               </li>
             </ul>
           </div>
@@ -577,11 +612,11 @@
           {/if}
 
           <button onclick={startExam} class="start-btn" disabled={checkingServer}>
-            {checkingServer ? 'Verificando...' : (getAttemptCount() === 0 ? 'Comenzar Examen' : `Iniciar ${getAttemptLabel(getAttemptCount() + 1)}`)}
+            {checkingServer ? 'Verificando...' : (getAttemptCount() === 0 ? 'Comenzar Parcial' : `Iniciar ${getAttemptLabel(getAttemptCount() + 1)}`)}
           </button>
         {:else}
           <div class="no-attempts">
-            <p>Una vez se asigne la fecha del taller o parcial en cuestión, ya se anunciará y se habilitará el acceso.</p>
+            <p>Has completado todos los intentos de este parcial. Si necesitas una revisión, contacta a tu docente.</p>
           </div>
           <a href="/" class="back-btn">Volver al Inicio</a>
         {/if}
@@ -602,14 +637,14 @@
 
         <div class="score-section">
           <div class="score-card">
-            <div class="score-value">{mcScore}/{mcTotal}</div>
-            <div class="score-label">Selección múltiple</div>
+            <div class="score-value">{finalScore}/{mcTotal}</div>
+            <div class="score-label">Teóricas (selección única)</div>
             <div class="score-status auto">✓ Corregido automáticamente</div>
           </div>
           <div class="score-card">
-            <div class="score-value">{pendingOpen}</div>
-            <div class="score-label">Preguntas abiertas</div>
-            <div class="score-status pending">⏳ Pendiente de revisión</div>
+            <div class="score-value">{Object.keys(uploadedFileNames).length}/{questions.filter(q => q.type === 'file').length}</div>
+            <div class="score-label">Ejercicios DFD subidos</div>
+            <div class="score-status pending">⏳ Revisión docente</div>
           </div>
         </div>
 
@@ -622,15 +657,41 @@
             {isSaving ? 'Guardando...' : '🔄 Reintentar guardado'}
           </button>
         {/if}
+        {#if isSaving}
+          <p class="save-note">Guardando calificación y subiendo archivos DFD...</p>
+        {/if}
+
+        {#if Object.keys(uploadedFileNames).length > 0}
+          <div class="dfd-summary">
+            <h2>📐 Archivos DFD</h2>
+            {#each questions.filter(q => q.type === 'file') as q}
+              <div class="review-item">
+                <span class="review-num">Ejercicio {q.id}</span>
+                {#if uploadedFileNames[String(q.id)]}
+                  <span class="review-status pending-review">📄 {uploadedFileNames[String(q.id)]}</span>
+                {:else}
+                  <span class="review-status unanswered">— Sin subir</span>
+                {/if}
+              </div>
+            {/each}
+          </div>
+        {/if}
+
+        {#if dfdUploadError}
+          <div class="save-error">⚠ {dfdUploadError}</div>
+          <button onclick={retryDfdUpload} disabled={isUploadingDfd} class="retry-btn">
+            {isUploadingDfd ? 'Subiendo DFD...' : '📤 Reintentar subida DFD'}
+          </button>
+        {/if}
 
         <div class="summary">
           <div class="summary-item">
             <span class="summary-label">Preguntas respondidas</span>
-            <span class="summary-value">{Object.keys(answers).length} / {totalQuestions}</span>
+            <span class="summary-value">{Object.keys(answers).length} / {examTotal}</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">Tiempo utilizado</span>
-            <span class="summary-value">{formatTime(totalTime - timeLeft)}</span>
+            <span class="summary-value">{formatTime(TOTAL_TIME - timeLeft)}</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">Intentos restantes</span>
@@ -643,28 +704,26 @@
           {#each questions as q, i}
             <div class="review-item">
               <span class="review-num">Pregunta {i + 1}</span>
-              {#if q.type === 'mc'}
-                {#if results[q.id]?.correct}
-                  <span class="review-status correct">✓ Correcta</span>
-                {:else if isQuestionAnswered(q.id)}
-                  <span class="review-status incorrect">✗ Incorrecta</span>
+              {#if q.type === 'file'}
+                {#if uploadedFileNames[String(q.id)]}
+                  <span class="review-status pending-review">📐 Subido</span>
                 {:else}
-                  <span class="review-status unanswered">— Sin responder</span>
+                  <span class="review-status unanswered">— Sin subir</span>
                 {/if}
+              {:else if results[q.id]?.correct}
+                <span class="review-status correct">✓ Correcta</span>
+              {:else if isQuestionAnswered(q.id)}
+                <span class="review-status incorrect">✗ Incorrecta</span>
               {:else}
-                {#if isQuestionAnswered(q.id)}
-                  <span class="review-status pending-review">⏳ Por revisar</span>
-                {:else}
-                  <span class="review-status unanswered">— Sin responder</span>
-                {/if}
+                <span class="review-status unanswered">— Sin responder</span>
               {/if}
             </div>
           {/each}
         </div>
 
         {#if slots.remaining > 0}
-          <button onclick={() => { finished = false; }} class="start-btn" style="margin-bottom:0.75rem">
-            {slots.remaining > 0 ? `Realizar ${getAttemptLabel(getAttemptCount() + 1)}` : ''}
+          <button onclick={() => { finished = false; started = false; }} class="start-btn" style="margin-bottom:0.75rem">
+            Realizar {getAttemptLabel(getAttemptCount() + 1)}
           </button>
         {/if}
         <a href="/" class="back-btn">Volver al Inicio</a>
@@ -676,7 +735,13 @@
       <div class="exam-header">
         <div class="exam-header-left">
           <h1>{getAttemptLabel(currentAttemptNumber)}</h1>
-          <span class="question-counter">Pregunta {currentIndex + 1} de {totalQuestions}</span>
+          <span class="question-counter">
+            {#if questions[currentIndex]?.type === 'file'}
+              Ejercicio Práctico (Pregunta {currentIndex + 1} de {examTotal})
+            {:else}
+              Pregunta {currentIndex + 1} de {examTotal}
+            {/if}
+          </span>
         </div>
         <div class="exam-header-right">
           {#if tabSwitchCount > 0}
@@ -696,15 +761,47 @@
       <div class="exam-body">
   <div class="question-card">
           <div class="question-header">
-            <span class="question-type-badge {questions[currentIndex]?.type === 'mc' ? 'mc' : 'open'}">
-              {questions[currentIndex]?.type === 'mc' ? 'Selección Múltiple' : 'Pregunta Abierta'}
+            <span class="question-type-badge {questions[currentIndex]?.type === 'file' ? 'open' : 'mc'}">
+              {questions[currentIndex]?.type === 'file' ? 'Ejercicio Práctico (DFD)' : 'Selección Múltiple'}
             </span>
-            <span class="question-tema">Tema {questions[currentIndex]?.tema}</span>
+            <span class="question-tema">{getLevelLabel(questions[currentIndex]?.tema)}</span>
           </div>
 
-          <p class="question-text">{questions[currentIndex]?.question}</p>
-
-          {#if questions[currentIndex]?.type === 'mc'}
+          {#if questions[currentIndex]?.type === 'file'}
+            <div class="file-question-text">
+              {@html questions[currentIndex].question.replace(/\n/g, '<br/>')}
+            </div>
+            <div class="file-upload-area">
+              <div class="upload-instructions">
+                <strong>📂 ¿Cómo responder?</strong>
+                <ol>
+                  <li>Abre el <a href="/algoritmos/dfd" target="_blank" rel="noopener">Editor de DFD</a>, resuelve el ejercicio y guarda tu archivo.</li>
+                  <li>Sube aquí el archivo <code>.dfd</code> (máximo 2 MB).</li>
+                </ol>
+              </div>
+              <label class="file-drop-zone {uploadedFileNames[String(questions[currentIndex].id)] ? 'has-file' : ''}">
+                <input type="file" accept=".dfd" onchange={handleFileSelect} style="display:none" />
+                {#if uploadedFileNames[String(questions[currentIndex].id)]}
+                  <div class="file-selected">
+                    <span class="file-icon">📄</span>
+                    <span class="file-name">{uploadedFileNames[String(questions[currentIndex].id)]}</span>
+                    <span class="file-check">✅</span>
+                  </div>
+                  <p class="file-hint">Haz clic para cambiar el archivo</p>
+                {:else}
+                  <div class="file-prompt">
+                    <span class="upload-icon">📤</span>
+                    <p><strong>Haz clic para seleccionar tu archivo .dfd</strong></p>
+                    <p class="file-hint">Máximo 2 MB · Solo archivos .dfd</p>
+                  </div>
+                {/if}
+              </label>
+              {#if uploadErrors[String(questions[currentIndex].id)]}
+                <div class="upload-error">❌ {uploadErrors[String(questions[currentIndex].id)]}</div>
+              {/if}
+            </div>
+          {:else}
+            <p class="question-text">{questions[currentIndex]?.question}</p>
             <div class="options">
               {#each questions[currentIndex].options as option, optIndex}
                 <label class="option-label {answers[questions[currentIndex]?.id] === optIndex ? 'selected' : ''}">
@@ -719,13 +816,6 @@
                 </label>
               {/each}
             </div>
-          {:else}
-            <textarea
-              class="open-answer"
-              placeholder="Escribe tu respuesta aquí..."
-              value={answers[questions[currentIndex]?.id] || ''}
-              oninput={(e) => handleAnswer((e.target as HTMLTextAreaElement).value)}
-            ></textarea>
           {/if}
         </div>
 
@@ -738,7 +828,7 @@
             ← Anterior
           </button>
 
-          {#if currentIndex < totalQuestions - 1}
+          {#if currentIndex < examTotal - 1}
             <button
               class="nav-btn"
               onclick={() => goToQuestion(currentIndex + 1)}
@@ -819,7 +909,7 @@
 
   .attempts-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.6rem;
     margin-bottom: 0.75rem;
   }
@@ -840,12 +930,6 @@
   .attempt-card.used {
     border-color: #e5e7eb;
     background: #f3f4f6;
-    opacity: 0.7;
-  }
-
-  .attempt-card.blocked {
-    border-color: #fca5a5;
-    background: #fef2f2;
     opacity: 0.7;
   }
 
@@ -888,10 +972,6 @@
 
   .used-badge {
     color: #4b5563;
-  }
-
-  .blocked-badge {
-    color: #dc2626;
   }
 
   .window-info {
@@ -1170,25 +1250,6 @@
     flex: 1;
   }
 
-  .open-answer {
-    width: 100%;
-    min-height: 160px;
-    padding: 1rem;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    font-family: inherit;
-    line-height: 1.6;
-    resize: vertical;
-    transition: border-color 0.2s;
-    box-sizing: border-box;
-  }
-
-  .open-answer:focus {
-    outline: none;
-    border-color: var(--color-theme-1, #3b82f6);
-  }
-
   .exam-actions {
     display: flex;
     justify-content: space-between;
@@ -1394,7 +1455,7 @@
     }
 
     .attempts-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: 1fr;
     }
 
     .attempt-card {
@@ -1433,12 +1494,6 @@
 
     .option-label {
       padding: 0.65rem 0.85rem;
-      font-size: 0.88rem;
-    }
-
-    .open-answer {
-      min-height: 120px;
-      padding: 0.75rem;
       font-size: 0.88rem;
     }
 
@@ -1608,4 +1663,130 @@
   .retry-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .save-note {
+    font-size: 0.85rem;
+    color: #6b7280;
+    text-align: center;
+    margin: 0.25rem 0 1rem;
+  }
+
+  .dfd-summary {
+    text-align: left;
+    margin-bottom: 1.5rem;
+  }
+
+  .dfd-summary h2 {
+    font-size: 1rem;
+    margin: 0 0 0.75rem;
+    color: #374151;
+  }
+
+  .file-question-text {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #1f2937;
+    background: #f8fafc;
+    border-left: 4px solid #2563eb;
+    padding: 1rem 1.15rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    text-align: left;
+  }
+
+  .file-upload-area {
+    margin-top: 1rem;
+  }
+
+  .upload-instructions {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    font-size: 0.88rem;
+    color: #1e40af;
+    text-align: left;
+    margin-bottom: 0.85rem;
+  }
+
+  .upload-instructions ol {
+    margin: 0.4rem 0 0;
+    padding-left: 1.2rem;
+    line-height: 1.6;
+  }
+
+  .upload-instructions a {
+    color: #1d4ed8;
+    font-weight: 600;
+  }
+
+  .upload-instructions code {
+    background: #dbeafe;
+    padding: 0.05rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.82rem;
+  }
+
+  .file-drop-zone {
+    display: block;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    background: #f9fafb;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .file-drop-zone:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+
+  .file-drop-zone.has-file {
+    border-color: #16a34a;
+    background: #f0fdf4;
+    border-style: solid;
+  }
+
+  .file-prompt p {
+    margin: 0.25rem 0;
+  }
+
+  .upload-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+
+  .file-hint {
+    font-size: 0.78rem;
+    color: #6b7280;
+    margin: 0.2rem 0 0;
+  }
+
+  .file-selected {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    font-weight: 600;
+    color: #166534;
+    flex-wrap: wrap;
+  }
+
+  .file-icon { font-size: 1.4rem; }
+  .file-name { word-break: break-all; }
+  .file-check { font-size: 1.1rem; }
+
+  .upload-error {
+    margin-top: 0.6rem;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    color: #dc2626;
+    border-radius: 8px;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
 </style>

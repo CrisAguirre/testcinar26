@@ -359,3 +359,12 @@ Cinar/
 - **Exención de DFD retirada del taller**: eliminados `MCQ_ONLY_EMAILS`/`isMcqOnly` de `algoritmos/taller` (filtro de preguntas file, comentario de envío y bloque de instrucciones) y su describe en `exam_taller_algo.test.js`. Las notas ya registradas (p. ej. Julián 4/5) no se modifican.
 - Verificación: tests de los archivos afectados 20/20; `npm run build` ✓; suite completa solo con los fallos ambientales de siempre (api.grades sin backend local).
 - **Actividad de la semana (Algoritmos) con Nivel 3**: tercera pestaña "Nivel 3 — Ciclos (12)" con análisis guiado y enlaces `?load=N3-X` al editor; la página ahora importa N1/N2/N3 de `dfdExercises.js` (fuente única, sin duplicar enunciados).
+
+### 27. Tests de aseguramiento de los parciales (19/10, indicación del docente)
+- **Backend** (`testcinar26bknd`, `node --test`, sin dependencias nuevas; script `npm test`):
+  - `src/config/schedule.test.js` (18 tests): fechas exactas en hora Colombia (Algo P1 19–20/10, DW2 prep 8–13/10 + evaluación 21/10, taller 06–07/10), bordes de medianoche (18/10 23:59 vs 19/10 00:00, 20/10 23:59 vs 21/10), máximos de intentos (2 / 2+2), mensajes 403 exactos y envío tardío aceptado vía `submittedAt`.
+  - `src/controllers/gradeController.test.js` (11 tests): `examLockError` por fecha y rol (estudiante bloqueado, admin/coordinación/docente no), bloqueo global `EXAMS_LOCKED` y mapeo materia→curso (`getCourseFromSubject`/`isExamSubject`). Para testearlos se exportaron esas 3 funciones (sin cambio de comportamiento).
+  - Hallazgo documentado: en el hueco 14–20/10 de DW2 el **candado deja pasar** (por diseño) y quien rechaza el envío es el gate `isSubmissionAllowed` con el mensaje del 21/10.
+- **Frontend** (Vitest): `exam_algo_p1.test.js` (constantes 20 preguntas/120 min/2 intentos, etiquetas, `formatTime`, `calculateScore`, `buildExamData` con DFD, snapshot retomable, cola de sync y health-check, con localStorage simulado) y `guards/__tests__/examLock.test.js` (fechas ISO exactas de Algo P1, DW2 y taller; bloqueos por rol con fake timers). 29 tests nuevos.
+- **Verificación**: backend 29/29 (`npm test`), frontend nuevos 29/29; suite completa del frontend 271 pasan / 6 fallan / 2 saltados (279) — los 6 fallos siguen siendo los ambientales de siempre (`api.grades` contra backend vivo, `api.test.js`, `exam.test.js`). `eslint` backend limpio.
+- **Commits**: backend `c638167` (tests + exports + script `npm test`); el fix de la expectativa DW2 quedó en un cambio posterior a ese commit. Frontend: pendiente de commit (2 archivos de tests).

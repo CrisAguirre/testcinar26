@@ -45,7 +45,9 @@
   let saveSuccess = $state(false);
   let isSaving = $state(false);
   let serverCheckOk = $state(false);
-  let checkingServer = $state(false);
+  // Empieza en true: evita que el aviso "No se pudo verificar el servidor"
+  // aparezca en el HTML inicial (SSR) antes del primer chequeo de salud.
+  let checkingServer = $state(true);
   let pendingSyncCount = $state(0);
   let syncingInProgress = $state(false);
 
@@ -289,7 +291,13 @@
   }
 
   async function checkBackendHealth(): Promise<boolean> {
-    if (isHealthCheckRecent()) return true;
+    if (isHealthCheckRecent()) {
+      // Chequeo reciente: el servidor está OK; marcar explícitamente para no
+      // dejar encendido el aviso de "No se pudo verificar el servidor".
+      serverCheckOk = true;
+      checkingServer = false;
+      return true;
+    }
     checkingServer = true;
     const baseUrl = getHealthUrl();
     try {

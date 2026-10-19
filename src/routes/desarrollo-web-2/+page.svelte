@@ -31,7 +31,7 @@
     links.map((l) => {
       const isExam = l.href !== null && /parcial|taller/i.test(l.href);
       if (!isExam) return l;
-      // Parcial 1 tiene ventana propia 15/10 18:00-20:00; el resto sigue el bloqueo global.
+      // Parcial 1 tiene ventana propia del 19/10 al 21/10 (hasta medianoche); el resto sigue el bloqueo global.
       const locked = l.href !== null && l.href.includes('parcial-1')
         ? isDW2P1LockedFor($currentUser)
         : examsLocked;

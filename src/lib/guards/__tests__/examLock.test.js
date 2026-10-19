@@ -38,10 +38,10 @@ describe('constantes de fecha (hora Colombia, UTC-5)', () => {
     expect(ALGO_P1_CLOSE.toISOString()).toBe('2026-10-21T04:59:59.000Z');
   });
 
-  it('DW2 P1: prep 8–13/10 y evaluación 21/10 todo el día', () => {
+  it('DW2 P1: prep 8–13/10 y evaluación del 19 al 21/10 (hasta medianoche)', () => {
     expect(DW2P1_PREP_OPEN.toISOString()).toBe('2026-10-08T05:00:00.000Z');
     expect(DW2P1_PREP_CLOSE.toISOString()).toBe('2026-10-14T04:59:59.000Z');
-    expect(DW2P1_OPEN.toISOString()).toBe('2026-10-21T05:00:00.000Z');
+    expect(DW2P1_OPEN.toISOString()).toBe('2026-10-19T05:00:00.000Z');
     expect(DW2P1_CLOSE.toISOString()).toBe('2026-10-22T04:59:59.000Z');
   });
 
@@ -81,7 +81,7 @@ describe('isAlgoP1Open / isAlgoP1LockedFor', () => {
 });
 
 describe('isDW2P1Open / isDW2P1LockedFor', () => {
-  it('cubre preparación y evaluación (el hueco 14–20/10 lo avisa la página, no esta guarda)', () => {
+  it('cubre preparación y evaluación (el hueco 14–18/10 lo avisa la página, no esta guarda)', () => {
     setTime('2026-10-07T23:59:59-05:00');
     expect(isDW2P1Open()).toBe(false);
     setTime('2026-10-08T00:00:00-05:00');

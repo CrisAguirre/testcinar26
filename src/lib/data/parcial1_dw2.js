@@ -11,7 +11,7 @@
 
 export const examConfig = {
   title: 'Parcial 1 - Desarrollo Web 2',
-  dateLabel: 'Miércoles 21/10/2026 · todo el día (re-habilitado; preparación hasta el 13/10)',
+  dateLabel: 'Del lunes 19/10 al miércoles 21/10/2026 · hasta medianoche (evaluación habilitada)',
   perBucket: 5,
   buckets: ['arq-mc', 'arq-open', 'svelte-mc', 'svelte-open']
 };

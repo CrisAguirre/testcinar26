@@ -32,12 +32,12 @@ export function isAlgoP1LockedFor(user) {
   return !isAlgoP1Open();
 }
 
-// Parcial 1 DW2: preparación (histórica) hasta el 13/10 23:59 + evaluación RE-HABILITADA
-// para el miércoles 21/10 todo el día (se movió desde el 14/10). Esquema 2+2 sin cambios.
+// Parcial 1 DW2: preparación (histórica) hasta el 13/10 23:59 + evaluación habilitada
+// desde el lunes 19/10 hasta el miércoles 21/10 a medianoche. Esquema 2+2 sin cambios.
 // 20 preguntas (10 Arquitectura TrueX + 10 Svelte) del banco de 50.
 export const DW2P1_PREP_OPEN = new Date('2026-10-08T00:00:00-05:00');
 export const DW2P1_PREP_CLOSE = new Date('2026-10-13T23:59:59-05:00');
-export const DW2P1_OPEN = new Date('2026-10-21T00:00:00-05:00');
+export const DW2P1_OPEN = new Date('2026-10-19T00:00:00-05:00');
 export const DW2P1_CLOSE = new Date('2026-10-21T23:59:59-05:00');
 
 /** Verifica si el Parcial 1 de DW2 está habilitado por fecha (preparación o evaluación) */

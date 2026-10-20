@@ -15,8 +15,8 @@ import {
 function baseData() {
   return {
     attemptNumber: 1,
-    mcScore: 6,
-    mcTotal: 10,
+    mcScore: 1,
+    mcTotal: 2,
     questions: [
       { id: 1, type: 'mc', studentAnswer: 0, isCorrect: true },
       { id: 2, type: 'mc', studentAnswer: 1, isCorrect: false },
@@ -53,7 +53,7 @@ describe('dw2Review', () => {
 
   it('usa mcScore/mcTotal si el examen viejo no trae isCorrect', () => {
     const data = { mcScore: 6, mcTotal: 10, questions: [{ id: 1, type: 'mc' }] };
-    expect(getMcStats(data)).toEqual({ correct: 6, total: 1 });
+    expect(getMcStats(data)).toEqual({ correct: 6, total: 10 });
   });
 
   it('detecta abiertas pendientes y suma solo las calificadas', () => {
@@ -92,6 +92,7 @@ describe('dw2Review', () => {
     );
     expect(stripReviewNote('Intento 1 | Revisado - Abiertas: 30/50')).toBe('Intento 1');
     expect(buildReviewComments('', 30, 50)).toBe('Revisado - Abiertas: 30/50');
+    expect(buildReviewComments(null, 0, 50)).toBe('Revisado - Abiertas: 0/50');
   });
 
   it('etiqueta la ventana según la fecha del intento', () => {

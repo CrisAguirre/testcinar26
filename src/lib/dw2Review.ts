@@ -47,7 +47,9 @@ export function getMcStats(data: any): McStats {
   const correct = hasFlags
     ? mc.filter((q) => q.isCorrect === true).length
     : Number(data?.mcScore) || 0;
-  const total = mc.length || Number(data?.mcTotal) || 0;
+  // El total declarado por el examen manda (10 MC); si falta, usamos las
+  // preguntas efectivamente guardadas.
+  const total = Number(data?.mcTotal) || mc.length || 0;
   return { correct, total };
 }
 

@@ -12,7 +12,29 @@
     if (!$currentUser) { goto('/login'); return; }
     if (examLocked) goto('/desarrollo-web-2');
   });
-  import { STORAGE_KEY, DETAIL_KEY, DW2P1_PREP_OPEN, DW2P1_PREP_CLOSE, DW2P1_OPEN, DW2P1_CLOSE, TOTAL_QUESTIONS, TOTAL_TIME, TIME_PER_MC, TIME_PER_OPEN, calculateTotalTime, formatTime, getAttemptLabel, getAttemptType, calculateScore, buildExamData, SYNC_QUEUE_KEY, getSyncQueue, addToSyncQueue, removeFromSyncQueue, setHealthCheckOk, isHealthCheckRecent, SAVED_ANSWERS_KEY, saveAnswersSnapshot, clearSavedAnswers } from '$lib/exam';
+  import {
+    DW2P1_SUBJECT,
+    DW2P1_STORAGE_KEY,
+    DW2P1_DETAIL_KEY,
+    DW2P1_SYNC_QUEUE_KEY,
+    DW2P1_SAVED_ANSWERS_KEY,
+    DW2P1_HEALTH_CHECK_KEY,
+    DW2P1_PREP_OPEN,
+    DW2P1_PREP_CLOSE,
+    DW2P1_OPEN,
+    DW2P1_CLOSE,
+    calculateTotalTime,
+    formatTime,
+    getAttemptLabel,
+    getSyncQueue,
+    addToSyncQueue,
+    removeFromSyncQueue,
+    setHealthCheckOk,
+    isHealthCheckRecent,
+    saveAnswersSnapshot,
+    clearSavedAnswers,
+    migrateDw2SavedAnswers
+  } from '$lib/exam';
   import { preloadedMyGrades, preloadingStatus, wakeUpStatus } from '$lib/stores/preloaded';
 
   let { data } = $props();
@@ -56,7 +78,7 @@
 
   function getLocalAttempts(): any[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
+      const data = localStorage.getItem(DW2P1_STORAGE_KEY);
       return data ? JSON.parse(data) : [];
     } catch { return []; }
   }
@@ -64,7 +86,10 @@
   function getAttemptCount(): number {
     if (loadingServer) return getLocalAttempts().length;
     if (serverAttempts === 0) {
-      try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(DETAIL_KEY); } catch {}
+      try {
+        localStorage.removeItem(DW2P1_STORAGE_KEY);
+        localStorage.removeItem(DW2P1_DETAIL_KEY);
+      } catch {}
       return 0;
     }
     return Math.max(serverAttempts, getLocalAttempts().length);
@@ -78,7 +103,7 @@
         all = await gradesApi.getMine();
         preloadedMyGrades.set(all);
       }
-      const examGrades = all.filter((g: any) => g.subject === 'Desarrollo Web 2 - Parcial 1');
+      const examGrades = all.filter((g: any) => g.subject === DW2P1_SUBJECT);
       serverGrades = examGrades;
       serverAttempts = examGrades.length;
     } catch {
@@ -130,14 +155,17 @@
   });
 
   onMount(() => {
+    // Antes de leer el borrador/cola, recupera lo que haya quedado en las
+    // claves compartidas con DW1 P1.
+    migrateDw2SavedAnswers();
     loadServerAttempts();
-    pendingSyncCount = getSyncQueue().length;
+    pendingSyncCount = getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length;
     checkBackendHealth();
     autoSaveTimer = setInterval(() => {
       if (started && !finished) autoSaveAnswers(true);
       // Reintento periódico de la cola (además de onload y del evento online).
       if (!started || finished) {
-        if (!isSaving && !submitting && !syncingInProgress && getSyncQueue().length > 0) {
+        if (!isSaving && !submitting && !syncingInProgress && getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length > 0) {
           processSyncQueue();
         }
       }
@@ -149,12 +177,12 @@
   $effect(() => {
     if ($currentUser) {
       loadServerAttempts();
-      if (!isSaving && !submitting && getSyncQueue().length > 0) processSyncQueue();
+      if (!isSaving && !submitting && getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length > 0) processSyncQueue();
     }
   });
 
   function handleOnline() {
-    if (!isSaving && !submitting && getSyncQueue().length > 0) processSyncQueue();
+    if (!isSaving && !submitting && getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length > 0) processSyncQueue();
   }
 
   function handleBeforeUnload() {
@@ -170,6 +198,7 @@
     if (!isUnlimited && !getAvailableSlots().enabled) return;
     saveError = '';
     saveSuccess = false;
+    migrateDw2SavedAnswers();
     const healthy = await checkBackendHealth();
     if (!healthy) {
       const proceed = confirm('El servidor no responde. Puedes comenzar, pero las respuestas se guardarán localmente y se sincronizarán después. ¿Deseas continuar?');
@@ -178,7 +207,7 @@
 
     const saved = (() => {
       try {
-        const raw = localStorage.getItem(SAVED_ANSWERS_KEY);
+        const raw = localStorage.getItem(DW2P1_SAVED_ANSWERS_KEY);
         return raw ? JSON.parse(raw) : null;
       } catch { return null; }
     })();
@@ -201,7 +230,7 @@
         return;
       }
     }
-    clearSavedAnswers();
+    clearSavedAnswers(DW2P1_SAVED_ANSWERS_KEY);
 
     questions = selectRandomQuestions();
     const dynamicTime = calculateTotalTime(questions);
@@ -252,19 +281,19 @@
       autoSaveTimeout = null;
     }
     if (immediate) {
-      saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount);
+      saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount, DW2P1_SAVED_ANSWERS_KEY);
       return;
     }
     // Debounce: al escribir una respuesta abierta no serializamos el examen
     // completo en cada tecla, pero guardamos pocos milisegundos después.
     autoSaveTimeout = setTimeout(() => {
       autoSaveTimeout = null;
-      saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount);
+      saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount, DW2P1_SAVED_ANSWERS_KEY);
     }, 400);
   }
 
   async function checkBackendHealth(): Promise<boolean> {
-    if (isHealthCheckRecent()) {
+    if (isHealthCheckRecent(DW2P1_HEALTH_CHECK_KEY)) {
       // Chequeo reciente: el servidor está OK; marcar explícitamente para no
       // dejar encendido el aviso de "No se pudo verificar el servidor".
       serverCheckOk = true;
@@ -280,7 +309,7 @@
           const timeout = setTimeout(() => controller.abort(), 25000);
           await fetch(baseUrl, { signal: controller.signal, mode: 'cors' });
           clearTimeout(timeout);
-          setHealthCheckOk();
+          setHealthCheckOk(DW2P1_HEALTH_CHECK_KEY);
           serverCheckOk = true;
           return true;
         } catch {
@@ -296,7 +325,7 @@
 
   async function processSyncQueue() {
     if (syncingInProgress) return;
-    const queue = getSyncQueue();
+    const queue = getSyncQueue(DW2P1_SYNC_QUEUE_KEY);
     if (queue.length === 0) {
       pendingSyncCount = 0;
       return;
@@ -316,7 +345,7 @@
           // Guardado atómico: la calificación y sus respuestas viajan en la
           // misma petición. Si esto falla, la entrada sigue en la cola.
           await gradesApi.submitMine({
-            subject: 'Desarrollo Web 2 - Parcial 1',
+            subject: DW2P1_SUBJECT,
             score: entry.score,
             max_score: entry.maxScore,
             period: '2026-1',
@@ -326,7 +355,7 @@
             // de que cierre la ventana del parcial.
             submittedAt: Number.isFinite(submittedAt) ? submittedAt : Date.now()
           });
-          removeFromSyncQueue(entry.createdAt);
+          removeFromSyncQueue(entry.createdAt, DW2P1_SYNC_QUEUE_KEY);
           savedAny = true;
         } catch {
           break;
@@ -334,7 +363,7 @@
       }
     } finally {
       syncingInProgress = false;
-      pendingSyncCount = getSyncQueue().length;
+      pendingSyncCount = getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length;
     }
     if (savedAny) {
       await loadServerAttempts(true);
@@ -361,6 +390,7 @@
       questions: questions.map(q => ({
         id: q.id,
         tema: q.tema,
+        area: q.area,
         type: q.type,
         question: q.question,
         // El criterio se guarda con la respuesta para que el docente pueda
@@ -389,7 +419,7 @@
         // Una sola petición: evita que la calificación quede sin respuestas
         // si falla el segundo PUT (el error se ignoraba antes).
         const res = await gradesApi.submitMine({
-          subject: 'Desarrollo Web 2 - Parcial 1',
+          subject: DW2P1_SUBJECT,
           score: mcScore,
           max_score: mcTotal,
           period: '2026-1',
@@ -417,13 +447,13 @@
     saveSuccess = false;
     isSaving = true;
     try {
-      if (getSyncQueue().length > 0) {
+      if (getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length > 0) {
         // Ya está en la cola local: reintentar no debe crear otra
         // calificación. Procesamos la cola (con examData incluido).
         await processSyncQueue();
-        if (getSyncQueue().length === 0) {
+        if (getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length === 0) {
           saveSuccess = true;
-          clearSavedAnswers();
+          clearSavedAnswers(DW2P1_SAVED_ANSWERS_KEY);
         } else {
           saveError = 'Todavía no se pudo sincronizar. Revisa la conexión e inténtalo de nuevo.';
         }
@@ -435,11 +465,11 @@
         );
         if (result.success) {
           saveSuccess = true;
-          clearSavedAnswers();
+          clearSavedAnswers(DW2P1_SAVED_ANSWERS_KEY);
           const localList = getLocalAttempts();
           if (localList.length > 0) {
             localList[localList.length - 1].gradeId = result.gradeId;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
+            localStorage.setItem(DW2P1_STORAGE_KEY, JSON.stringify(localList));
           }
           await loadServerAttempts(true);
         } else {
@@ -517,26 +547,27 @@
       } else {
         try {
           addToSyncQueue({
+            subject: DW2P1_SUBJECT,
             score,
             maxScore: totalMc,
             openCount,
             comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${totalMc} | Abiertas: ${openCount} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`,
             examData: JSON.stringify(examData),
             submittedAt
-          });
+          }, DW2P1_SYNC_QUEUE_KEY);
           queued = true;
           saveError = `No se pudo guardar en el servidor: ${result.error}. Las respuestas quedaron guardadas localmente y se reintentará automáticamente.`;
         } catch {
           saveError = `No se pudo guardar en el servidor ni localmente: ${result.error}. No cierres esta página; intenta de nuevo.`;
         }
-        pendingSyncCount = getSyncQueue().length;
+        pendingSyncCount = getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length;
       }
     }
 
     try {
       const localList = getLocalAttempts();
       localList.push(localRecord);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
+      localStorage.setItem(DW2P1_STORAGE_KEY, JSON.stringify(localList));
     } catch {
       if (!saveError) saveError = 'No se pudo guardar el resumen local del intento.';
     }
@@ -544,7 +575,7 @@
     if (gradeId) await loadServerAttempts(true);
     // Solo borrar el borrador cuando existe una copia en el servidor o en la
     // cola local. Si ambos fallan, el borrador sigue disponible para reintentar.
-    if (gradeId || queued) clearSavedAnswers();
+    if (gradeId || queued) clearSavedAnswers(DW2P1_SAVED_ANSWERS_KEY);
     submitting = false;
   }
 
@@ -552,7 +583,7 @@
     // Guarda el borrador también al navegar fuera con el botón "Volver"
     // (la navegación de SvelteKit no dispara beforeunload).
     if (started && !finished) {
-      saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount);
+      saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount, DW2P1_SAVED_ANSWERS_KEY);
     }
     if (timerInterval) {
       clearInterval(timerInterval);

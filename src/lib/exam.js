@@ -105,42 +105,87 @@ export function isMcCorrect(question, answer) {
 
 export const SYNC_QUEUE_KEY = 'parcial1_sync_queue';
 
-export function getSyncQueue() {
+// Claves propias de DW2 P1. DW1 P1 y DW2 P1 comparten este módulo; antes
+// ambos usaban `parcial1_*` y podían reanudar el borrador del otro o enviar
+// su cola con la materia equivocada.
+export const DW2P1_SUBJECT = 'Desarrollo Web 2 - Parcial 1';
+export const DW2P1_STORAGE_KEY = 'dw2_p1_attempts';
+export const DW2P1_DETAIL_KEY = 'dw2_p1_details';
+export const DW2P1_SYNC_QUEUE_KEY = 'dw2_p1_sync_queue';
+export const DW2P1_SAVED_ANSWERS_KEY = 'dw2_p1_saved_answers';
+export const DW2P1_HEALTH_CHECK_KEY = 'dw2_p1_last_health_check';
+
+function readQueue(key) {
   try {
-    const data = localStorage.getItem(SYNC_QUEUE_KEY);
+    const data = localStorage.getItem(key);
     return data ? JSON.parse(data) : [];
   } catch { return []; }
 }
 
-export function addToSyncQueue(entry) {
-  const queue = getSyncQueue();
+function isDw2QueueEntry(entry) {
+  if (!entry || typeof entry !== 'object') return false;
+  if (entry.subject) return entry.subject === DW2P1_SUBJECT;
+  try {
+    const data = typeof entry.examData === 'string' ? JSON.parse(entry.examData) : entry.examData;
+    const questions = Array.isArray(data?.questions) ? data.questions : [];
+    // DW2 usa temas string (`Arquitectura`, `Svelte`) y `area`; DW1 usa
+    // temas numéricos. Así recuperamos las entradas viejas sin sujeto.
+    return questions.some(q => typeof q?.tema === 'string' || q?.area);
+  } catch { return false; }
+}
+
+// Mueve a la cola de DW2 las entradas antiguas que quedaron en la cola
+// compartida. Es idempotente y conserva las entradas de DW1.
+export function migrateDw2Queue() {
+  try {
+    const shared = readQueue(SYNC_QUEUE_KEY);
+    if (shared.length === 0) return;
+    const dw2 = shared.filter(isDw2QueueEntry);
+    if (dw2.length === 0) return;
+    const rest = shared.filter(entry => !isDw2QueueEntry(entry));
+    const own = readQueue(DW2P1_SYNC_QUEUE_KEY);
+    const seen = new Set(own.map(entry => entry.createdAt));
+    const merged = [...own, ...dw2.filter(entry => !seen.has(entry.createdAt))];
+    localStorage.setItem(DW2P1_SYNC_QUEUE_KEY, JSON.stringify(merged));
+    localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(rest));
+  } catch {}
+}
+
+export function getSyncQueue(key = SYNC_QUEUE_KEY) {
+  // Cualquier lectura de la cola compartida (DW1) separa primero lo de DW2.
+  migrateDw2Queue();
+  return readQueue(key);
+}
+
+export function addToSyncQueue(entry, key = SYNC_QUEUE_KEY) {
+  const queue = getSyncQueue(key);
   queue.push({ ...entry, createdAt: Date.now() });
-  localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+  localStorage.setItem(key, JSON.stringify(queue));
 }
 
-export function removeFromSyncQueue(createdAt) {
-  const queue = getSyncQueue().filter(e => e.createdAt !== createdAt);
-  localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+export function removeFromSyncQueue(createdAt, key = SYNC_QUEUE_KEY) {
+  const queue = getSyncQueue(key).filter(e => e.createdAt !== createdAt);
+  localStorage.setItem(key, JSON.stringify(queue));
 }
 
-export function clearSyncQueue() {
-  localStorage.removeItem(SYNC_QUEUE_KEY);
+export function clearSyncQueue(key = SYNC_QUEUE_KEY) {
+  localStorage.removeItem(key);
 }
 
 export const CHECK_BEFORE_START_KEY = 'parcial1_last_health_check';
-export function setHealthCheckOk() {
-  try { localStorage.setItem(CHECK_BEFORE_START_KEY, Date.now().toString()); } catch {}
+export function setHealthCheckOk(key = CHECK_BEFORE_START_KEY) {
+  try { localStorage.setItem(key, Date.now().toString()); } catch {}
 }
-export function isHealthCheckRecent() {
+export function isHealthCheckRecent(key = CHECK_BEFORE_START_KEY) {
   try {
-    const last = localStorage.getItem(CHECK_BEFORE_START_KEY);
+    const last = localStorage.getItem(key);
     if (!last) return false;
     return Date.now() - Number(last) < 60000;
   } catch { return false; }
 }
 
 export const SAVED_ANSWERS_KEY = 'parcial1_saved_answers';
-export function saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount) {
+export function saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount, key = SAVED_ANSWERS_KEY) {
   try {
     const snapshot = {
       questions,
@@ -150,9 +195,30 @@ export function saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, 
       tabSwitchCount,
       savedAt: Date.now()
     };
-    localStorage.setItem(SAVED_ANSWERS_KEY, JSON.stringify(snapshot));
+    localStorage.setItem(key, JSON.stringify(snapshot));
   } catch {}
 }
-export function clearSavedAnswers() {
-  try { localStorage.removeItem(SAVED_ANSWERS_KEY); } catch {}
+export function clearSavedAnswers(key = SAVED_ANSWERS_KEY) {
+  try { localStorage.removeItem(key); } catch {}
+}
+
+// Recupera el borrador DW2 que haya quedado en la clave compartida.
+export function migrateDw2SavedAnswers() {
+  try {
+    const raw = localStorage.getItem(SAVED_ANSWERS_KEY);
+    if (!raw) return;
+    const snapshot = JSON.parse(raw);
+    const questions = Array.isArray(snapshot?.questions) ? snapshot.questions : [];
+    const isDw2 = questions.some(q => typeof q?.tema === 'string' || q?.area);
+    if (!isDw2) return;
+    let existing = null;
+    try {
+      const existingRaw = localStorage.getItem(DW2P1_SAVED_ANSWERS_KEY);
+      existing = existingRaw ? JSON.parse(existingRaw) : null;
+    } catch {}
+    if (!existing || (Number(snapshot?.savedAt) || 0) > (Number(existing?.savedAt) || 0)) {
+      localStorage.setItem(DW2P1_SAVED_ANSWERS_KEY, raw);
+    }
+    localStorage.removeItem(SAVED_ANSWERS_KEY);
+  } catch {}
 }

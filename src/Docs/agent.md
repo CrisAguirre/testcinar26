@@ -397,3 +397,25 @@ Cinar/
 - **Utilidades/tests**: `src/lib/dw2Review.ts` (parseo, MC/abiertas, totales, notas, comentarios, ventana) + `src/lib/__tests__/dw2Review.test.js` (8/8); `src/lib/__tests__/exam.dw2Storage.test.js` (6/6) cubre migración de cola/borrador y separación DW1/DW2.
 - **Verificación 20/10**: `npm run build` ✓ (rutas admin y DW2 compiladas); frontend 287 pasan / 6 fallan / 2 saltados (los 6 ambientales de siempre); backend `npm test` 29/29. **Sin commit ni push** (el docente los hace).
 - **Pendiente**: los demás parciales/talleres conservan el patrón de dos pasos (`POST` + `PUT examData`); no se tocaron en esta ventana para no modificar exámenes cerrados. Aplicar el mismo guardado atómico después del 21/10.
+
+### 31. Corrección y Desbloqueo del Ciclo Mientras (While) en el Editor DFD (20/10)
+- **Problema 1 (Imposible agregar elementos al interior del Mientras)**:
+  - **Causa raíz geométrica**: Cuando el Mientras estaba vacío (`isBodyEmpty=true`), la zona de soltado (`dropZone`) del cuerpo y la zona de soltado posterior del flujo principal compartían exactamente las mismas coordenadas `(cx, cy)`. Al estar la zona posterior después en el orden del DOM SVG, capturaba el evento `ondrop` e insertaba el componente fuera del Mientras (después de él).
+  - **Causa de UI**: El clic en la paleta izquierda (`handlePaletteClick`) siempre insertaba al final de `ast.nodes` ignorando la selección; el panel derecho no tenía botones para insertar en el cuerpo; y la lista de pasos omitía el cuerpo cuando estaba vacío.
+  - **Solución implementada**:
+    1. Espacio y separación garantizada en `renderer.js`: el cuerpo vacío reserva altura dedicada (`NODE_H + 12`) y genera su zona de soltado separada por más de 40px de la zona posterior.
+    2. Flecha **Sí**: se dibuja la flecha vertical con etiqueta **`Sí`** apuntando hacia el cuerpo del Mientras (tanto vacío como con hijos), mientras que la flecha de salida a la derecha conserva la etiqueta **`No`**.
+    3. Botones directos en el Panel de Propiedades: se incorporaron botones rápidos (`📥 + Lectura`, `⚙️ + Asignación`, `📤 + Salida`, `🔀 + Decisión`, `⏎ + Salto`) para agregar instrucciones directamente al cuerpo del Mientras con un clic.
+    4. Paleta inteligente: al tener seleccionado el Mientras o un nodo de su cuerpo, hacer clic en la paleta inserta directamente dentro del ciclo.
+    5. Lista de pasos: ahora muestra siempre `↳ Cuerpo del Mientras (vacío - clic para agregar)` o `↳ Cuerpo del Mientras (repite)`.
+- **Problema 2 ("Siempre se va por el No")**:
+  - **Causa 1 (Visual)**: Solo existía la flecha con etiqueta `No` (la entrada al cuerpo no tenía etiqueta y vacía no se dibujaba), lo que visualmente mostraba un camino único hacia la salida.
+  - **Causa 2 (Evaluador de expresiones en `executor.js`)**:
+    - El operador estándar de desigualdad de FreeDFD `<>` no era reconocido en el tokenizer (se dividía en `<` y `>`), evaluando condiciones como `i <> 10` o `clave <> 2026` como `0` (Falso / "No").
+    - Los literales de texto entre comillas simples (`'s'`, `'SI'`) y dobles (`"s"`) eran ignorados en el tokenizer, convirtiéndose en variables inexistentes evaluadas a `0`. Toda comparación de texto (`x != 's'`, `opcion == 's'`) fallaba y salía por el "No".
+  - **Solución implementada**:
+    1. Soporte en `executor.js` para el operador `<>` (mapeado a `!=`) y literales de cadena entre comillas simples y dobles (`type: 'string'`).
+    2. Comparación de cadenas flexible y tolerante (`case-insensitive` y con `.trim()`).
+    3. Re-notificación de paso en cada iteración del bucle para que el bloque Mientras se re-ilumine en verde en la ejecución paso a paso antes de cada comprobación.
+- **Verificación**: Tests unitarios nuevos en `src/lib/dfd/__tests__/while.test.js` (5/5 PASS); `test_executor.mjs` (3/3 PASS); `npm run build` exitoso (code 0) en 19.67s.
+

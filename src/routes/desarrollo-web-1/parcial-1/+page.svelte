@@ -12,7 +12,7 @@
     if (!$currentUser) { goto('/login'); return; }
     if (examLocked) goto('/desarrollo-web-1');
   });
-  import { STORAGE_KEY, DETAIL_KEY, WINDOW1_END, WINDOW2_START, WINDOW2_END, TOTAL_QUESTIONS, TOTAL_TIME, TIME_PER_MC, TIME_PER_OPEN, calculateTotalTime, formatTime, getAttemptLabel, getAttemptType, calculateScore, buildExamData, SYNC_QUEUE_KEY, getSyncQueue, addToSyncQueue, removeFromSyncQueue, setHealthCheckOk, isHealthCheckRecent, SAVED_ANSWERS_KEY, saveAnswersSnapshot, clearSavedAnswers } from '$lib/exam';
+  import { STORAGE_KEY, DETAIL_KEY, WINDOW1_END, WINDOW2_START, WINDOW2_END, TOTAL_QUESTIONS, TOTAL_TIME, TIME_PER_MC, TIME_PER_OPEN, calculateTotalTime, formatTime, getAttemptLabel, getAttemptType, calculateScore, buildExamData, SYNC_QUEUE_KEY, getSyncQueue, addToSyncQueue, removeFromSyncQueue, setHealthCheckOk, isHealthCheckRecent, getSavedAnswers, saveAnswersSnapshot, clearSavedAnswers } from '$lib/exam';
   import { preloadedMyGrades, preloadingStatus, wakeUpStatus } from '$lib/stores/preloaded';
 
   let { data } = $props();
@@ -131,12 +131,9 @@
       if (!proceed) return;
     }
 
-    const saved = (() => {
-      try {
-        const raw = localStorage.getItem(SAVED_ANSWERS_KEY);
-        return raw ? JSON.parse(raw) : null;
-      } catch { return null; }
-    })();
+    // getSavedAnswers separa antes un borrador DW2 que haya quedado en la
+    // clave compartida; DW1 nunca debe reanudar preguntas de DW2.
+    const saved = getSavedAnswers();
 
     if (saved && saved.questions && saved.answers && Object.keys(saved.answers).length > 0) {
       const resume = confirm(`Tienes un examen en progreso guardado (${Object.keys(saved.answers).length} preguntas respondidas). ¿Deseas continuar?`);

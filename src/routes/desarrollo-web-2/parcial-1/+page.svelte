@@ -31,6 +31,7 @@
     removeFromSyncQueue,
     setHealthCheckOk,
     isHealthCheckRecent,
+    getSavedAnswers,
     saveAnswersSnapshot,
     clearSavedAnswers,
     migrateDw2SavedAnswers
@@ -205,12 +206,7 @@
       if (!proceed) return;
     }
 
-    const saved = (() => {
-      try {
-        const raw = localStorage.getItem(DW2P1_SAVED_ANSWERS_KEY);
-        return raw ? JSON.parse(raw) : null;
-      } catch { return null; }
-    })();
+    const saved = getSavedAnswers(DW2P1_SAVED_ANSWERS_KEY);
 
     if (saved && saved.questions && saved.answers && Object.keys(saved.answers).length > 0) {
       const resume = confirm(`Tienes un examen en progreso guardado (${Object.keys(saved.answers).length} preguntas respondidas). ¿Deseas continuar?`);

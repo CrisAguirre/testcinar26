@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
   import { gradesApi } from '$lib/api';
   import { preloadedGrades } from '$lib/stores/preloaded';
-  import { SYNC_QUEUE_KEY, STORAGE_KEY, getSyncQueue, formatTime } from '$lib/exam';
+  import { SYNC_QUEUE_KEY, STORAGE_KEY, DW2P1_STORAGE_KEY, DW2P1_SYNC_QUEUE_KEY, getSyncQueue, formatTime } from '$lib/exam';
 
   let { data } = $props();
 
@@ -26,10 +26,16 @@
   let localAttemptsCount = $state(0);
 
   function checkUnsynced() {
-    unsyncedCount = getSyncQueue().length;
+    // Cola compartida (DW1 P1) + cola propia de DW2 P1.
+    unsyncedCount =
+      getSyncQueue(SYNC_QUEUE_KEY).length +
+      getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      localAttemptsCount = raw ? JSON.parse(raw).length : 0;
+      const dw2Raw = localStorage.getItem(DW2P1_STORAGE_KEY);
+      localAttemptsCount =
+        (raw ? JSON.parse(raw).length : 0) +
+        (dw2Raw ? JSON.parse(dw2Raw).length : 0);
     } catch { localAttemptsCount = 0; }
   }
 

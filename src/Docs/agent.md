@@ -285,9 +285,9 @@ Cinar/
 
 ## Vulnerabilidades y Deuda Técnica
 - Existen algunas vulnerabilidades low severity en frontend por la cookie herencia de @sveltejs/kit (no crítico para producción, no forzar `npm audit fix` para no romper el workspace).
-- Tests con fallos preexistentes (re-verificado 19/10/2026): `api.grades.test.js` (integración que exige backend vivo) y `exam.test.js` (ventana vencida placeholder 2027). `enlacesData.test.js` ya pasa.
+- Tests con fallos preexistentes (re-verificado 20/10/2026): `api.grades.test.js` (integración contra el backend real; acumula estado y límite de intentos entre corridas) y `exam.test.js` (ventana placeholder vencida). `enlacesData.test.js` ya pasa.
 - `api.test.js` (1 fallo local): espera `API_URL` prod pero `.env` local apunta a localhost; pasa en build prod.
-- `svelte-check`: ~519 errores base preexistentes (implicit `any` en JS legacy); los archivos nuevos del Parcial 1 Algoritmos/Nivel 3 quedaron en 0. `vite build` pasa (gate de Vercel).
+- `svelte-check`: ~528 errores base preexistentes (implicit `any` en JS legacy); los archivos nuevos del Parcial 1 Algoritmos/Nivel 3 y el fix de health-check del 20/10 quedaron en 0. `vite build` pasa (gate de Vercel).
 
 ## Bitácora 06-08/10/2026 (Taller Algoritmos + Parcial DW2 + estabilidad)
 
@@ -330,10 +330,10 @@ Cinar/
 
 ## Bitácora 18-19/10/2026 (Parcial 1 Algoritmos + DW2 re-habilitado + Nivel 3 DFD)
 
-### 22. DW2 Parcial 1 re-habilitado — miércoles 21/10 todo el día
-- Evaluación (intentos 3-4, esquema **2+2** intacto) movida del 14/10 al **miércoles 21/10 00:00–23:59** (hora Colombia); Preparación histórica cerrada desde el 13/10.
-- Frontend: `examLock.js` (`DW2P1_OPEN/CLOSE` = 21/10), `exam.js`, `parcial1_dw2.js` (dateLabel) y página `desarrollo-web-2/parcial-1` (rama 18–20/10: `📅 Evaluación: miércoles 21/10 (todo el día)`, tarjetas deshabilitadas, badges "Disponible 21/10"/"21/10").
-- Backend: `schedule.js` (fechas + mensajes) y `gradeController.examLockError` ("preparación hasta el 13/10 y evaluación el 21/10 todo el día"). Test `parcial1_dw2.test.js` actualizado.
+### 22. DW2 Parcial 1 re-habilitado — lunes 19/10 a miércoles 21/10 (hasta medianoche)
+- Evaluación (intentos 3-4, esquema **2+2** intacto) movida del 14/10 a la ventana **lunes 19/10 00:00 → miércoles 21/10 23:59** (hora Colombia), por indicación del docente del 19/10 ("desde ya" hasta el miércoles a medianoche); Preparación histórica cerrada desde el 13/10. El hueco 14–18/10 sigue rechazado por el gate de envío.
+- Frontend: `examLock.js` y `exam.js` (`DW2P1_OPEN` = 19/10 00:00, `DW2P1_CLOSE` = 21/10 23:59), `parcial1_dw2.js` (dateLabel "Del lunes 19/10 al miércoles 21/10/2026 · hasta medianoche (evaluación habilitada)") y página `desarrollo-web-2/parcial-1` (etiquetas "Disponible ya"/"19-21/10" e instrucciones actualizadas).
+- Backend: `schedule.js` (fechas + mensajes "preparación hasta el 13/10 y evaluación del 19 al 21/10 (hasta medianoche)") y `gradeController.examLockError` (mismo mensaje). Tests `schedule.test.js` y `gradeController.test.js` actualizados.
 - Fix UX (heredado del taller): el botón "Realizar Intento N" de la pantalla final ahora vuelve al menú de intentos en lugar de reabrir el examen con el estado del intento anterior.
 
 ### 23. Parcial 1 Algoritmos — lunes 19 y martes 20/10 (todo el día)
@@ -362,9 +362,26 @@ Cinar/
 
 ### 27. Tests de aseguramiento de los parciales (19/10, indicación del docente)
 - **Backend** (`testcinar26bknd`, `node --test`, sin dependencias nuevas; script `npm test`):
-  - `src/config/schedule.test.js` (18 tests): fechas exactas en hora Colombia (Algo P1 19–20/10, DW2 prep 8–13/10 + evaluación 21/10, taller 06–07/10), bordes de medianoche (18/10 23:59 vs 19/10 00:00, 20/10 23:59 vs 21/10), máximos de intentos (2 / 2+2), mensajes 403 exactos y envío tardío aceptado vía `submittedAt`.
+  - `src/config/schedule.test.js` (18 tests): fechas exactas en hora Colombia (Algo P1 19–20/10, DW2 prep 8–13/10 + evaluación **19–21/10**, taller 06–07/10), bordes de medianoche (18/10 23:59 vs 19/10 00:00; 20/10 23:59 vs 21/10 00:00; 21/10 23:59 vs 22/10 00:00), máximos de intentos (2 / 2+2), mensajes 403 exactos y envío tardío aceptado vía `submittedAt`.
   - `src/controllers/gradeController.test.js` (11 tests): `examLockError` por fecha y rol (estudiante bloqueado, admin/coordinación/docente no), bloqueo global `EXAMS_LOCKED` y mapeo materia→curso (`getCourseFromSubject`/`isExamSubject`). Para testearlos se exportaron esas 3 funciones (sin cambio de comportamiento).
-  - Hallazgo documentado: en el hueco 14–20/10 de DW2 el **candado deja pasar** (por diseño) y quien rechaza el envío es el gate `isSubmissionAllowed` con el mensaje del 21/10.
+  - Hallazgo documentado: en el hueco 14–18/10 de DW2 el **candado deja pasar** (por diseño) y quien rechaza el envío es el gate `isSubmissionAllowed` con el mensaje del 19–21/10.
 - **Frontend** (Vitest): `exam_algo_p1.test.js` (constantes 20 preguntas/120 min/2 intentos, etiquetas, `formatTime`, `calculateScore`, `buildExamData` con DFD, snapshot retomable, cola de sync y health-check, con localStorage simulado) y `guards/__tests__/examLock.test.js` (fechas ISO exactas de Algo P1, DW2 y taller; bloqueos por rol con fake timers). 29 tests nuevos.
 - **Verificación**: backend 29/29 (`npm test`), frontend nuevos 29/29; suite completa del frontend 271 pasan / 6 fallan / 2 saltados (279) — los 6 fallos siguen siendo los ambientales de siempre (`api.grades` contra backend vivo, `api.test.js`, `exam.test.js`). `eslint` backend limpio.
-- **Commits**: backend `c638167` (tests + exports + script `npm test`); el fix de la expectativa DW2 quedó en un cambio posterior a ese commit. Frontend: pendiente de commit (2 archivos de tests).
+- **Commits**: backend `c638167` (tests + exports + script `npm test`); el fix de la expectativa DW2 quedó en un cambio posterior a ese commit. Frontend: tests en `9194b31`; expectativa DW2 actualizada en `1d5577b`.
+
+## Bitácora 20/10/2026 (aviso de health-check + cuentas demo)
+
+### 28. Fix del aviso falso de health-check (20/10)
+- **Síntoma**: antes de iniciar el Parcial 1 de Algoritmos aparecía "⚠ No se pudo verificar el servidor. Si continúas, las respuestas se guardarán localmente" (el mismo aviso visto el día del Taller 1).
+- **Causa 1 (HTML inicial/SSR)**: `checkingServer` empezaba en `false`, así que el aviso se renderizaba en el HTML antes del primer chequeo; además, cuando `isHealthCheckRecent()` era `true` (<60 s) se retornaba sin marcar `serverCheckOk` y el aviso quedaba encendido hasta el siguiente chequeo.
+- **Causa 2 (el "error viejo")**: 7 páginas llamaban `getHealthUrl()` **sin importarla** → `ReferenceError` en el navegador; el chequeo nunca terminaba y la página se quedaba en "Verificando conexión...". Confirmado en el bundle de producción (identificador literal sin resolver). Páginas: `algoritmos/parcial-2`, `algoritmos/taller`, `algoritmos/algoritmia/taller`, `desarrollo-web-1/parcial-2`, `desarrollo-web-1/algoritmia/taller`, `desarrollo-web-2/parcial-2`, `desarrollo-web-2/algoritmia/taller`.
+- **Fix**: las 11 páginas de examen inicializan `checkingServer = true` y el camino de chequeo reciente marca `serverCheckOk = true` / `checkingServer = false`; se agregó el import faltante de `getHealthUrl` en las 7 páginas.
+- **Verificación (20/10)**: `npm run build` ✓; bundle de producción sin `getHealthUrl` sin resolver; HTML de `/algoritmos/parcial-1` y `/desarrollo-web-2/parcial-1` ya no trae el aviso (muestra "Verificando conexión..."); `svelte-check` 535 → 528 (solo errores legacy); suite front 270 pasan / 2 saltados; los 9 fallos son los ambientales conocidos (`api.grades.test.js` contra backend vivo, `api.test.js` por `API_URL` local y `exam.test.js` por ventana placeholder).
+- **Estado**: front `176b83f` y backend `792a4f5`, ambos = `origin/main`; Vercel redesplegado y verificado.
+
+### 29. Cuentas demo permanentes (19/10)
+- `seed.js` las crea/actualiza en cada arranque (idempotente; **no eliminar**):
+  - `demo1` / `Demo1@2026` (`demo1@cinar.edu.co`) → inscrito solo en **algoritmos**, `canPresent: true`.
+  - `demo2` / `Demo2@2026` (`demo2@cinar.edu.co`) → inscrito solo en **desarrollo-web-2**, `canPresent: true`.
+- Inscripción exclusiva por curso (borra inscripciones cruzadas) y protegidas de la regla general "todo student → solo algoritmos" (se crean antes de esa regla).
+- Uso: probar el flujo completo de los parciales sin tocar cuentas de estudiantes reales; si se borran, el siguiente arranque las recrea.

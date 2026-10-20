@@ -206,9 +206,16 @@
           acc.push({ label: '↳ Rama No', isLabel: true, depth: depth + 1 });
           flattenSteps(node.falseBranch, [...path, 'false'], depth + 1, acc);
         }
-      } else if (node.type === 'while' && node.body?.length) {
-        acc.push({ label: '↳ Cuerpo del Mientras', isLabel: true, depth: depth + 1 });
-        flattenSteps(node.body, [...path, 'body'], depth + 1, acc);
+      } else if (node.type === 'while') {
+        const bodyLen = node.body?.length || 0;
+        acc.push({
+          label: bodyLen > 0 ? '↳ Cuerpo del Mientras (repite)' : '↳ Cuerpo del Mientras (vacío - clic para agregar)',
+          isLabel: true,
+          depth: depth + 1
+        });
+        if (bodyLen > 0) {
+          flattenSteps(node.body, [...path, 'body'], depth + 1, acc);
+        }
       }
     });
     return acc;
@@ -575,9 +582,36 @@
     insertNodeAt(zone.targetList, zone.index, type);
   }
 
-  // Clic en paleta agrega al final del flujo principal (accesible y táctil)
+  function addNodeToWhileBody(type) {
+    if (!ast || !selectedNode || selectedNode.type !== 'while') return;
+    if (!Array.isArray(selectedNode.body)) selectedNode.body = [];
+    insertNodeAt(selectedNode.body, selectedNode.body.length, type);
+  }
+
+  // Clic en paleta agrega dentro del bloque seleccionado o al final del flujo principal (accesible y táctil)
   function handlePaletteClick(type) {
     if (!ast && !ensureAst()) return;
+    if (selectedPath) {
+      const node = getNodeByPath(ast, selectedPath);
+      if (node?.type === 'while') {
+        if (!Array.isArray(node.body)) node.body = [];
+        insertNodeAt(node.body, node.body.length, type);
+        return;
+      }
+      if (selectedPath.includes('body')) {
+        const list = getParentList(ast, selectedPath);
+        const idx = selectedPath[selectedPath.length - 1];
+        if (Array.isArray(list) && typeof idx === 'number') {
+          insertNodeAt(list, idx + 1, type);
+          return;
+        }
+      }
+      if (node?.type === 'decision') {
+        if (!Array.isArray(node.trueBranch)) node.trueBranch = [];
+        insertNodeAt(node.trueBranch, node.trueBranch.length, type);
+        return;
+      }
+    }
     insertNodeAt(ast.nodes, Math.max(0, ast.nodes.length - 1), type);
   }
 
@@ -1105,9 +1139,19 @@
           <input id="prop-decision-cond" class="props-input" value={selectedNode.condition || ''} onfocus={armEdit} oninput={(e) => { selectedNode.condition = e.currentTarget.value; commitEdit(); }} placeholder="ej: n1 > n2" />
           <p class="props-example">✍️ Ej: <code>n1 &gt; n2</code>, <code>nota &gt;= 3</code>. Si es verdad va a la <strong>izquierda (Sí)</strong>, si no a la <strong>derecha (No)</strong>. Arrastra componentes a cada rama con las zonas azules.</p>
         {:else if selectedNode.type === 'while'}
-          <label class="props-label" for="prop-while-cond">1) ¿Cuándo debe repetirse?</label>
+          <label class="props-label" for="prop-while-cond">1) ¿Cuándo debe repetirse? (Condición)</label>
           <input id="prop-while-cond" class="props-input" value={selectedNode.condition || ''} onfocus={armEdit} oninput={(e) => { selectedNode.condition = e.currentTarget.value; commitEdit(); }} placeholder="ej: contador <= 5" />
-          <p class="props-example">✍️ Ej: <code>contador &lt;= 5</code>. Todo lo que arrastres al cuerpo azul se repetirá. ¡No olvides aumentar el contador dentro o será infinito!</p>
+          <p class="props-example">✍️ Ej: <code>contador &lt;= 5</code>, <code>i &lt;= 10</code>, <code>x != 's'</code>. Si la condición es <strong>Sí</strong> entra al cuerpo y repite; si es <strong>No</strong> sale hacia Fin.</p>
+
+          <label class="props-label" style="margin-top: 0.9rem;">2) Agregar instrucciones al cuerpo del ciclo (repetir):</label>
+          <div class="while-add-buttons">
+            <button class="mini-btn add-body-btn" onclick={() => addNodeToWhileBody('input')} title="Pedir dato dentro del ciclo">📥 + Lectura</button>
+            <button class="mini-btn add-body-btn" onclick={() => addNodeToWhileBody('process')} title="Calcular o incrementar contador">⚙️ + Asignación</button>
+            <button class="mini-btn add-body-btn" onclick={() => addNodeToWhileBody('output')} title="Mostrar resultado dentro del ciclo">📤 + Salida</button>
+            <button class="mini-btn add-body-btn" onclick={() => addNodeToWhileBody('decision')} title="Condicional Si/No dentro del ciclo">🔀 + Decisión</button>
+            <button class="mini-btn add-body-btn" onclick={() => addNodeToWhileBody('newline')} title="Salto de línea">⏎ + Salto</button>
+          </div>
+          <p class="props-example">💡 También puedes arrastrar desde la paleta izquierda y soltar en la zona azul <em>"+ soltar aquí"</em> con la flecha <strong>Sí</strong>.</p>
         {:else if selectedNode.type === 'newline'}
           <p class="props-example">⏎ Este componente imprime una <strong>línea en blanco</strong> al ejecutar. No necesita configuración: úsalo entre dos Salidas para separar resultados (ej: Dólares / Euros / Yenes). En pseudocódigo es <code>Escribir '' // salto de línea</code>.</p>
         {/if}
@@ -1725,6 +1769,9 @@
   .warn-line { font-size: 0.78rem; color: #92400e; margin-bottom: 0.25rem; }
   .props-ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; font-size: 0.78rem; font-weight: 600; border-radius: 8px; padding: 0.5rem 0.6rem; margin-bottom: 0.6rem; }
   .props-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 1rem; }
+  .while-add-buttons { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.45rem; }
+  .add-body-btn { flex: 1 1 calc(50% - 0.25rem); background: #ede9fe; border-color: #c4b5fd; color: #5b21b6; padding: 0.45rem 0.5rem; font-size: 0.76rem; font-weight: 700; border-radius: 8px; }
+  .add-body-btn:hover { background: #ddd6fe; border-color: #a78bfa; }
   .danger-btn { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
   .danger-btn:hover:not(:disabled) { background: #fee2e2; }
   .bottom-panel { display: flex; gap: 0; border-top: 4px solid #3b82f6; background: #1e293b; height: 210px; }

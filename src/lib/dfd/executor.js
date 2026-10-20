@@ -26,11 +26,24 @@ function tokenize(expr, vars) {
       continue;
     }
 
+    // string literal ('...' or "...")
+    if (ch === "'" || ch === '"') {
+      const quote = ch;
+      i++;
+      let str = '';
+      while (i < expr.length && expr[i] !== quote) {
+        str += expr[i++];
+      }
+      if (i < expr.length && expr[i] === quote) i++;
+      tokens.push({ type: 'string', value: str });
+      continue;
+    }
+
     // two-char operators
     if (i + 1 < expr.length) {
       const two = expr[i] + expr[i + 1];
-      if (two === '>=' || two === '<=' || two === '!=' || two === '==') {
-        tokens.push({ type: 'op', value: two });
+      if (two === '>=' || two === '<=' || two === '!=' || two === '==' || two === '<>') {
+        tokens.push({ type: 'op', value: two === '<>' ? '!=' : two });
         i += 2;
         continue;
       }
@@ -140,8 +153,18 @@ function evaluateTokens(tokens, vars) {
         case '>=': return left >= right ? 1 : 0;
         case '<=': return left <= right ? 1 : 0;
         case '==': // fall through
-        case '=':  return left == right ? 1 : 0;
-        case '!=': return left != right ? 1 : 0;
+        case '=': {
+          if (typeof left === 'string' || typeof right === 'string') {
+            return String(left).trim().toLowerCase() === String(right).trim().toLowerCase() ? 1 : 0;
+          }
+          return left == right ? 1 : 0;
+        }
+        case '!=': {
+          if (typeof left === 'string' || typeof right === 'string') {
+            return String(left).trim().toLowerCase() !== String(right).trim().toLowerCase() ? 1 : 0;
+          }
+          return left != right ? 1 : 0;
+        }
       }
     }
     return left;
@@ -185,6 +208,11 @@ function evaluateTokens(tokens, vars) {
   function parsePrimary() {
     const t = peek();
     if (!t) return 0;
+
+    if (t.type === 'string') {
+      next();
+      return t.value;
+    }
 
     if (t.type === 'number') {
       next();
@@ -343,7 +371,12 @@ export class DfdExecutor {
 
       case 'while': {
         let safety = 0;
-        while (!this.stopped && this.evaluateExpression(node.condition)) {
+        while (!this.stopped) {
+          if (safety > 0) {
+            await this.notifyStep(path ? path : []);
+          }
+          const cond = this.evaluateExpression(node.condition);
+          if (!cond) break;
           await this.runNodes(node.body, path ? [...path, 'body'] : ['body']);
           if (++safety > 10000) {
             await this.onOutput('[Error]: Bucle infinito detectado, deteniendo.');

@@ -59,9 +59,12 @@ function measureNodes(nodes) {
       totalH += h + V_GAP + (branchH > 0 ? branchH + V_GAP : 0);
     } else if (node.type === 'while') {
       const mBody = measureNodes(node.body || []);
-      const loopW = Math.max(w, mBody.width) + 60; // extra for loop-back arrow
+      const isBodyEmpty = !(node.body && node.body.length > 0 && node.body[0].type !== 'end');
+      const bodyH = isBodyEmpty ? NODE_H : mBody.height;
+      const bodyW = isBodyEmpty ? MIN_NODE_W : mBody.width;
+      const loopW = Math.max(w, bodyW) + 60; // extra for loop-back arrow
       maxW = Math.max(maxW, loopW);
-      totalH += h + V_GAP + (mBody.height > 0 ? mBody.height + V_GAP : 0);
+      totalH += h + V_GAP + bodyH + V_GAP;
     } else {
       maxW = Math.max(maxW, w);
       totalH += h + V_GAP;
@@ -187,20 +190,32 @@ function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId, baseP
       const isBodyEmpty = !(node.body.length > 0 && node.body[0].type !== 'end');
       const bodyY = y + h + V_GAP;
       if (!isBodyEmpty) {
-        const res = placeNodes(node.body, cx, bodyY, shapes, links, dropZones, id, [...nodePath, 'body']);
+        const res = placeNodes(node.body, cx, bodyY, shapes, links, dropZones, null, [...nodePath, 'body']);
+        // Link from while down to first body node with label 'Sí'
+        if (res.firstId) {
+          links.push({ ...makeLink(id, res.firstId, shapes), label: 'Sí' });
+        }
         // loop-back arrow from last body node back to while
         if (res.lastId) {
           links.push(makeLoopBack(res.lastId, id, shapes, cx, w));
         }
+        y = res.endY + V_GAP;
+      } else {
+        // Cuerpo vacío: zona dedicada visible y holgada para arrastrar componentes dentro del Mientras
+        const emptyH = NODE_H + 12;
+        const dropY = bodyY + emptyH / 2;
+        // Flecha "Sí" desde el Mientras hacia el interior del cuerpo
+        links.push({
+          sourceX: cx,
+          sourceY: y + h,
+          targetX: cx,
+          targetY: bodyY,
+          label: 'Sí'
+        });
+        dropZones.push({ targetList: node.body, index: 0, cx, cy: dropY });
+        y = bodyY + emptyH + V_GAP;
       }
 
-      // Exit link to the right (will point down past the body)
-      const mBody = measureNodes(node.body || []);
-      y = bodyY + (mBody.height > 0 ? mBody.height : 0) + V_GAP;
-      if (isBodyEmpty) {
-        // Cuerpo vacío: zona para arrastrar componentes dentro del Mientras
-        dropZones.push({ targetList: node.body, index: 0, cx, cy: (bodyY + y) / 2 });
-      }
       const exitId = `exit_${id}`;
       shapes.push({ id: exitId, type: 'merge', text: '', x: cx, y, width: 0, height: 0 });
       links.push(makeExitWhile(id, exitId, shapes, cx, w, y));

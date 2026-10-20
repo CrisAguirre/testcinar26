@@ -44,6 +44,11 @@
   let checkingServer = $state(true);
   let pendingSyncCount = $state(0);
   let syncingInProgress = $state(false);
+  let submitting = $state(false);
+  let lastSubmitAt = $state(0);
+  let lastAttemptNum = $state(0);
+  let autoSaveTimer: ReturnType<typeof setInterval> | null = null;
+  let autoSaveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   const totalQuestions = 20;
   let totalTime = $state(45 * 60);
@@ -65,10 +70,10 @@
     return Math.max(serverAttempts, getLocalAttempts().length);
   }
 
-  async function loadServerAttempts() {
+  async function loadServerAttempts(force = false) {
     if (!$currentUser?.id) { loadingServer = false; return; }
     try {
-      let all = data.serverGrades;
+      let all = force ? null : data.serverGrades;
       if (!all || all.length === 0) {
         all = await gradesApi.getMine();
         preloadedMyGrades.set(all);
@@ -126,12 +131,35 @@
 
   onMount(() => {
     loadServerAttempts();
+    pendingSyncCount = getSyncQueue().length;
     checkBackendHealth();
+    autoSaveTimer = setInterval(() => {
+      if (started && !finished) autoSaveAnswers(true);
+      // Reintento periódico de la cola (además de onload y del evento online).
+      if (!started || finished) {
+        if (!isSaving && !submitting && !syncingInProgress && getSyncQueue().length > 0) {
+          processSyncQueue();
+        }
+      }
+    }, 15000);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('beforeunload', handleBeforeUnload);
   });
 
   $effect(() => {
-    if ($currentUser) loadServerAttempts();
+    if ($currentUser) {
+      loadServerAttempts();
+      if (!isSaving && !submitting && getSyncQueue().length > 0) processSyncQueue();
+    }
   });
+
+  function handleOnline() {
+    if (!isSaving && !submitting && getSyncQueue().length > 0) processSyncQueue();
+  }
+
+  function handleBeforeUnload() {
+    if (started && !finished) autoSaveAnswers(true);
+  }
 
   function getProgressPercent(): number {
     const answered = Object.keys(answers).length;
@@ -140,6 +168,8 @@
 
   async function startExam() {
     if (!isUnlimited && !getAvailableSlots().enabled) return;
+    saveError = '';
+    saveSuccess = false;
     const healthy = await checkBackendHealth();
     if (!healthy) {
       const proceed = confirm('El servidor no responde. Puedes comenzar, pero las respuestas se guardarán localmente y se sincronizarán después. ¿Deseas continuar?');
@@ -159,9 +189,10 @@
         questions = saved.questions;
         answers = saved.answers;
         currentIndex = saved.currentIndex || 0;
-        timeLeft = saved.timeLeft || calculateTotalTime(saved.questions);
+        const savedTotalTime = calculateTotalTime(saved.questions);
+        totalTime = savedTotalTime;
+        timeLeft = typeof saved.timeLeft === 'number' ? saved.timeLeft : savedTotalTime;
         tabSwitchCount = saved.tabSwitchCount || 0;
-        totalTime = timeLeft;
         started = true;
         finished = false;
         currentAttemptNumber = getAttemptCount() + 1;
@@ -194,6 +225,7 @@
   function handleVisibility() {
     if (document.hidden && started && !finished) {
       tabSwitchCount++;
+      autoSaveAnswers(true);
     }
   }
 
@@ -213,9 +245,22 @@
     return answers[qId] !== undefined && answers[qId] !== '';
   }
 
-  function autoSaveAnswers() {
+  function autoSaveAnswers(immediate = false) {
     if (!started || finished) return;
-    saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount);
+    if (autoSaveTimeout) {
+      clearTimeout(autoSaveTimeout);
+      autoSaveTimeout = null;
+    }
+    if (immediate) {
+      saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount);
+      return;
+    }
+    // Debounce: al escribir una respuesta abierta no serializamos el examen
+    // completo en cada tecla, pero guardamos pocos milisegundos después.
+    autoSaveTimeout = setTimeout(() => {
+      autoSaveTimeout = null;
+      saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount);
+    }, 400);
   }
 
   async function checkBackendHealth(): Promise<boolean> {
@@ -252,68 +297,109 @@
   async function processSyncQueue() {
     if (syncingInProgress) return;
     const queue = getSyncQueue();
-    if (queue.length === 0) return;
+    if (queue.length === 0) {
+      pendingSyncCount = 0;
+      return;
+    }
+    if (!$currentUser?.id) return;
     syncingInProgress = true;
     pendingSyncCount = queue.length;
+    let savedAny = false;
 
-    for (const entry of queue) {
-      if (!$currentUser?.id) break;
-      try {
-        const res = await gradesApi.submitMine({
-          subject: 'Desarrollo Web 2 - Parcial 1',
-          score: entry.score,
-          max_score: entry.maxScore,
-          period: '2026-1',
-          comments: entry.comments
-        });
-        const grade = res.grade || res;
-        if (grade && grade._id && entry.examData) {
-          await gradesApi.updateMine(grade._id, { examData: entry.examData });
+    try {
+      for (const entry of queue) {
+        try {
+          const rawSubmittedAt = entry.submittedAt ?? entry.createdAt;
+          const submittedAt = typeof rawSubmittedAt === 'string'
+            ? Date.parse(rawSubmittedAt)
+            : Number(rawSubmittedAt);
+          // Guardado atómico: la calificación y sus respuestas viajan en la
+          // misma petición. Si esto falla, la entrada sigue en la cola.
+          await gradesApi.submitMine({
+            subject: 'Desarrollo Web 2 - Parcial 1',
+            score: entry.score,
+            max_score: entry.maxScore,
+            period: '2026-1',
+            comments: entry.comments,
+            examData: entry.examData,
+            // Conserva la hora real del intento aunque se sincronice después
+            // de que cierre la ventana del parcial.
+            submittedAt: Number.isFinite(submittedAt) ? submittedAt : Date.now()
+          });
+          removeFromSyncQueue(entry.createdAt);
+          savedAny = true;
+        } catch {
+          break;
         }
-        removeFromSyncQueue(entry.createdAt);
-        pendingSyncCount--;
-      } catch {
-        break;
+      }
+    } finally {
+      syncingInProgress = false;
+      pendingSyncCount = getSyncQueue().length;
+    }
+    if (savedAny) {
+      await loadServerAttempts(true);
+      if (lastSubmitAt && !isSaving) {
+        if (pendingSyncCount === 0) {
+          saveSuccess = true;
+          saveError = '';
+        } else {
+          saveSuccess = false;
+          saveError = `Quedan ${pendingSyncCount} intento(s) por sincronizar. Se reintentará automáticamente.`;
+        }
       }
     }
-    syncingInProgress = false;
-    pendingSyncCount = getSyncQueue().length;
-    if (pendingSyncCount > 0) loadServerAttempts();
   }
 
-  async function attemptSubmitWithRetry(maxRetries = 3): Promise<{ success: boolean; gradeId?: string; error?: string }> {
-    const attemptNumLocal = getAttemptCount() + 1;
+  function buildDw2ExamData(attemptNum: number, submittedAt: number) {
+    return {
+      attemptNumber: attemptNum,
+      submittedAt: new Date(submittedAt).toISOString(),
+      tabSwitches: tabSwitchCount,
+      timeUsed: totalTime - timeLeft,
+      mcScore,
+      mcTotal,
+      questions: questions.map(q => ({
+        id: q.id,
+        tema: q.tema,
+        type: q.type,
+        question: q.question,
+        // El criterio se guarda con la respuesta para que el docente pueda
+        // calificar sin depender de la versión actual del banco de preguntas.
+        rubric: q.type === 'open' ? q.rubric : undefined,
+        options: q.type === 'mc' ? q.options : undefined,
+        correctAnswer: q.type === 'mc' ? q.answer : undefined,
+        studentAnswer: answers[q.id],
+        isCorrect: q.type === 'mc' ? answers[q.id] === q.answer : undefined,
+        openScore: null,
+        openMaxScore: q.type === 'open' ? 5 : undefined
+      }))
+    };
+  }
+
+  async function attemptSubmitWithRetry(
+    maxRetries = 3,
+    submittedAt = Date.now(),
+    attemptNum = getAttemptCount() + 1
+  ): Promise<{ success: boolean; gradeId?: string; error?: string }> {
+    const comments = `${getAttemptLabel(attemptNum)} | MC: ${mcScore}/${mcTotal} | Abiertas: ${pendingOpen} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`;
+    const examData = buildDw2ExamData(attemptNum, submittedAt);
 
     for (let i = 0; i < maxRetries; i++) {
       try {
+        // Una sola petición: evita que la calificación quede sin respuestas
+        // si falla el segundo PUT (el error se ignoraba antes).
         const res = await gradesApi.submitMine({
           subject: 'Desarrollo Web 2 - Parcial 1',
           score: mcScore,
           max_score: mcTotal,
           period: '2026-1',
-          comments: `${getAttemptLabel(attemptNumLocal)} | MC: ${mcScore}/${mcTotal} | Abiertas: ${pendingOpen} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`
+          comments,
+          examData: JSON.stringify(examData),
+          submittedAt
         });
         const grade = res.grade || res;
-        if (grade && grade._id) {
-          try {
-            const examDataForServer = {
-              attemptNumber: attemptNumLocal,
-              tabSwitches: tabSwitchCount,
-              timeUsed: totalTime - timeLeft,
-              mcScore, mcTotal,
-              questions: questions.map(q => ({
-                id: q.id, tema: q.tema, type: q.type, question: q.question,
-                options: q.type === 'mc' ? q.options : undefined,
-                correctAnswer: q.type === 'mc' ? q.answer : undefined,
-                studentAnswer: answers[q.id],
-                isCorrect: q.type === 'mc' ? answers[q.id] === q.answer : undefined,
-                openScore: null, openMaxScore: q.type === 'open' ? 5 : undefined
-              }))
-            };
-            await gradesApi.updateMine(grade._id, { examData: JSON.stringify(examDataForServer) });
-          } catch {}
-          return { success: true, gradeId: grade._id };
-        }
+        if (grade && grade._id) return { success: true, gradeId: grade._id };
+        return { success: false, error: 'El servidor no confirmó la calificación' };
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Error de conexión';
         if (i < maxRetries - 1) {
@@ -330,23 +416,50 @@
     saveError = '';
     saveSuccess = false;
     isSaving = true;
-    const result = await attemptSubmitWithRetry(3);
-    isSaving = false;
-    if (result.success) {
-      saveSuccess = true;
-      const localList = getLocalAttempts();
-      if (localList.length > 0) {
-        localList[localList.length - 1].gradeId = result.gradeId;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
+    try {
+      if (getSyncQueue().length > 0) {
+        // Ya está en la cola local: reintentar no debe crear otra
+        // calificación. Procesamos la cola (con examData incluido).
+        await processSyncQueue();
+        if (getSyncQueue().length === 0) {
+          saveSuccess = true;
+          clearSavedAnswers();
+        } else {
+          saveError = 'Todavía no se pudo sincronizar. Revisa la conexión e inténtalo de nuevo.';
+        }
+      } else {
+        const result = await attemptSubmitWithRetry(
+          3,
+          lastSubmitAt || Date.now(),
+          lastAttemptNum || getAttemptCount() + 1
+        );
+        if (result.success) {
+          saveSuccess = true;
+          clearSavedAnswers();
+          const localList = getLocalAttempts();
+          if (localList.length > 0) {
+            localList[localList.length - 1].gradeId = result.gradeId;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
+          }
+          await loadServerAttempts(true);
+        } else {
+          saveError = result.error || 'Error al guardar';
+        }
       }
-      await loadServerAttempts();
-    } else {
-      saveError = result.error || 'Error al guardar';
+    } finally {
+      isSaving = false;
     }
   }
 
   async function handleSubmit() {
+    if (submitting || finished) return;
+    submitting = true;
     saveError = '';
+    saveSuccess = false;
+    if (autoSaveTimeout) {
+      clearTimeout(autoSaveTimeout);
+      autoSaveTimeout = null;
+    }
     if (timerInterval) {
       clearInterval(timerInterval);
       timerInterval = null;
@@ -376,62 +489,89 @@
     finished = true;
 
     const attemptNum = getAttemptCount() + 1;
-    const localRecord = { date: new Date().toISOString(), mcScore: score, mcTotal: totalMc, openCount, tabSwitches: tabSwitchCount, timeUsed: totalTime - timeLeft, gradeId: undefined as string | undefined };
-
-    const examData = {
-      attemptNumber: attemptNum,
-      tabSwitches: tabSwitchCount,
-      timeUsed: totalTime - timeLeft,
+    const submittedAt = Date.now();
+    lastSubmitAt = submittedAt;
+    lastAttemptNum = attemptNum;
+    const localRecord = {
+      date: new Date(submittedAt).toISOString(),
+      submittedAt,
       mcScore: score,
       mcTotal: totalMc,
-      questions: questions.map(q => ({
-        id: q.id,
-        tema: q.tema,
-        type: q.type,
-        question: q.question,
-        options: q.type === 'mc' ? q.options : undefined,
-        correctAnswer: q.type === 'mc' ? q.answer : undefined,
-        studentAnswer: answers[q.id],
-        isCorrect: q.type === 'mc' ? answers[q.id] === q.answer : undefined,
-        openScore: null,
-        openMaxScore: q.type === 'open' ? 5 : undefined
-      }))
+      openCount,
+      tabSwitches: tabSwitchCount,
+      timeUsed: totalTime - timeLeft,
+      gradeId: undefined as string | undefined
     };
+    const examData = buildDw2ExamData(attemptNum, submittedAt);
 
     let gradeId: string | undefined;
+    let queued = false;
     if ($currentUser?.id) {
       isSaving = true;
-      const result = await attemptSubmitWithRetry(3);
+      const result = await attemptSubmitWithRetry(3, submittedAt, attemptNum);
       isSaving = false;
       if (result.success) {
         gradeId = result.gradeId;
         localRecord.gradeId = result.gradeId;
         saveSuccess = true;
       } else {
-        saveError = `No se pudo guardar en el servidor: ${result.error}. Las respuestas están guardadas localmente. Se reintentará automáticamente.`;
-        addToSyncQueue({
-          score, maxScore: totalMc, openCount,
-          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${totalMc} | Abiertas: ${openCount} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`,
-          examData: JSON.stringify(examData)
-        });
+        try {
+          addToSyncQueue({
+            score,
+            maxScore: totalMc,
+            openCount,
+            comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${totalMc} | Abiertas: ${openCount} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(totalTime - timeLeft)}`,
+            examData: JSON.stringify(examData),
+            submittedAt
+          });
+          queued = true;
+          saveError = `No se pudo guardar en el servidor: ${result.error}. Las respuestas quedaron guardadas localmente y se reintentará automáticamente.`;
+        } catch {
+          saveError = `No se pudo guardar en el servidor ni localmente: ${result.error}. No cierres esta página; intenta de nuevo.`;
+        }
+        pendingSyncCount = getSyncQueue().length;
       }
     }
 
-    const localList = getLocalAttempts();
-    localList.push(localRecord);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
-    if (gradeId) await loadServerAttempts();
+    try {
+      const localList = getLocalAttempts();
+      localList.push(localRecord);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
+    } catch {
+      if (!saveError) saveError = 'No se pudo guardar el resumen local del intento.';
+    }
 
-    clearSavedAnswers();
+    if (gradeId) await loadServerAttempts(true);
+    // Solo borrar el borrador cuando existe una copia en el servidor o en la
+    // cola local. Si ambos fallan, el borrador sigue disponible para reintentar.
+    if (gradeId || queued) clearSavedAnswers();
+    submitting = false;
   }
 
   onDestroy(() => {
+    // Guarda el borrador también al navegar fuera con el botón "Volver"
+    // (la navegación de SvelteKit no dispara beforeunload).
+    if (started && !finished) {
+      saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount);
+    }
     if (timerInterval) {
       clearInterval(timerInterval);
       timerInterval = null;
     }
+    if (autoSaveTimer) {
+      clearInterval(autoSaveTimer);
+      autoSaveTimer = null;
+    }
+    if (autoSaveTimeout) {
+      clearTimeout(autoSaveTimeout);
+      autoSaveTimeout = null;
+    }
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', handleVisibility);
+    }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     }
   });
 </script>
@@ -545,6 +685,15 @@
           </div>
         {/if}
 
+        {#if pendingSyncCount > 0}
+          <div class="sync-notice">
+            ⏳ Tienes <strong>{pendingSyncCount} intento(s)</strong> pendiente(s) por sincronizar.
+            <button onclick={processSyncQueue} disabled={syncingInProgress} class="sync-btn">
+              {syncingInProgress ? 'Sincronizando...' : 'Sincronizar ahora'}
+            </button>
+          </div>
+        {/if}
+
         {#if loadingServer}
           <p class="loading-text">Cargando datos del servidor...</p>
         {:else if slots.enabled}
@@ -591,15 +740,6 @@
             <p class="server-check">Verificando conexión con el servidor...</p>
           {:else if !isUnlimited && !serverCheckOk && getAttemptCount() === 0}
             <p class="server-warning">⚠ No se pudo verificar el servidor. Si continúas, las respuestas se guardarán localmente.</p>
-          {/if}
-
-          {#if pendingSyncCount > 0}
-            <div class="sync-notice">
-              ⏳ Tienes <strong>{pendingSyncCount} intento(s)</strong> pendiente(s) por sincronizar.
-              <button onclick={processSyncQueue} disabled={syncingInProgress} class="sync-btn">
-                {syncingInProgress ? 'Sincronizando...' : 'Sincronizar ahora'}
-              </button>
-            </div>
           {/if}
 
           <button onclick={startExam} class="start-btn" disabled={checkingServer}>

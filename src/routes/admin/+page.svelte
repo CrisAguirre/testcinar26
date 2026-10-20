@@ -11,6 +11,7 @@
   });
 
   const sections = [
+    { href: '/admin/desarrollo-web-2/parcial-1', icon: '📝', label: 'Calificar Abiertas DW2', desc: 'Revisar y calificar las respuestas abiertas del Parcial 1 de Desarrollo Web 2' },
     { href: '/admin/planeacion', icon: '📅', label: 'Planeación', desc: 'Horarios, agenda trimestral, temáticas y capacitaciones a impartir' },
     { href: '/admin/registro-academico', icon: '📋', label: 'Registro Académico', desc: 'Notas, contenidos temáticos, cronograma y asistencia' },
     { href: '/admin/capacitaciones', icon: '🎓', label: 'Capacitaciones', desc: 'Cursos para docentes, evaluaciones, certificados y bienvenida' },

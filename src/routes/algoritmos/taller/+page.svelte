@@ -1,6 +1,6 @@
 <script lang="ts">
   import { selectRandomQuestions } from '$lib/data/taller_algo';
-  import { gradesApi, API_URL, apiUploadFile } from '$lib/api';
+  import { gradesApi, API_URL, apiUploadFile, getHealthUrl } from '$lib/api';
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';

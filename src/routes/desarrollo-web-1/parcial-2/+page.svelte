@@ -1,6 +1,6 @@
 <script lang="ts">
   import { selectRandomQuestions } from '$lib/data/parcial2';
-  import { gradesApi, authApi, API_URL, scheduleApi } from '$lib/api';
+  import { gradesApi, authApi, API_URL, scheduleApi, getHealthUrl } from '$lib/api';
   import { currentUser, isAdmin } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';

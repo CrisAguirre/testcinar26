@@ -1,7 +1,7 @@
 # Cinar - Estado Actual de la Plataforma (19 Octubre 2026)
 
 ## Estructura del Proyecto
-
+x
 ```
 Cinar/
 ├── testcinar26/           # Frontend (SvelteKit)
@@ -189,7 +189,8 @@ Cinar/
       - **Crash en Reactividad Svelte 5**: Corregido error crítico de tipografía (`isPrivilegedEffectiveEffective`) que crasheaba las tablas (notas, asistencia, seguimiento) dejándolas en blanco.
       - **Validación Mongoose (Seguimiento)**: Se asignó el valor predeterminado `"Tema inicial por definir"` al campo `topicAndGoal` para cumplir la regla estricta `required: true` al crear el documento vacío.
       - **CSS de Banners**: Se aplicaron reglas `-webkit-background-clip: text` globales mediante script en todos los `h1` de módulos y cursos, logrando un degradado de colores transparente sobre el texto sin fondos blancos intrusivos.
-13. **Taller 1 — Algoritmos (Niveles 1 y 2, habilitado 06/10/2026)**
+
+13. **Taller 1 — Algoritmos (Niveles 1 y 2, habilitado 06/10/2026)**
     - **Fecha de apertura**: Martes 6 de octubre de 2026 (18:30 a 20:30). Controlado nativamente en `examLock.js`.
     - **Estructura del examen**: 5 preguntas de selección múltiple inéditas y 2 ejercicios prácticos DFD nuevos (monedas y zapatería).
     - **Subida de archivos**: Interfaz modificada para soportar subida independiente de múltiples archivos `.dfd`.

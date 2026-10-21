@@ -16,7 +16,7 @@ Cinar/
 │   │   │   │   ├── enlaces-de-consulta/
 │   │   │   │   └── actividad-de-la-semana/
 │   │   │   ├── desarrollo-web-2/   # DW2
-│   │   │   │   ├── parcial-1/      # BLOQUEADO no-admin (guard examLock)
+│   │   │   │   ├── parcial-1/      # HABILITADO 19-21/10 (evaluación con retoma en la nube)
 │   │   │   │   ├── parcial-2/      # BLOQUEADO no-admin
 │   │   │   │   ├── taller/         # BLOQUEADO no-admin
 │   │   │   │   ├── notas/
@@ -420,10 +420,24 @@ Cinar/
     3. Re-notificación de paso en cada iteración del bucle para que el bloque Mientras se re-ilumine en verde en la ejecución paso a paso antes de cada comprobación.
 - **Verificación**: Tests unitarios nuevos en `src/lib/dfd/__tests__/while.test.js` (5/5 PASS); `test_executor.mjs` (3/3 PASS); `npm run build` exitoso (code 0) en 19.67s.
 
-### 32. Ajustes de inserción, comparación y geometría DFD (21/10)
-- **Inserción desde la paleta en cualquier rama**: se extrajo `src/lib/dfd/editorOps.js` (`getNodeByPath`, `getParentList`, `resolvePaletteInsertion`). Un nodo seleccionado dentro de una rama `No`, `Sí`, cuerpo de Mientras o rama anidada inserta el nuevo componente justo después de él; el Mientras seleccionado sigue insertando en su cuerpo y una Decisión principal en su rama `Sí`.
-- **Comparación de cadenas exacta**: `executor.js` ya no usa `trim().toLowerCase()`; `==`, `=` y `<>` distinguen mayúsculas y espacios. Los tests cubren `'SI'` vs `'si'` y espacios finales.
-- **Geometría consistente del cuerpo vacío**: `EMPTY_BODY_H = NODE_H + 12` se usa tanto en `measureNodes` como en `placeNodes`, eliminando la diferencia de 12 px y manteniendo separadas las zonas de soltado.
-- **Pruebas**: `editorOps.test.js` (8/8) cubre rama No, anidamientos, Mientras anidado y ruta inválida; `while.test.js` añade un bucle anidado 3×2 (total 6).
-- **Verificación 21/10**: DFD 33/33; `npm run build` ✓; suite completa 315 pasan / 6 fallan / 2 omitidas (las 6 ambientales de siempre); `svelte-check` sin errores en los archivos nuevos.
+### 33. Desbloqueo, persistencia en la nube y retiro de temporizador en parciales (21/10)
+- **Desbloqueo y correcciones en DW2 Parcial 1**:
+  - Habilitada la evaluación para estudiantes (19 al 21/10 a medianoche).
+  - **Fix SSR 500 en Vercel**: `src/routes/desarrollo-web-2/parcial-1/+page.ts` añade `export const ssr = false;` debido al uso extensivo de APIs de navegador (`localStorage`, `setInterval`, eventos de visibilidad) en la página autenticada.
+  - **Fix ReferenceError en runtime**: Se importaron las constantes faltantes `TIME_PER_MC`, `TIME_PER_OPEN` y la función `getAttemptType` desde `$lib/exam`.
+- **Persistencia y retoma entre dispositivos y redes (DW2 y Algoritmos)**:
+  - **Backend (`testcinar26bknd/src/routes/exams.js`)**: Endpoints de borrador para DW2 `GET/PUT/DELETE /exams/dw2-p1/draft` apoyados en el modelo `ExamDraft` de MongoDB (con índice compuesto `{ student: 1, subject: 1 }`).
+  - **Frontend API (`src/lib/api.js`)**: Nuevos métodos `examDraftApi.getDw2P1()`, `saveDw2P1()`, `deleteDw2P1()` y `saveDw2P1DraftKeepalive()`.
+  - **DW2 Parcial 1 (`src/routes/desarrollo-web-2/parcial-1/+page.svelte`)**:
+    - Consulta `loadServerDraft()` en segundo plano y fusiona con `readLocalSnapshot()` mediante `mergeDraftWithLocal` sin perder respuestas.
+    - Banner interactivo de retoma: muestra pregunta actual, respuestas guardadas y fecha del último guardado, con opciones de «Continuar intento» o «Descartar borrador».
+    - Autoguardado periódico cada 10 s, inmediato al navegar/responder y con `keepalive` en `pagehide`/`beforeunload`.
+    - Indicador de estado visual en el encabezado (`Guardando...` / `Guardado`).
+    - Eliminación automática del borrador al registrar exitosamente la calificación o sincronizar la cola offline.
+- **Retiro de temporizadores en parciales de Algoritmos**:
+  - Estudiantes disponen de todo el tiempo necesario para completar su evaluación sin límite ni corte automático.
+  - **Algoritmos Parcial 1**: Retiro de la visualización del temporizador del encabezado.
+  - **Algoritmos Parcial 2**: Eliminación del `$effect` de auto-envío por tiempo (`timeLeft <= 0`), retiro de la cuenta atrás del encabezado y actualización de las recomendaciones iniciales indicando que es sin límite de tiempo.
+- **Verificación**: Tests unitarios de backend ejecutados (37/37 PASS); compilación frontend exitosa (`npm run build` code 0).
+
 

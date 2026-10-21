@@ -153,7 +153,11 @@ export const scheduleApi = {
 export const examDraftApi = {
   getAlgoP1: () => api('GET', '/exams/algo-p1/draft'),
   saveAlgoP1: (data) => api('PUT', '/exams/algo-p1/draft', data),
-  deleteAlgoP1: () => api('DELETE', '/exams/algo-p1/draft')
+  deleteAlgoP1: () => api('DELETE', '/exams/algo-p1/draft'),
+
+  getDw2P1: () => api('GET', '/exams/dw2-p1/draft'),
+  saveDw2P1: (data) => api('PUT', '/exams/dw2-p1/draft', data),
+  deleteDw2P1: () => api('DELETE', '/exams/dw2-p1/draft')
 };
 
 // Guardado final al cerrar/ocultar la pestaña. `keepalive` permite que el
@@ -161,6 +165,20 @@ export const examDraftApi = {
 export function saveAlgoP1DraftKeepalive(data) {
   const token = getToken();
   return fetch(`${API_URL}/exams/algo-p1/draft`, {
+    method: 'PUT',
+    credentials: 'include',
+    keepalive: true,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify(data)
+  }).catch(() => null);
+}
+
+export function saveDw2P1DraftKeepalive(data) {
+  const token = getToken();
+  return fetch(`${API_URL}/exams/dw2-p1/draft`, {
     method: 'PUT',
     credentials: 'include',
     keepalive: true,

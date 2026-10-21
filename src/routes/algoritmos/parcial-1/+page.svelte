@@ -31,8 +31,11 @@
   let answers = $state<Record<number, any>>({});
   let currentIndex = $state(0);
 
-  let timeLeft = $state(TOTAL_TIME);
-  let timerInterval: ReturnType<typeof setInterval> | null = null;
+  // Sin límite de tiempo: solo se registra el tiempo transcurrido.
+  let elapsedSeconds = $state(0);
+  let elapsedInterval: ReturnType<typeof setInterval> | null = null;
+  let elapsedBase = 0;
+  let elapsedAnchor = 0;
   let offlinePaused = $state(false);
   let tabSwitchCount = $state(0);
   let finalScore = $state(0);
@@ -118,8 +121,9 @@
       questions,
       answers,
       currentIndex,
-      timeLeft,
-      timeUsed: TOTAL_TIME - timeLeft,
+      // Se conserva timeLeft=0 por compatibilidad; ya no hay cuenta atrás.
+      timeLeft: 0,
+      timeUsed: getElapsedSeconds(),
       tabSwitchCount,
       uploadedFileNames,
       dfdSubmissions,
@@ -206,17 +210,28 @@
     return draftLoadPromise;
   }
 
-  function startTimer() {
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      // Sin conexión el reloj se pausa; se reanuda en el evento `online`.
-      offlinePaused = true;
-      if (timerInterval) clearInterval(timerInterval);
-      timerInterval = null;
-      return;
+  function getElapsedSeconds(): number {
+    if (!elapsedAnchor) return elapsedSeconds;
+    return elapsedBase + Math.floor((Date.now() - elapsedAnchor) / 1000);
+  }
+
+  function startElapsedClock() {
+    elapsedBase = elapsedSeconds;
+    elapsedAnchor = Date.now();
+    if (elapsedInterval) clearInterval(elapsedInterval);
+    elapsedInterval = setInterval(() => {
+      elapsedSeconds = getElapsedSeconds();
+    }, 1000);
+  }
+
+  function stopElapsedClock() {
+    elapsedSeconds = getElapsedSeconds();
+    elapsedBase = elapsedSeconds;
+    elapsedAnchor = 0;
+    if (elapsedInterval) {
+      clearInterval(elapsedInterval);
+      elapsedInterval = null;
     }
-    offlinePaused = false;
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(() => { timeLeft--; }, 1000);
   }
 
   function attachVisibility() {
@@ -228,17 +243,13 @@
   function handleOffline() {
     if (!started || finished) return;
     offlinePaused = true;
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
-    // Guarda el tiempo exacto en el snapshot local; el servidor no está
-    // disponible, pero el reloj no debe seguir consumiéndose sin conexión.
+    // Guarda las respuestas localmente; al volver la conexión se envía el
+    // borrador pendiente y se procesa la cola de sincronización.
     autoSaveAnswers();
   }
 
   function handleOnline() {
-    if (started && !finished && offlinePaused) startTimer();
+    if (started && !finished) offlinePaused = false;
     processSyncQueue();
     queueDraftSave(0);
   }
@@ -267,12 +278,6 @@
   }
 
   let slots = $derived.by(() => getAvailableSlots());
-
-  $effect(() => {
-    if (timeLeft <= 0 && started && !finished) {
-      handleSubmit();
-    }
-  });
 
   onMount(() => {
     loadServerAttempts();
@@ -339,8 +344,13 @@
       Math.max(Number(state.currentIndex) || 0, 0),
       Math.max(questions.length - 1, 0)
     );
-    const savedTime = Number(state.timeLeft);
-    timeLeft = Number.isFinite(savedTime) && savedTime >= 0 ? savedTime : TOTAL_TIME;
+    const savedElapsed = Number(state.timeUsed);
+    const legacyTimeLeft = Number(state.timeLeft);
+    elapsedSeconds = Number.isFinite(savedElapsed) && savedElapsed >= 0
+      ? savedElapsed
+      : Number.isFinite(legacyTimeLeft)
+        ? Math.max(0, TOTAL_TIME - legacyTimeLeft)
+        : 0;
     tabSwitchCount = Number(state.tabSwitchCount) || 0;
     uploadedFileNames = state.uploadedFileNames || {};
     dfdSubmissions = state.dfdSubmissions || {};
@@ -351,7 +361,7 @@
     resumeGradeId = gradeId || state.gradeId || undefined;
     started = true;
     finished = false;
-    startTimer();
+    startElapsedClock();
     attachVisibility();
     queueDraftSave(0);
   }
@@ -375,10 +385,12 @@
     finished = false;
     answers = {};
     currentIndex = 0;
-    timeLeft = TOTAL_TIME;
+    elapsedSeconds = 0;
+    elapsedBase = 0;
+    elapsedAnchor = 0;
     tabSwitchCount = 0;
     currentAttemptNumber = getAttemptCount() + 1;
-    startTimer();
+    startElapsedClock();
     attachVisibility();
     queueDraftSave(0);
   }
@@ -491,11 +503,11 @@
     saveAnswersSnapshot(
       questions,
       answers,
-      timeLeft,
+      0,
       currentIndex,
       tabSwitchCount,
       uploadedFileNames,
-      { gradeId: resumeGradeId, attemptNumber: currentAttemptNumber }
+      { gradeId: resumeGradeId, attemptNumber: currentAttemptNumber, timeUsed: getElapsedSeconds() }
     );
     queueDraftSave(400);
   }
@@ -703,8 +715,8 @@
   async function attemptSubmitWithRetry(maxRetries = 3): Promise<{ success: boolean; gradeId?: string; error?: string; dfdSuccess?: boolean; dfdError?: string }> {
     const attemptNumLocal = resumeGradeId ? currentAttemptNumber : getAttemptCount() + 1;
     const mcCount = questions.filter(q => q.type !== 'file').length;
-    const comments = `${getAttemptLabel(attemptNumLocal)} | MC: ${finalScore}/${mcCount} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`;
-    const examDataForServer = buildExamData(attemptNumLocal, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileNames);
+    const comments = `${getAttemptLabel(attemptNumLocal)} | MC: ${finalScore}/${mcCount} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(getElapsedSeconds())}`;
+    const examDataForServer = buildExamData(attemptNumLocal, tabSwitchCount, getElapsedSeconds(), questions, answers, uploadedFileNames);
 
     for (let i = 0; i < maxRetries; i++) {
       try {
@@ -782,10 +794,7 @@
 
   async function handleSubmit() {
     saveError = '';
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
+    stopElapsedClock();
 
     const score = calculateScore(questions, answers);
     mcTotal = questions.filter(q => q.type !== 'file').length;
@@ -807,8 +816,8 @@
     finished = true;
 
     const attemptNum = resumeGradeId ? currentAttemptNumber : getAttemptCount() + 1;
-    const localRecord = { date: new Date().toISOString(), score, total: questions.length, mcScore: score, mcTotal, tabSwitches: tabSwitchCount, timeUsed: TOTAL_TIME - timeLeft, attemptNumber: attemptNum, gradeId: undefined as string | undefined };
-    const examData = buildExamData(attemptNum, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileNames);
+    const localRecord = { date: new Date().toISOString(), score, total: questions.length, mcScore: score, mcTotal, tabSwitches: tabSwitchCount, timeUsed: getElapsedSeconds(), attemptNumber: attemptNum, gradeId: undefined as string | undefined };
+    const examData = buildExamData(attemptNum, tabSwitchCount, getElapsedSeconds(), questions, answers, uploadedFileNames);
 
     let gradeId: string | undefined;
     let queued = false;
@@ -838,7 +847,7 @@
         addToSyncQueue({
           score,
           maxScore: questions.length,
-          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${mcTotal} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
+          comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${mcTotal} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(getElapsedSeconds())}`,
           examData: JSON.stringify(examData),
           gradeId: resumeGradeId
         });
@@ -860,10 +869,7 @@
   }
 
   onDestroy(() => {
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
+    stopElapsedClock();
     if (draftSaveTimer) {
       clearTimeout(draftSaveTimer);
       draftSaveTimer = null;
@@ -933,7 +939,7 @@
           {#if !isUnlimited}
           <div class="window-info">
             <strong>📅 Ventana única (Intentos 1-2):</strong> Del lunes 19 al domingo 25 de octubre, hasta medianoche<br>
-            <strong>📝 20 preguntas:</strong> 15 teóricas (5 por nivel) + 5 ejercicios prácticos DFD · <strong>⏱ 2 horas</strong>
+            <strong>📝 20 preguntas:</strong> 15 teóricas (5 por nivel) + 5 ejercicios prácticos DFD · <strong>⏱ Sin límite de tiempo</strong>
           </div>
           {/if}
         </div>
@@ -961,7 +967,7 @@
               Guardado en el servidor:
               <strong>pregunta {Math.min((serverDraft.currentIndex || 0) + 1, serverDraft.questions.length)} de {serverDraft.questions.length}</strong>,
               <strong>{Object.keys(serverDraft.answers || {}).length}</strong> respondidas,
-              <strong>{formatTime(serverDraft.timeLeft)}</strong> restantes.
+              <strong>{formatTime(serverDraft.timeUsed || (serverDraft.timeLeft ? TOTAL_TIME - serverDraft.timeLeft : 0))}</strong> transcurridos.
             </p>
             <p class="draft-meta">
               Último guardado: {new Date(serverDraft.updatedAt).toLocaleString('es-CO')}.
@@ -977,9 +983,8 @@
             <h2>📌 Recomendaciones importantes</h2>
             <ul>
               <li>
-                <strong>⏱ Tiempo límite:</strong> Dispondrás de <strong>2 horas (120 minutos)</strong> para completar las 20 preguntas
-                (15 teóricas + 5 prácticas), contadas desde que inicies el intento. Si cierras la página, el reloj se pausa y
-                al retomar continúa desde el tiempo restante. El examen se envía automáticamente al agotarse el tiempo.
+                <strong>⏱ Sin límite de tiempo:</strong> Puedes completar las 20 preguntas (15 teóricas + 5 prácticas) a tu ritmo.
+                El examen ya no se envía automáticamente por tiempo; solo se registra el tiempo utilizado.
               </li>
               <li>
                 <strong>📝 Parte 1 — Teóricas (15 preguntas):</strong> Selección única sobre los 3 niveles:
@@ -1002,8 +1007,9 @@
                 Puedes volver atrás con el botón Anterior.
               </li>
               <li>
-                <strong>💾 Auto-guardado en el servidor:</strong> Tus respuestas, la pregunta actual y los .dfd se guardan
-                automáticamente. Si cierras el examen o cambias de equipo, podrás retomarlo exactamente donde quedaste.
+                <strong>💾 Auto-guardado:</strong> Tus respuestas y la pregunta actual se guardan automáticamente en este equipo
+                y, cuando hay conexión, en el servidor. Los .dfd se suben al servidor al seleccionarlos. Si cierras el examen
+                o cambias de equipo, podrás retomarlo desde el último guardado confirmado.
               </li>
             </ul>
           </div>
@@ -1126,7 +1132,7 @@
           </div>
           <div class="summary-item">
             <span class="summary-label">Tiempo utilizado</span>
-            <span class="summary-value">{formatTime(TOTAL_TIME - timeLeft)}</span>
+            <span class="summary-value">{formatTime(elapsedSeconds)}</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">Intentos restantes</span>
@@ -1193,9 +1199,9 @@
               💾 Guardado
             {/if}
           </span>
-          <div class="timer {timeLeft <= 300 ? 'timer-warning' : ''}">
-            <span class="timer-icon">⏱</span>
-            <span class="timer-text">{formatTime(timeLeft)}</span>
+          <div class="timer no-limit">
+            <span class="timer-icon">∞</span>
+            <span class="timer-text">Sin límite</span>
           </div>
         </div>
       </div>
@@ -1206,8 +1212,8 @@
 
       {#if offlinePaused}
         <div class="offline-notice">
-          📴 Sin conexión: el reloj está pausado en <strong>{formatTime(timeLeft)}</strong>.
-          Se reanudará automáticamente al recuperar la conexión.
+          📴 Sin conexión: tus respuestas se guardan localmente y se sincronizarán
+          automáticamente al recuperar la conexión.
         </div>
       {/if}
 
@@ -1660,6 +1666,11 @@
     font-weight: 700;
     font-size: 1.1rem;
     font-variant-numeric: tabular-nums;
+  }
+
+  .timer.no-limit {
+    font-size: 0.95rem;
+    font-weight: 600;
   }
 
   .timer-warning {

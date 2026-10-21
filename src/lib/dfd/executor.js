@@ -158,14 +158,15 @@ function evaluateTokens(tokens, vars) {
         case '<=': return left <= right ? 1 : 0;
         case '==': // fall through
         case '=': {
+          // Comparación de cadenas exacta: sensible a mayúsculas y espacios.
           if (typeof left === 'string' || typeof right === 'string') {
-            return String(left).trim().toLowerCase() === String(right).trim().toLowerCase() ? 1 : 0;
+            return left === right ? 1 : 0;
           }
           return left == right ? 1 : 0;
         }
         case '!=': {
           if (typeof left === 'string' || typeof right === 'string') {
-            return String(left).trim().toLowerCase() !== String(right).trim().toLowerCase() ? 1 : 0;
+            return left !== right ? 1 : 0;
           }
           return left != right ? 1 : 0;
         }

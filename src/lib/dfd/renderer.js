@@ -10,6 +10,7 @@
  */
 
 const NODE_H = 48;
+const EMPTY_BODY_H = NODE_H + 12;
 const DECISION_H = 56;
 const V_GAP = 36;
 const H_GAP = 40;
@@ -60,7 +61,7 @@ function measureNodes(nodes) {
     } else if (node.type === 'while') {
       const mBody = measureNodes(node.body || []);
       const isBodyEmpty = !(node.body && node.body.length > 0 && node.body[0].type !== 'end');
-      const bodyH = isBodyEmpty ? NODE_H : mBody.height;
+      const bodyH = isBodyEmpty ? EMPTY_BODY_H : mBody.height;
       const bodyW = isBodyEmpty ? MIN_NODE_W : mBody.width;
       const loopW = Math.max(w, bodyW) + 60; // extra for loop-back arrow
       maxW = Math.max(maxW, loopW);
@@ -202,7 +203,7 @@ function placeNodes(nodes, cx, startY, shapes, links, dropZones, parentId, baseP
         y = res.endY + V_GAP;
       } else {
         // Cuerpo vacío: zona dedicada visible y holgada para arrastrar componentes dentro del Mientras
-        const emptyH = NODE_H + 12;
+        const emptyH = EMPTY_BODY_H;
         const dropY = bodyY + emptyH / 2;
         // Flecha "Sí" desde el Mientras hacia el interior del cuerpo
         links.push({

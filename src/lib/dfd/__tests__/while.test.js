@@ -73,7 +73,12 @@ describe('DFD While (Ciclo Mientras): evaluación de condiciones y strings', () 
     expect(exec.evaluateExpression("letra == 's'")).toBe(1);
     expect(exec.evaluateExpression("letra = 's'")).toBe(1);
     expect(exec.evaluateExpression("letra != 'n'")).toBe(1);
-    expect(exec.evaluateExpression("respuesta == 'si'")).toBe(1); // case-insensitive
+    // Comparación exacta: mayúsculas y espacios cuentan.
+    expect(exec.evaluateExpression("respuesta == 'si'")).toBe(0);
+    expect(exec.evaluateExpression("respuesta == 'SI'")).toBe(1);
+    expect(exec.evaluateExpression("respuesta == 'SI '")).toBe(0);
+    expect(exec.evaluateExpression("respuesta != 'si'")).toBe(1);
+    expect(exec.evaluateExpression("respuesta != 'SI'")).toBe(0);
   });
 
   it('ejecuta un ciclo Mientras de 1 a 5 correctamente', async () => {
@@ -97,5 +102,39 @@ describe('DFD While (Ciclo Mientras): evaluación de condiciones y strings', () 
     await exec.execute();
 
     expect(exec.variables.i).toBe(6);
+  });
+
+  it('ejecuta bucles Mientras anidados sin perder iteraciones', async () => {
+    const ast = {
+      variables: [],
+      nodes: [
+        { type: 'assignment', assignments: [{ variable: 'i', expression: '1' }] },
+        { type: 'assignment', assignments: [{ variable: 'total', expression: '0' }] },
+        {
+          type: 'while',
+          condition: 'i <= 3',
+          body: [
+            { type: 'assignment', assignments: [{ variable: 'j', expression: '1' }] },
+            {
+              type: 'while',
+              condition: 'j <= 2',
+              body: [
+                { type: 'assignment', assignments: [{ variable: 'total', expression: 'total + 1' }] },
+                { type: 'assignment', assignments: [{ variable: 'j', expression: 'j + 1' }] }
+              ]
+            },
+            { type: 'assignment', assignments: [{ variable: 'i', expression: 'i + 1' }] }
+          ]
+        },
+        { type: 'end' }
+      ]
+    };
+
+    const exec = new DfdExecutor(ast, async () => '', async () => {});
+    await exec.execute();
+
+    expect(exec.variables.total).toBe(6);
+    expect(exec.variables.i).toBe(4);
+    expect(exec.variables.j).toBe(3);
   });
 });

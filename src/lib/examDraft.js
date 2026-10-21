@@ -30,7 +30,11 @@ export function mergeDraftWithLocal(serverDraft, localSnapshot) {
 
   const answers = { ...(serverDraft.answers || {}) };
   for (const [key, value] of Object.entries(localSnapshot.answers || {})) {
-    if (answers[key] === undefined || answers[key] === '') answers[key] = value;
+    if (value === undefined || value === '') continue;
+    const serverHasAnswer = answers[key] !== undefined && answers[key] !== '';
+    // Si el snapshot local es más reciente, sus respuestas modificadas ganan.
+    // Las respuestas que solo existen en local nunca se pierden.
+    if (!serverHasAnswer || useLocalPosition) answers[key] = value;
   }
 
   const serverIndex = Number.isInteger(serverDraft.currentIndex) ? serverDraft.currentIndex : 0;
@@ -38,12 +42,15 @@ export function mergeDraftWithLocal(serverDraft, localSnapshot) {
 
   const serverTimeLeft = Number.isFinite(serverDraft.timeLeft) ? serverDraft.timeLeft : null;
   const localTimeLeft = Number.isFinite(localSnapshot.timeLeft) ? localSnapshot.timeLeft : serverTimeLeft;
+  const serverTimeUsed = Number.isFinite(serverDraft.timeUsed) ? serverDraft.timeUsed : null;
+  const localTimeUsed = Number.isFinite(localSnapshot.timeUsed) ? localSnapshot.timeUsed : serverTimeUsed;
 
   return {
     ...serverDraft,
     answers,
     currentIndex: useLocalPosition ? localIndex : serverIndex,
     timeLeft: useLocalPosition && localTimeLeft !== null ? localTimeLeft : serverTimeLeft,
+    timeUsed: useLocalPosition && localTimeUsed !== null ? localTimeUsed : (serverTimeUsed ?? 0),
     tabSwitchCount: Math.max(serverDraft.tabSwitchCount || 0, localSnapshot.tabSwitchCount || 0),
     uploadedFileNames: {
       ...(serverDraft.uploadedFileNames || {}),

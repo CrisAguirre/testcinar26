@@ -415,7 +415,14 @@ Cinar/
     - Los literales de texto entre comillas simples (`'s'`, `'SI'`) y dobles (`"s"`) eran ignorados en el tokenizer, convirtiéndose en variables inexistentes evaluadas a `0`. Toda comparación de texto (`x != 's'`, `opcion == 's'`) fallaba y salía por el "No".
   - **Solución implementada**:
     1. Soporte en `executor.js` para el operador `<>` (mapeado a `!=`) y literales de cadena entre comillas simples y dobles (`type: 'string'`).
-    2. Comparación de cadenas flexible y tolerante (`case-insensitive` y con `.trim()`).
+    2. Comparación de cadenas exacta (sensible a mayúsculas y espacios; sin `trim()`).
     3. Re-notificación de paso en cada iteración del bucle para que el bloque Mientras se re-ilumine en verde en la ejecución paso a paso antes de cada comprobación.
 - **Verificación**: Tests unitarios nuevos en `src/lib/dfd/__tests__/while.test.js` (5/5 PASS); `test_executor.mjs` (3/3 PASS); `npm run build` exitoso (code 0) en 19.67s.
+
+### 32. Ajustes de inserción, comparación y geometría DFD (21/10)
+- **Inserción desde la paleta en cualquier rama**: se extrajo `src/lib/dfd/editorOps.js` (`getNodeByPath`, `getParentList`, `resolvePaletteInsertion`). Un nodo seleccionado dentro de una rama `No`, `Sí`, cuerpo de Mientras o rama anidada inserta el nuevo componente justo después de él; el Mientras seleccionado sigue insertando en su cuerpo y una Decisión principal en su rama `Sí`.
+- **Comparación de cadenas exacta**: `executor.js` ya no usa `trim().toLowerCase()`; `==`, `=` y `<>` distinguen mayúsculas y espacios. Los tests cubren `'SI'` vs `'si'` y espacios finales.
+- **Geometría consistente del cuerpo vacío**: `EMPTY_BODY_H = NODE_H + 12` se usa tanto en `measureNodes` como en `placeNodes`, eliminando la diferencia de 12 px y manteniendo separadas las zonas de soltado.
+- **Pruebas**: `editorOps.test.js` (8/8) cubre rama No, anidamientos, Mientras anidado y ruta inválida; `while.test.js` añade un bucle anidado 3×2 (total 6).
+- **Verificación 21/10**: DFD 33/33; `npm run build` ✓; suite completa 315 pasan / 6 fallan / 2 omitidas (las 6 ambientales de siempre); `svelte-check` sin errores en los archivos nuevos.
 

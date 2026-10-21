@@ -5,7 +5,9 @@
 export const STORAGE_KEY = 'algo_p1_attempts';
 export const DETAIL_KEY = 'algo_p1_details';
 export const TOTAL_QUESTIONS = 20; // 15 teóricas + 5 prácticas
-export const TOTAL_TIME = 120 * 60; // 2 horas (120 min) por intento, contadas desde que el estudiante inicia
+// Legado: se conserva para convertir snapshots antiguos que guardaban tiempo
+// restante. El Parcial 1 ya no tiene límite de tiempo ni autoenvío por reloj.
+export const TOTAL_TIME = 120 * 60;
 
 export const MAX_ATTEMPTS = 2; // 2 intentos: Intento 1 (Preparación) + Intento 2 (Evaluación)
 

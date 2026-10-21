@@ -6,6 +6,7 @@
   import { buildRenderData } from '$lib/dfd/renderer';
   import { generatePseudocode } from '$lib/dfd/pseudocode';
   import { DfdExecutor } from '$lib/dfd/executor';
+  import { getNodeByPath, getParentList, resolvePaletteInsertion } from '$lib/dfd/editorOps';
   import { getExerciseStatement } from '$lib/data/dfdExercises';
 
   $effect(() => {
@@ -134,51 +135,6 @@
 
   let consoleOutput = $state<string[]>([]);
   let isExecuting = $state(false);
-
-  function getNodeByPath(root, path) {
-    if (!root || !path) return null;
-    let list = root.nodes;
-    let node = null;
-    for (let k = 0; k < path.length; k++) {
-      const seg = path[k];
-      if (typeof seg === 'number') {
-        node = list?.[seg] ?? null;
-        if (!node) return null;
-        if (k === path.length - 1) return node;
-      } else {
-        if (!node) return null;
-        if (seg === 'true') list = node.trueBranch;
-        else if (seg === 'false') list = node.falseBranch;
-        else if (seg === 'body') list = node.body;
-        else return null;
-        node = null;
-      }
-    }
-    return node;
-  }
-
-  function getParentList(root, path) {
-    if (!root || !path || path.length === 0) return null;
-    if (path.length === 1) return root.nodes;
-    const parentPath = path.slice(0, -1);
-    let list = root.nodes;
-    let node = null;
-    for (let k = 0; k < parentPath.length; k++) {
-      const seg = parentPath[k];
-      if (typeof seg === 'number') {
-        node = list?.[seg] ?? null;
-        if (!node) return null;
-      } else {
-        if (!node) return null;
-        if (seg === 'true') list = node.trueBranch;
-        else if (seg === 'false') list = node.falseBranch;
-        else if (seg === 'body') list = node.body;
-        else return null;
-        node = null;
-      }
-    }
-    return list;
-  }
 
   function describeNodeShort(node) {
     if (!node) return 'vacío';
@@ -591,26 +547,10 @@
   // Clic en paleta agrega dentro del bloque seleccionado o al final del flujo principal (accesible y táctil)
   function handlePaletteClick(type) {
     if (!ast && !ensureAst()) return;
-    if (selectedPath) {
-      const node = getNodeByPath(ast, selectedPath);
-      if (node?.type === 'while') {
-        if (!Array.isArray(node.body)) node.body = [];
-        insertNodeAt(node.body, node.body.length, type);
-        return;
-      }
-      if (selectedPath.includes('body')) {
-        const list = getParentList(ast, selectedPath);
-        const idx = selectedPath[selectedPath.length - 1];
-        if (Array.isArray(list) && typeof idx === 'number') {
-          insertNodeAt(list, idx + 1, type);
-          return;
-        }
-      }
-      if (node?.type === 'decision') {
-        if (!Array.isArray(node.trueBranch)) node.trueBranch = [];
-        insertNodeAt(node.trueBranch, node.trueBranch.length, type);
-        return;
-      }
+    const target = resolvePaletteInsertion(ast, selectedPath);
+    if (target) {
+      insertNodeAt(target.list, target.index, type);
+      return;
     }
     insertNodeAt(ast.nodes, Math.max(0, ast.nodes.length - 1), type);
   }

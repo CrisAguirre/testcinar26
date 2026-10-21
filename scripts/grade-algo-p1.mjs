@@ -186,8 +186,8 @@ const CASES = {
     { inputs: [7], keywords: ['impar'] }
   ],
   114: [
-    { inputs: [2, 3], keywords: ['ambos'], absent: ['al menos'] },
-    { inputs: [2, -3], keywords: ['al menos'], absent: ['ambos son positivos'] }
+    { inputs: [2, 3], keywords: ['ambos son positivos'], absent: ['al menos'] },
+    { inputs: [2, -3], keywords: ['al menos uno no'], absent: ['ambos son positivos'] }
   ],
   115: [
     { inputs: [], sequence: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }

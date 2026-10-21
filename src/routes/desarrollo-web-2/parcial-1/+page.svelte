@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { selectRandomQuestions } from '$lib/data/parcial1_dw2';
-  import { gradesApi, authApi, API_URL, getHealthUrl } from '$lib/api';
+  import { selectRandomQuestions, questionBank } from '$lib/data/parcial1_dw2';
+  import { gradesApi, authApi, API_URL, getHealthUrl, examDraftApi, saveDw2P1DraftKeepalive } from '$lib/api';
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
   import { isDW2P1LockedFor } from '$lib/guards/examLock';
+  import { mergeDraftWithLocal, isResumableDraft } from '$lib/examDraft';
 
   // Parcial 1 DW2: evaluación habilitada del lunes 19/10 al miércoles 21/10 a medianoche (admin siempre entra).
   let examLocked = $derived(isDW2P1LockedFor($currentUser));
@@ -75,6 +76,20 @@
   let lastAttemptNum = $state(0);
   let autoSaveTimer: ReturnType<typeof setInterval> | null = null;
   let autoSaveTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  // Borrador de examen en servidor: permite retomar en otro dispositivo o red
+  let serverDraft = $state<any>(null);
+  let serverDraftLoading = $state(false);
+  let serverDraftLoadFailed = $state(false);
+  let draftSaving = $state(false);
+  let draftSaveError = $state('');
+  let draftSavedAt = $state<number | null>(null);
+  let draftSaveInFlight = false;
+  let draftDirty = false;
+  let draftSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  let draftInterval: ReturnType<typeof setInterval> | null = null;
+  let draftLoadPromise: Promise<boolean> | null = null;
+  let draftUserId = '';
 
   const totalQuestions = 20;
   let totalTime = $state(45 * 60);
@@ -158,39 +173,233 @@
     }
   });
 
+  function readLocalSnapshot(): any {
+    try {
+      const raw = localStorage.getItem(DW2P1_SAVED_ANSWERS_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  function buildDraftPayload() {
+    return {
+      attemptNumber: currentAttemptNumber || (getAttemptCount() + 1),
+      questions,
+      answers,
+      currentIndex,
+      timeLeft,
+      timeUsed: (totalTime || calculateTotalTime(questions)) - timeLeft,
+      tabSwitchCount,
+      clientUpdatedAt: Date.now()
+    };
+  }
+
+  function queueDraftSave(delay = 400) {
+    if (!started || finished || !$currentUser?.id) return;
+    draftDirty = true;
+    if (draftSaveTimer) clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(() => {
+      draftSaveTimer = null;
+      void flushDraftSave();
+    }, delay);
+  }
+
+  async function flushDraftSave(keepalive = false) {
+    if (!started || finished || !$currentUser?.id) return;
+    if (draftSaveTimer) {
+      clearTimeout(draftSaveTimer);
+      draftSaveTimer = null;
+    }
+
+    const payload = buildDraftPayload();
+    if (keepalive) {
+      saveDw2P1DraftKeepalive(payload);
+      return;
+    }
+    if (draftSaveInFlight) {
+      draftDirty = true;
+      return;
+    }
+
+    draftSaveInFlight = true;
+    draftSaving = true;
+    try {
+      await examDraftApi.saveDw2P1(payload);
+      draftSaveError = '';
+      draftSavedAt = Date.now();
+      draftDirty = false;
+    } catch (err) {
+      draftSaveError = err instanceof Error ? err.message : 'No se pudo guardar el borrador en el servidor';
+    } finally {
+      draftSaveInFlight = false;
+      draftSaving = false;
+    }
+
+    if (draftDirty) {
+      draftDirty = false;
+      setTimeout(() => { void flushDraftSave(); }, 1200);
+    }
+  }
+
+  async function loadServerDraft(): Promise<boolean> {
+    if (!$currentUser?.id) return false;
+    if (draftLoadPromise) return draftLoadPromise;
+
+    serverDraftLoading = true;
+    draftLoadPromise = (async () => {
+      try {
+        const draft = await examDraftApi.getDw2P1();
+        serverDraft = isResumableDraft(draft) ? draft : null;
+        serverDraftLoadFailed = false;
+        return true;
+      } catch (err) {
+        const status = err && typeof err === 'object' ? (err as any).status : undefined;
+        if (status === 404) {
+          serverDraft = null;
+          serverDraftLoadFailed = false;
+          return true;
+        }
+        serverDraftLoadFailed = true;
+        return false;
+      } finally {
+        serverDraftLoading = false;
+        draftLoadPromise = null;
+      }
+    })();
+
+    return draftLoadPromise;
+  }
+
+  function hydrateQuestions(rawQuestions: any[]): any[] {
+    const bankById = new Map(questionBank.map((q) => [q.id, q]));
+    return (rawQuestions || []).map((q) => {
+      const bank = bankById.get(q.id);
+      return {
+        ...q,
+        options: Array.isArray(q.options) && q.options.length > 0 ? q.options : (bank?.options || []),
+        answer: q.answer ?? bank?.answer ?? null,
+        explanation: q.explanation ?? bank?.explanation ?? ''
+      };
+    });
+  }
+
+  function applyResumedState(state: any) {
+    questions = hydrateQuestions(state.questions);
+    answers = state.answers || {};
+    currentIndex = Math.min(
+      Math.max(Number(state.currentIndex) || 0, 0),
+      Math.max(questions.length - 1, 0)
+    );
+    const dynamicTime = calculateTotalTime(questions);
+    totalTime = dynamicTime;
+    timeLeft = typeof state.timeLeft === 'number' ? state.timeLeft : dynamicTime;
+    tabSwitchCount = Number(state.tabSwitchCount) || 0;
+    currentAttemptNumber = Number(state.attemptNumber) || (getAttemptCount() + 1);
+    started = true;
+    finished = false;
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => { timeLeft--; }, 1000);
+    document.addEventListener('visibilitychange', handleVisibility);
+    queueDraftSave(0);
+  }
+
+  function resumeServerDraft() {
+    if (!serverDraft) return;
+    const merged = mergeDraftWithLocal(serverDraft, readLocalSnapshot());
+    applyResumedState(merged);
+  }
+
+  function beginNewExam() {
+    clearSavedAnswers(DW2P1_SAVED_ANSWERS_KEY);
+    questions = selectRandomQuestions();
+    const dynamicTime = calculateTotalTime(questions);
+    totalTime = dynamicTime;
+    started = true;
+    finished = false;
+    answers = {};
+    currentIndex = 0;
+    timeLeft = dynamicTime;
+    tabSwitchCount = 0;
+    currentAttemptNumber = getAttemptCount() + 1;
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => { timeLeft--; }, 1000);
+    document.addEventListener('visibilitychange', handleVisibility);
+    queueDraftSave(0);
+  }
+
+  async function startNewAttempt() {
+    if (serverDraft && !confirm('Se descartará el intento guardado en el servidor y comenzarás uno nuevo. ¿Deseas continuar?')) {
+      return;
+    }
+    try {
+      await examDraftApi.deleteDw2P1();
+    } catch {}
+    serverDraft = null;
+    beginNewExam();
+  }
+
   onMount(() => {
-    // Antes de leer el borrador/cola, recupera lo que haya quedado en las
-    // claves compartidas con DW1 P1.
     migrateDw2SavedAnswers();
     loadServerAttempts();
     pendingSyncCount = getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length;
     checkBackendHealth();
+
+    // Autoguardado periódico en el servidor cada 10 segundos durante el examen
+    draftInterval = setInterval(() => {
+      if (started && !finished) queueDraftSave(0);
+    }, 10000);
+
     autoSaveTimer = setInterval(() => {
       if (started && !finished) autoSaveAnswers(true);
-      // Reintento periódico de la cola (además de onload y del evento online).
       if (!started || finished) {
         if (!isSaving && !submitting && !syncingInProgress && getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length > 0) {
           processSyncQueue();
         }
       }
     }, 15000);
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handlePageHide);
+
+    return () => {
+      if (draftInterval) {
+        clearInterval(draftInterval);
+        draftInterval = null;
+      }
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
   });
 
   $effect(() => {
-    if ($currentUser) {
+    if ($currentUser?.id) {
       loadServerAttempts();
+      if (draftUserId !== $currentUser.id) {
+        draftUserId = $currentUser.id;
+        loadServerDraft();
+      }
       if (!isSaving && !submitting && getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length > 0) processSyncQueue();
     }
   });
 
   function handleOnline() {
     if (!isSaving && !submitting && getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length > 0) processSyncQueue();
+    if (started && !finished) queueDraftSave(0);
   }
 
   function handleBeforeUnload() {
-    if (started && !finished) autoSaveAnswers(true);
+    if (started && !finished) {
+      autoSaveAnswers(true);
+      flushDraftSave(true);
+    }
+  }
+
+  function handlePageHide() {
+    if (started && !finished) {
+      autoSaveAnswers(true);
+      flushDraftSave(true);
+    }
   }
 
   function getProgressPercent(): number {
@@ -203,57 +412,43 @@
     saveError = '';
     saveSuccess = false;
     migrateDw2SavedAnswers();
-    const healthy = await checkBackendHealth();
+
+    // 1. Prioridad: borrador del servidor (retomar en cualquier equipo o red)
+    if (serverDraft) {
+      resumeServerDraft();
+      return;
+    }
+
+    // 2. Consulta borrador del servidor en paralelo con salud
+    const [healthy, draftOk] = await Promise.all([checkBackendHealth(), loadServerDraft()]);
+    if (serverDraft) {
+      resumeServerDraft();
+      return;
+    }
+
     if (!healthy) {
       const proceed = confirm('El servidor no responde. Puedes comenzar, pero las respuestas se guardarán localmente y se sincronizarán después. ¿Deseas continuar?');
       if (!proceed) return;
     }
 
+    // 3. Fallback: borrador local si existía antes
     const saved = getSavedAnswers(DW2P1_SAVED_ANSWERS_KEY);
-
     if (saved && saved.questions && saved.answers && Object.keys(saved.answers).length > 0) {
-      const resume = confirm(`Tienes un examen en progreso guardado (${Object.keys(saved.answers).length} preguntas respondidas). ¿Deseas continuar?`);
+      const resume = confirm(`Tienes un examen local en progreso (${Object.keys(saved.answers).length} preguntas respondidas). ¿Deseas continuar?`);
       if (resume) {
-        questions = saved.questions;
-        answers = saved.answers;
-        currentIndex = saved.currentIndex || 0;
-        const savedTotalTime = calculateTotalTime(saved.questions);
-        totalTime = savedTotalTime;
-        timeLeft = typeof saved.timeLeft === 'number' ? saved.timeLeft : savedTotalTime;
-        tabSwitchCount = saved.tabSwitchCount || 0;
-        started = true;
-        finished = false;
-        currentAttemptNumber = getAttemptCount() + 1;
-        timerInterval = setInterval(() => { timeLeft--; }, 1000);
-        document.addEventListener('visibilitychange', handleVisibility);
+        applyResumedState(saved);
         return;
       }
     }
-    clearSavedAnswers(DW2P1_SAVED_ANSWERS_KEY);
 
-    questions = selectRandomQuestions();
-    const dynamicTime = calculateTotalTime(questions);
-    totalTime = dynamicTime;
-    started = true;
-    finished = false;
-    answers = {};
-    currentIndex = 0;
-    timeLeft = dynamicTime;
-    tabSwitchCount = 0;
-
-    currentAttemptNumber = getAttemptCount() + 1;
-
-    timerInterval = setInterval(() => {
-      timeLeft--;
-    }, 1000);
-
-    document.addEventListener('visibilitychange', handleVisibility);
+    beginNewExam();
   }
 
   function handleVisibility() {
     if (document.hidden && started && !finished) {
       tabSwitchCount++;
       autoSaveAnswers(true);
+      queueDraftSave(0);
     }
   }
 
@@ -261,12 +456,14 @@
     if (index >= 0 && index < totalQuestions) {
       if (index > currentIndex && !isQuestionAnswered(questions[currentIndex]?.id)) return;
       currentIndex = index;
+      queueDraftSave(100);
     }
   }
 
   function handleAnswer(value: any) {
     answers[questions[currentIndex].id] = value;
     autoSaveAnswers();
+    queueDraftSave(300);
   }
 
   function isQuestionAnswered(qId: number): boolean {
@@ -356,6 +553,9 @@
           });
           removeFromSyncQueue(entry.createdAt, DW2P1_SYNC_QUEUE_KEY);
           savedAny = true;
+          try {
+            await examDraftApi.deleteDw2P1();
+          } catch {}
         } catch {
           break;
         }
@@ -392,8 +592,6 @@
         area: q.area,
         type: q.type,
         question: q.question,
-        // El criterio se guarda con la respuesta para que el docente pueda
-        // calificar sin depender de la versión actual del banco de preguntas.
         rubric: q.type === 'open' ? q.rubric : undefined,
         options: q.type === 'mc' ? q.options : undefined,
         correctAnswer: q.type === 'mc' ? q.answer : undefined,
@@ -415,8 +613,6 @@
 
     for (let i = 0; i < maxRetries; i++) {
       try {
-        // Una sola petición: evita que la calificación quede sin respuestas
-        // si falla el segundo PUT (el error se ignoraba antes).
         const res = await gradesApi.submitMine({
           subject: DW2P1_SUBJECT,
           score: mcScore,
@@ -447,8 +643,6 @@
     isSaving = true;
     try {
       if (getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length > 0) {
-        // Ya está en la cola local: reintentar no debe crear otra
-        // calificación. Procesamos la cola (con examData incluido).
         await processSyncQueue();
         if (getSyncQueue(DW2P1_SYNC_QUEUE_KEY).length === 0) {
           saveSuccess = true;
@@ -464,6 +658,10 @@
         );
         if (result.success) {
           saveSuccess = true;
+          serverDraft = null;
+          try {
+            await examDraftApi.deleteDw2P1();
+          } catch {}
           clearSavedAnswers(DW2P1_SAVED_ANSWERS_KEY);
           const localList = getLocalAttempts();
           if (localList.length > 0) {
@@ -488,6 +686,10 @@
     if (autoSaveTimeout) {
       clearTimeout(autoSaveTimeout);
       autoSaveTimeout = null;
+    }
+    if (draftSaveTimer) {
+      clearTimeout(draftSaveTimer);
+      draftSaveTimer = null;
     }
     if (timerInterval) {
       clearInterval(timerInterval);
@@ -543,6 +745,10 @@
         gradeId = result.gradeId;
         localRecord.gradeId = result.gradeId;
         saveSuccess = true;
+        serverDraft = null;
+        try {
+          await examDraftApi.deleteDw2P1();
+        } catch {}
       } else {
         try {
           addToSyncQueue({
@@ -583,6 +789,7 @@
     // (la navegación de SvelteKit no dispara beforeunload).
     if (started && !finished) {
       saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount, DW2P1_SAVED_ANSWERS_KEY);
+      flushDraftSave(true);
     }
     if (timerInterval) {
       clearInterval(timerInterval);
@@ -592,9 +799,17 @@
       clearInterval(autoSaveTimer);
       autoSaveTimer = null;
     }
+    if (draftInterval) {
+      clearInterval(draftInterval);
+      draftInterval = null;
+    }
     if (autoSaveTimeout) {
       clearTimeout(autoSaveTimeout);
       autoSaveTimeout = null;
+    }
+    if (draftSaveTimer) {
+      clearTimeout(draftSaveTimer);
+      draftSaveTimer = null;
     }
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', handleVisibility);
@@ -602,6 +817,7 @@
     if (typeof window !== 'undefined') {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
     }
   });
 </script>
@@ -761,20 +977,48 @@
               </li>
               <li>
                 <strong>💾 Auto-guardado:</strong> Tus respuestas se guardan automáticamente al responder cada pregunta.
-                Si cierras el examen sin terminar, podrás retomarlo.
+                Si cierras el examen sin terminar, podrás retomarlo en cualquier momento.
               </li>
             </ul>
           </div>
 
-          {#if checkingServer}
+          {#if serverDraftLoading}
+            <div class="draft-notice">
+              <h2>Buscando intento guardado...</h2>
+              <p>Consultando si tienes un intento en progreso en el servidor.</p>
+            </div>
+          {:else if serverDraft}
+            <div class="draft-notice">
+              <h2>⚠️ Tienes un intento en progreso guardado en el servidor</h2>
+              <p>
+                Estás en <strong>pregunta {Math.min((serverDraft.currentIndex || 0) + 1, serverDraft.questions.length)} de {serverDraft.questions.length}</strong>,
+                <strong>{Object.keys(serverDraft.answers || {}).length}</strong> respondidas,
+                <strong>{formatTime(serverDraft.timeLeft ?? 0)}</strong> restantes.
+              </p>
+              <p class="draft-meta">
+                Último guardado: {new Date(serverDraft.updatedAt).toLocaleString('es-CO')}. Puedes continuar desde este equipo o cualquier otro sin perder tus respuestas ni tus preguntas.
+              </p>
+            </div>
+          {/if}
+
+          {#if checkingServer && !serverDraft}
             <p class="server-check">Verificando conexión con el servidor...</p>
-          {:else if !isUnlimited && !serverCheckOk && getAttemptCount() === 0}
+          {:else if !isUnlimited && !serverCheckOk && getAttemptCount() === 0 && !serverDraft}
             <p class="server-warning">⚠ No se pudo verificar el servidor. Si continúas, las respuestas se guardarán localmente.</p>
           {/if}
 
-          <button onclick={startExam} class="start-btn" disabled={checkingServer}>
-            {checkingServer ? 'Verificando...' : (getAttemptCount() === 0 ? 'Comenzar Examen' : `Iniciar ${getAttemptLabel(getAttemptCount() + 1)}`)}
-          </button>
+          {#if serverDraft}
+            <button onclick={startExam} class="start-btn" disabled={serverDraftLoading}>
+              {serverDraftLoading ? 'Buscando intento...' : `Continuar intento (pregunta ${Math.min((serverDraft.currentIndex || 0) + 1, serverDraft.questions.length)})`}
+            </button>
+            <button onclick={startNewAttempt} class="new-attempt-btn" disabled={serverDraftLoading}>
+              Descartar borrador y comenzar intento nuevo
+            </button>
+          {:else}
+            <button onclick={startExam} class="start-btn" disabled={checkingServer || serverDraftLoading}>
+              {serverDraftLoading ? 'Buscando intento en el servidor...' : checkingServer ? 'Verificando...' : (getAttemptCount() === 0 ? 'Comenzar Examen' : `Iniciar ${getAttemptLabel(getAttemptCount() + 1)}`)}
+            </button>
+          {/if}
         {:else}
           <div class="no-attempts">
             <p>{slots.windowLabel}</p>
@@ -875,6 +1119,11 @@
           <span class="question-counter">Pregunta {currentIndex + 1} de {totalQuestions}</span>
         </div>
         <div class="exam-header-right">
+          {#if draftSaving}
+            <span class="draft-status draft-saving">Guardando...</span>
+          {:else if draftSavedAt}
+            <span class="draft-status">Guardado</span>
+          {/if}
           {#if tabSwitchCount > 0}
             <span class="tab-warning-badge">⚠ {tabSwitchCount} cambio(s)</span>
           {/if}
@@ -1804,4 +2053,69 @@
   .retry-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .draft-notice {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    color: #065f46;
+  }
+
+  .draft-notice h2 {
+    font-size: 1rem;
+    margin: 0 0 0.4rem;
+    color: #047857;
+  }
+
+  .draft-notice p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .draft-meta {
+    color: #047857;
+    opacity: 0.85;
+  }
+
+  .new-attempt-btn {
+    display: block;
+    width: 100%;
+    margin-top: 0.6rem;
+    padding: 0.7rem;
+    background: transparent;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .new-attempt-btn:hover {
+    background: #f9fafb;
+    color: #374151;
+  }
+
+  .new-attempt-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .draft-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #047857;
+    background: #ecfdf5;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+  }
+
+  .draft-status.draft-saving {
+    color: #92400e;
+    background: #fef3c7;
+  }
 </style>

@@ -130,11 +130,7 @@
 
   let slots = $derived.by(() => getAvailableSlots());
 
-  $effect(() => {
-    if (timeLeft <= 0 && started && !finished) {
-      handleSubmit();
-    }
-  });
+  // Sin límite de tiempo: los estudiantes tienen todo el tiempo disponible para terminar su evaluación
 
   onMount(() => {
     loadServerAttempts();
@@ -590,9 +586,7 @@
             <h2>📌 Recomendaciones importantes</h2>
             <ul>
               <li>
-                <strong>⏱ Tiempo límite:</strong> Dispondrás de aproximadamente <strong>1 hora</strong> para completar las 20 preguntas.
-                El tiempo por pregunta es de <strong>{Math.floor(TIME_PER_MC / 60)} min</strong> para selección múltiple y <strong>{Math.floor(TIME_PER_OPEN / 60)} min</strong> para abiertas.
-                El examen se enviará automáticamente al cumplirse el tiempo.
+                <strong>⏱ Sin límite de tiempo:</strong> Puedes completar las 20 preguntas a tu ritmo. Tendrás todo el tiempo disponible para terminar tu evaluación.
               </li>
               <li>
                 <strong>📝 Tipos de preguntas:</strong> El examen incluye preguntas de <strong>selección múltiple</strong>
@@ -745,10 +739,6 @@
           {#if tabSwitchCount > 0}
             <span class="tab-warning-badge">⚠ {tabSwitchCount} cambio(s)</span>
           {/if}
-          <div class="timer {timeLeft <= 300 ? 'timer-warning' : ''}">
-            <span class="timer-icon">⏱</span>
-            <span class="timer-text">{formatTime(timeLeft)}</span>
-          </div>
         </div>
       </div>
 

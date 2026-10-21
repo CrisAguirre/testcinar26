@@ -1199,10 +1199,6 @@
               💾 Guardado
             {/if}
           </span>
-          <div class="timer no-limit">
-            <span class="timer-icon">∞</span>
-            <span class="timer-text">Sin límite</span>
-          </div>
         </div>
       </div>
 

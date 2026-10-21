@@ -64,9 +64,9 @@ describe('banco parcial 1 Algoritmos', () => {
     }
   });
 
-  it('examConfig: 20 preguntas, 120 min (2 h) y ventana 19-20/10', () => {
+  it('examConfig: 20 preguntas, 120 min (2 h) y ventana 19-25/10', () => {
     expect(examConfig.totalQuestions).toBe(20);
     expect(examConfig.duration).toBe(120 * 60);
-    expect(examConfig.dateLabel).toMatch(/19 y martes 20\/10/);
+    expect(examConfig.dateLabel).toMatch(/19 al domingo 25\/10/);
   });
 });

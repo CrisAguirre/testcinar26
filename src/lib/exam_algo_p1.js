@@ -58,7 +58,7 @@ export function getLocalAttempts() {
 }
 
 /**
- * @typedef {{ score: number, maxScore: number, comments: string, examData?: string, createdAt: number }} SyncEntry
+ * @typedef {{ score: number, maxScore: number, comments: string, examData?: string, gradeId?: string, createdAt: number }} SyncEntry
  */
 
 /** @returns {SyncEntry[]} */
@@ -101,10 +101,20 @@ export function isHealthCheckRecent() {
  * @param {number} currentIndex
  * @param {number} tabSwitchCount
  * @param {Record<string, string>} [uploadedFileNames]
+ * @param {{ gradeId?: string, attemptNumber?: number }} [extra]
  */
-export function saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount, uploadedFileNames) {
+export function saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount, uploadedFileNames, extra = {}) {
   try {
-    const snapshot = { questions, answers, timeLeft, currentIndex, tabSwitchCount, uploadedFileNames: uploadedFileNames || {}, savedAt: Date.now() };
+    const snapshot = {
+      questions,
+      answers,
+      timeLeft,
+      currentIndex,
+      tabSwitchCount,
+      uploadedFileNames: uploadedFileNames || {},
+      ...extra,
+      savedAt: Date.now()
+    };
     localStorage.setItem(SAVED_ANSWERS_KEY, JSON.stringify(snapshot));
   } catch {}
 }

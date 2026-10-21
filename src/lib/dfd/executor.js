@@ -63,21 +63,25 @@ function tokenize(expr, vars) {
         id += expr[i++];
       }
 
-      // Check built-in constants / keywords
+      // Check built-in constants / keywords. Si el nombre está declarado como
+      // variable, tiene prioridad: en DFDs es común llamar `div` al resultado
+      // de una división o `y` a una coordenada, y antes se interpretaban como
+      // los operadores DIV/Y (bug que convertía `div` en 0 al imprimirlo).
       const lower = id.toLowerCase();
-      if (lower === 'mod') {
+      const isVariable = !!(vars && Object.prototype.hasOwnProperty.call(vars, id));
+      if (!isVariable && lower === 'mod') {
         tokens.push({ type: 'op', value: '%' });
-      } else if (lower === 'div') {
+      } else if (!isVariable && lower === 'div') {
         tokens.push({ type: 'op', value: '/' }); // integer div in some DFDs
-      } else if (lower === 'and' || lower === 'y') {
+      } else if (!isVariable && (lower === 'and' || lower === 'y')) {
         tokens.push({ type: 'op', value: '&&' });
-      } else if (lower === 'or' || lower === 'o') {
+      } else if (!isVariable && (lower === 'or' || lower === 'o')) {
         tokens.push({ type: 'op', value: '||' });
-      } else if (lower === 'not' || lower === 'no') {
+      } else if (!isVariable && (lower === 'not' || lower === 'no')) {
         tokens.push({ type: 'op', value: '!' });
-      } else if (lower === 'true' || lower === 'verdadero') {
+      } else if (!isVariable && (lower === 'true' || lower === 'verdadero')) {
         tokens.push({ type: 'number', value: 1 });
-      } else if (lower === 'false' || lower === 'falso') {
+      } else if (!isVariable && (lower === 'false' || lower === 'falso')) {
         tokens.push({ type: 'number', value: 0 });
       } else {
         // Variable reference – resolve immediately

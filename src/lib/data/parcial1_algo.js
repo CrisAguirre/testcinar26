@@ -1,5 +1,5 @@
 /**
- * Banco Parcial 1 — Algoritmos (19 y 20/10/2026 · todo el día).
+ * Banco Parcial 1 — Algoritmos (19 al 25/10/2026 · hasta medianoche).
  * Basado en el Taller 1 y ampliado a los 3 niveles:
  *   Nivel 1 — Operadores/secuenciales · Nivel 2 — Condicionales · Nivel 3 — Ciclos.
  *
@@ -13,7 +13,7 @@
 
 export const examConfig = {
   title: 'Parcial 1 - Algoritmos',
-  dateLabel: 'Lunes 19 y martes 20/10/2026 · todo el día',
+  dateLabel: 'Del lunes 19 al domingo 25/10/2026 · hasta medianoche',
   duration: 120 * 60, // 2 horas (120 min) por intento, contadas desde el inicio
   totalQuestions: 20,
   theoryPerLevel: 5,

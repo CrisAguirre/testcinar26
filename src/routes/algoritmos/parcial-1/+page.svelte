@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { selectRandomQuestions, examConfig } from '$lib/data/parcial1_algo';
-  import { gradesApi, apiUploadFile, getHealthUrl } from '$lib/api';
+  import { selectRandomQuestions, examConfig, questionBank } from '$lib/data/parcial1_algo';
+  import { gradesApi, apiUploadFile, getHealthUrl, examDraftApi, saveAlgoP1DraftKeepalive } from '$lib/api';
+  import { mergeDraftWithLocal, isResumableDraft } from '$lib/examDraft';
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
   import { isAlgoP1LockedFor, ALGO_P1_OPEN, ALGO_P1_CLOSE } from '$lib/guards/examLock';
 
-  // Bloqueo temporal: Parcial 1 de Algoritmos habilitado lunes 19 y martes 20/10 (o admin).
+  // Bloqueo temporal: Parcial 1 de Algoritmos habilitado del lunes 19 al domingo 25/10 (o admin).
   let examLocked = $derived(isAlgoP1LockedFor($currentUser));
   $effect(() => {
     if (!$currentUser) { goto('/login'); return; }
@@ -32,6 +33,7 @@
 
   let timeLeft = $state(TOTAL_TIME);
   let timerInterval: ReturnType<typeof setInterval> | null = null;
+  let offlinePaused = $state(false);
   let tabSwitchCount = $state(0);
   let finalScore = $state(0);
   let mcTotal = $state(0);
@@ -59,6 +61,24 @@
   let lastGradeId = $state<string | undefined>(undefined);
   let dfdUploadError = $state('');
   let isUploadingDfd = $state(false);
+  let dfdSubmissions = $state<Record<string, string>>({});
+
+  // Borrador en servidor: permite retomar en otro equipo/red sin perder
+  // preguntas, respuestas, pregunta actual ni tiempo restante.
+  let serverDraft = $state<any>(null);
+  let serverDraftLoading = $state(false);
+  let serverDraftLoadFailed = $state(false);
+  let draftLoadPromise: Promise<boolean> | null = null;
+  let resumeGradeId = $state<string | undefined>(undefined);
+  let draftSaveError = $state('');
+  let draftSaving = $state(false);
+  let draftSavedAt = $state<number | null>(null);
+  let draftSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  let draftInterval: ReturnType<typeof setInterval> | null = null;
+  let draftSaveInFlight = false;
+  let draftDirty = false;
+  let draftUserId = '';
+  let visibilityAttached = false;
 
   let isUnlimited = $derived($currentUser?.email === 'coordinacion@cinarsistemas.edu.co');
   let examTotal = $derived(questions.length > 0 ? questions.length : TOTAL_QUESTIONS);
@@ -85,6 +105,149 @@
     }
   }
 
+  function readLocalSnapshot(): any {
+    try {
+      const raw = localStorage.getItem(SAVED_ANSWERS_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  function buildDraftPayload() {
+    return {
+      attemptNumber: currentAttemptNumber || (getAttemptCount() + 1),
+      questions,
+      answers,
+      currentIndex,
+      timeLeft,
+      timeUsed: TOTAL_TIME - timeLeft,
+      tabSwitchCount,
+      uploadedFileNames,
+      dfdSubmissions,
+      gradeId: resumeGradeId || null,
+      clientUpdatedAt: Date.now()
+    };
+  }
+
+  function queueDraftSave(delay = 400) {
+    if (!started || finished || !$currentUser?.id || offlinePaused) return;
+    draftDirty = true;
+    if (draftSaveTimer) clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(() => {
+      draftSaveTimer = null;
+      void flushDraftSave();
+    }, delay);
+  }
+
+  async function flushDraftSave(keepalive = false) {
+    if (!started || finished || !$currentUser?.id) return;
+    if (draftSaveTimer) {
+      clearTimeout(draftSaveTimer);
+      draftSaveTimer = null;
+    }
+
+    const payload = buildDraftPayload();
+    if (keepalive) {
+      saveAlgoP1DraftKeepalive(payload);
+      return;
+    }
+    if (draftSaveInFlight) {
+      draftDirty = true;
+      return;
+    }
+
+    draftSaveInFlight = true;
+    draftSaving = true;
+    try {
+      await examDraftApi.saveAlgoP1(payload);
+      draftSaveError = '';
+      draftSavedAt = Date.now();
+      draftDirty = false;
+    } catch (err) {
+      draftSaveError = err instanceof Error ? err.message : 'No se pudo guardar el borrador en el servidor';
+    } finally {
+      draftSaveInFlight = false;
+      draftSaving = false;
+    }
+
+    if (draftDirty) {
+      draftDirty = false;
+      setTimeout(() => { void flushDraftSave(); }, 1200);
+    }
+  }
+
+  async function loadServerDraft(): Promise<boolean> {
+    if (!$currentUser?.id) return false;
+    if (draftLoadPromise) return draftLoadPromise;
+
+    serverDraftLoading = true;
+    draftLoadPromise = (async () => {
+      try {
+        const draft = await examDraftApi.getAlgoP1();
+        serverDraft = isResumableDraft(draft) ? draft : null;
+        serverDraftLoadFailed = false;
+        return true;
+      } catch (err) {
+        // 404 = no hay borrador. Un error de red/autenticación no se debe
+        // confundir con "no hay borrador": podría existir uno en el servidor.
+        const status = err && typeof err === 'object' ? (err as any).status : undefined;
+        if (status === 404) {
+          serverDraft = null;
+          serverDraftLoadFailed = false;
+          return true;
+        }
+        serverDraftLoadFailed = true;
+        return false;
+      } finally {
+        serverDraftLoading = false;
+        draftLoadPromise = null;
+      }
+    })();
+
+    return draftLoadPromise;
+  }
+
+  function startTimer() {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      // Sin conexión el reloj se pausa; se reanuda en el evento `online`.
+      offlinePaused = true;
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = null;
+      return;
+    }
+    offlinePaused = false;
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => { timeLeft--; }, 1000);
+  }
+
+  function attachVisibility() {
+    if (visibilityAttached || typeof document === 'undefined') return;
+    document.addEventListener('visibilitychange', handleVisibility);
+    visibilityAttached = true;
+  }
+
+  function handleOffline() {
+    if (!started || finished) return;
+    offlinePaused = true;
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    // Guarda el tiempo exacto en el snapshot local; el servidor no está
+    // disponible, pero el reloj no debe seguir consumiéndose sin conexión.
+    autoSaveAnswers();
+  }
+
+  function handleOnline() {
+    if (started && !finished && offlinePaused) startTimer();
+    processSyncQueue();
+    queueDraftSave(0);
+  }
+
+  function handlePageHide() {
+    if (!started || finished) return;
+    saveAlgoP1DraftKeepalive(buildDraftPayload());
+  }
+
   function getAvailableSlots(): { total: number; used: number; remaining: number; windowLabel: string; enabled: boolean } {
     const used = getAttemptCount();
 
@@ -98,7 +261,7 @@
       total: MAX_ATTEMPTS,
       used,
       remaining: Math.max(0, MAX_ATTEMPTS - used),
-      windowLabel: inWindow ? 'Habilitado: lunes 19 y martes 20/10 (todo el día)' : 'Fuera de la ventana del parcial',
+      windowLabel: inWindow ? 'Habilitado: lunes 19 al domingo 25/10 (hasta medianoche)' : 'Fuera de la ventana del parcial',
       enabled: used < MAX_ATTEMPTS
     };
   }
@@ -115,15 +278,37 @@
     loadServerAttempts();
     pendingSyncCount = getSyncQueue().length;
     checkBackendHealth();
+
+    // Autoguardado periódico en el servidor (además del guardado por cambio).
+    draftInterval = setInterval(() => {
+      if (started && !finished) queueDraftSave(0);
+    }, 10000);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('pagehide', handlePageHide);
+
+    return () => {
+      if (draftInterval) {
+        clearInterval(draftInterval);
+        draftInterval = null;
+      }
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
   });
 
   $effect(() => {
-    if ($currentUser) loadServerAttempts();
+    if (!$currentUser?.id) return;
+    loadServerAttempts();
+    if (draftUserId !== $currentUser.id) {
+      draftUserId = $currentUser.id;
+      loadServerDraft();
+    }
   });
 
   function getProgressPercent(): number {
-    const answered = Object.keys(answers).length;
-    return (answered / examTotal) * 100;
+    return (answeredCount() / examTotal) * 100;
   }
 
   function getLevelLabel(tema: unknown): string {
@@ -131,63 +316,136 @@
     return (typeof tema === 'number' && labels[tema]) || `Tema ${tema ?? ''}`;
   }
 
-  async function startExam() {
-    const healthy = await checkBackendHealth();
-    if (!healthy) {
-      const proceed = confirm('El servidor no responde. Puedes comenzar, pero las respuestas se guardarán localmente y se sincronizarán después. ¿Deseas continuar?');
-      if (!proceed) return;
-    }
+  function hydrateQuestions(rawQuestions: any[]): any[] {
+    // El borrador reabierto por el docente llega sin `answer` (para no
+    // exponer las respuestas correctas). Se completan desde el banco local
+    // por id; el resto de campos se conserva tal como estaba en el intento.
+    const bankById = new Map(questionBank.map((q) => [q.id, q]));
+    return (rawQuestions || []).map((q) => {
+      const bank = bankById.get(q.id);
+      return {
+        ...q,
+        options: Array.isArray(q.options) && q.options.length > 0 ? q.options : (bank?.options || []),
+        answer: q.answer ?? bank?.answer ?? null,
+        explanation: q.explanation ?? bank?.explanation ?? ''
+      };
+    });
+  }
 
-    const saved = (() => {
-      try {
-        const raw = localStorage.getItem(SAVED_ANSWERS_KEY);
-        return raw ? JSON.parse(raw) : null;
-      } catch { return null; }
-    })();
+  function applyResumedState(state: any, gradeId?: string) {
+    questions = hydrateQuestions(state.questions);
+    answers = state.answers || {};
+    currentIndex = Math.min(
+      Math.max(Number(state.currentIndex) || 0, 0),
+      Math.max(questions.length - 1, 0)
+    );
+    const savedTime = Number(state.timeLeft);
+    timeLeft = Number.isFinite(savedTime) && savedTime >= 0 ? savedTime : TOTAL_TIME;
+    tabSwitchCount = Number(state.tabSwitchCount) || 0;
+    uploadedFileNames = state.uploadedFileNames || {};
+    dfdSubmissions = state.dfdSubmissions || {};
+    uploadedFiles = {};
+    uploadStatuses = {};
+    uploadErrors = {};
+    currentAttemptNumber = Number(state.attemptNumber) || (getAttemptCount() + 1);
+    resumeGradeId = gradeId || state.gradeId || undefined;
+    started = true;
+    finished = false;
+    startTimer();
+    attachVisibility();
+    queueDraftSave(0);
+  }
 
-    if (saved && saved.questions && saved.answers && Object.keys(saved.answers).length > 0) {
-      const resume = confirm(`Tienes un parcial en progreso guardado (${Object.keys(saved.answers).length} preguntas respondidas). ¿Deseas continuar?`);
-      if (resume) {
-        questions = saved.questions;
-        answers = saved.answers;
-        currentIndex = saved.currentIndex || 0;
-        timeLeft = saved.timeLeft || TOTAL_TIME;
-        tabSwitchCount = saved.tabSwitchCount || 0;
-        if (saved.uploadedFileNames) uploadedFileNames = saved.uploadedFileNames;
-        started = true;
-        finished = false;
-        currentAttemptNumber = getAttemptCount() + 1;
-        timerInterval = setInterval(() => { timeLeft--; }, 1000);
-        document.addEventListener('visibilitychange', handleVisibility);
-        return;
-      }
-    }
+  function resumeServerDraft() {
+    if (!serverDraft) return;
+    const merged = mergeDraftWithLocal(serverDraft, readLocalSnapshot());
+    applyResumedState(merged, merged.gradeId || serverDraft.gradeId);
+  }
+
+  function beginNewExam() {
     clearSavedAnswers();
-
     questions = selectRandomQuestions();
     uploadedFiles = {};
     uploadedFileNames = {};
     uploadStatuses = {};
     uploadErrors = {};
+    dfdSubmissions = {};
+    resumeGradeId = undefined;
     started = true;
     finished = false;
     answers = {};
     currentIndex = 0;
     timeLeft = TOTAL_TIME;
     tabSwitchCount = 0;
-
     currentAttemptNumber = getAttemptCount() + 1;
+    startTimer();
+    attachVisibility();
+    queueDraftSave(0);
+  }
 
-    timerInterval = setInterval(() => {
-      timeLeft--;
-    }, 1000);
+  async function startNewAttempt() {
+    if (serverDraft && !confirm('Se descartará el intento guardado en el servidor y comenzarás uno nuevo. ¿Deseas continuar?')) {
+      return;
+    }
+    try {
+      await examDraftApi.deleteAlgoP1();
+    } catch {}
+    serverDraft = null;
+    beginNewExam();
+  }
 
-    document.addEventListener('visibilitychange', handleVisibility);
+  async function discardDraftOnly() {
+    if (!confirm('Se descartará el intento guardado en el servidor. ¿Deseas continuar?')) return;
+    try {
+      await examDraftApi.deleteAlgoP1();
+    } catch {}
+    serverDraft = null;
+  }
+
+  async function startExam() {
+    // Prioridad: borrador del servidor (funciona en cualquier equipo/red).
+    // Si ya está cargado, se retoma de inmediato sin esperar el health check
+    // (que puede tardar si Render está frío).
+    if (serverDraft) {
+      resumeServerDraft();
+      return;
+    }
+
+    // Se consulta el borrador y la salud del servidor en paralelo para no
+    // duplicar la espera cuando el backend está frío.
+    const [healthy, draftOk] = await Promise.all([checkBackendHealth(), loadServerDraft()]);
+
+    if (serverDraft) {
+      resumeServerDraft();
+      return;
+    }
+
+    if (!draftOk) {
+      const proceed = confirm(
+        'No se pudo verificar si tienes un intento guardado en el servidor. ' +
+        'Si continúas, podrías comenzar un intento nuevo y dejar el anterior sin retomar. ¿Deseas continuar?'
+      );
+      if (!proceed) return;
+    } else if (!healthy) {
+      const proceed = confirm('El servidor no responde. Puedes comenzar, pero las respuestas se guardarán localmente y se sincronizarán después. ¿Deseas continuar?');
+      if (!proceed) return;
+    }
+
+    const saved = readLocalSnapshot();
+    if (saved && saved.questions && saved.answers && Object.keys(saved.answers).length > 0) {
+      const resume = confirm(`Tienes un parcial en progreso guardado (${Object.keys(saved.answers).length} preguntas respondidas). ¿Deseas continuar?`);
+      if (resume) {
+        applyResumedState(saved, saved.gradeId);
+        return;
+      }
+    }
+    beginNewExam();
   }
 
   function handleVisibility() {
     if (document.hidden && started && !finished) {
       tabSwitchCount++;
+      queueDraftSave(0);
     }
   }
 
@@ -195,6 +453,7 @@
     if (index >= 0 && index < examTotal) {
       if (index > currentIndex && !isQuestionAnswered(questions[currentIndex]?.id)) return;
       currentIndex = index;
+      queueDraftSave(100);
     }
   }
 
@@ -203,15 +462,42 @@
     autoSaveAnswers();
   }
 
+  function isFileAnswered(qId: number | string): boolean {
+    const key = String(qId);
+    // Un nombre en uploadedFileNames no basta: la subida pudo fallar. Se
+    // considera respondida solo si el servidor confirmó la entrega o si hay
+    // un archivo local seleccionado cuyo último intento no falló.
+    if (dfdSubmissions[key]) return true;
+    if (uploadedFiles[key] && uploadStatuses[key] !== 'error') return true;
+    return false;
+  }
+
   function isQuestionAnswered(qId: number): boolean {
     const q = questions.find((qq) => qq.id === qId);
-    if (q?.type === 'file') return !!uploadedFileNames[String(qId)];
+    if (q?.type === 'file') return isFileAnswered(qId);
     return answers[qId] !== undefined && answers[qId] !== '';
+  }
+
+  function answeredCount(): number {
+    const theory = questions.filter(
+      (q) => q.type !== 'file' && answers[q.id] !== undefined && answers[q.id] !== ''
+    ).length;
+    const files = questions.filter((q) => q.type === 'file' && isFileAnswered(q.id)).length;
+    return theory + files;
   }
 
   function autoSaveAnswers() {
     if (!started || finished) return;
-    saveAnswersSnapshot(questions, answers, timeLeft, currentIndex, tabSwitchCount, uploadedFileNames);
+    saveAnswersSnapshot(
+      questions,
+      answers,
+      timeLeft,
+      currentIndex,
+      tabSwitchCount,
+      uploadedFileNames,
+      { gradeId: resumeGradeId, attemptNumber: currentAttemptNumber }
+    );
+    queueDraftSave(400);
   }
 
   function handleFileSelect(event: Event) {
@@ -232,22 +518,48 @@
     uploadedFiles[qId] = file;
     uploadedFileNames[qId] = file.name;
     uploadErrors[qId] = '';
-    uploadStatuses[qId] = '';
+    uploadStatuses[qId] = 'uploading';
     // Marca la pregunta como respondida
     answers[questions[currentIndex].id] = 'file-selected';
     autoSaveAnswers();
+    // Subida inmediata: si el estudiante cambia de equipo, el .dfd ya está
+    // en el servidor y el borrador solo necesita el submissionId.
+    void uploadSingleDfd(qId, file);
+  }
+
+  async function uploadSingleDfd(qId: string, file: File) {
+    uploadStatuses[qId] = 'uploading';
+    uploadErrors[qId] = '';
+    try {
+      const res = await apiUploadFile('/dfd/upload', file, {
+        examType: 'parcial-1',
+        period: '2026-3',
+        attemptNumber: String(currentAttemptNumber || (getAttemptCount() + 1)),
+        questionId: qId
+      });
+      uploadStatuses[qId] = 'success';
+      uploadedFileNames[qId] = file.name;
+      if (res?.submissionId) dfdSubmissions[qId] = String(res.submissionId);
+      delete uploadedFiles[qId];
+      queueDraftSave(0);
+    } catch (err) {
+      uploadStatuses[qId] = 'error';
+      uploadErrors[qId] = err instanceof Error ? err.message : 'Error al subir el archivo';
+      // Se conserva en uploadedFiles para reintentar al finalizar.
+    }
   }
 
   async function uploadDfdFile(gradeId?: string) {
-    if (Object.keys(uploadedFiles).length === 0) {
-      return { success: false, error: 'No hay archivos seleccionados. Vuelve a seleccionarlos (.dfd) e intenta de nuevo.' };
+    const pending = Object.entries(uploadedFiles).filter(([qId]) => uploadStatuses[qId] !== 'success');
+    if (pending.length === 0) {
+      return { success: true };
     }
 
     let allSuccess = true;
     let firstError = '';
     const attemptNum = currentAttemptNumber || (getAttemptCount() + 1);
 
-    for (const [qId, file] of Object.entries(uploadedFiles)) {
+    for (const [qId, file] of pending) {
       uploadStatuses[qId] = 'uploading';
       uploadErrors[qId] = '';
       // 3 intentos por archivo: el primer POST suele dar timeout si el servidor estaba dormido
@@ -255,13 +567,17 @@
       let lastErr = '';
       for (let r = 0; r < 3 && !ok; r++) {
         try {
-          await apiUploadFile('/dfd/upload', file, {
+          const res = await apiUploadFile('/dfd/upload', file, {
             examType: 'parcial-1',
             period: '2026-3',
             attemptNumber: String(attemptNum),
+            questionId: qId,
             ...(gradeId ? { gradeId } : {})
           });
           uploadStatuses[qId] = 'success';
+          uploadedFileNames[qId] = file.name;
+          if (res?.submissionId) dfdSubmissions[qId] = String(res.submissionId);
+          delete uploadedFiles[qId];
           ok = true;
         } catch (err) {
           lastErr = err instanceof Error ? err.message : 'Error al subir el archivo';
@@ -281,7 +597,8 @@
   async function retryDfdUpload() {
     dfdUploadError = '';
     if (Object.keys(uploadedFiles).length === 0) {
-      dfdUploadError = 'No hay archivos en memoria. Tus .dfd siguen en tu computador: vuelve a iniciar el parcial, selecciónalos de nuevo y podrás reintentar la subida sin gastar un intento adicional.';
+      if (Object.keys(dfdSubmissions).length > 0) return;
+      dfdUploadError = 'No hay archivos pendientes. Si un .dfd no se subió, vuelve a seleccionarlo en su pregunta.';
       return;
     }
     isUploadingDfd = true;
@@ -321,6 +638,26 @@
     }
   }
 
+  async function deleteDraftIfMatches(entry: any) {
+    // Un envío pendiente pudo haber quedado con su borrador en el servidor.
+    // Se elimina solo si corresponde al mismo intento y no hay un examen
+    // activo en esta pestaña (para no borrar el borrador de un intento nuevo).
+    if (started && !finished) return;
+    try {
+      const draft = await examDraftApi.getAlgoP1();
+      if (!isResumableDraft(draft)) return;
+      const sameAttempt = entry.gradeId
+        ? String(draft.gradeId || '') === String(entry.gradeId)
+        : !draft.gradeId;
+      if (!sameAttempt) return;
+      await examDraftApi.deleteAlgoP1();
+      if (!started) serverDraft = null;
+    } catch {
+      // Si no se puede verificar, se deja el borrador; el estudiante puede
+      // retomarlo o descartarlo manualmente.
+    }
+  }
+
   async function processSyncQueue() {
     if (syncingInProgress) return;
     const queue = getSyncQueue();
@@ -331,20 +668,29 @@
     for (const entry of queue) {
       if (!$currentUser?.id) break;
       try {
-        const res = await gradesApi.submitMine({
-          subject: 'Algoritmos - Parcial 1',
-          score: entry.score,
-          max_score: entry.maxScore,
-          period: '2026-3',
-          comments: entry.comments,
-          submittedAt: entry.createdAt || Date.now()
-        });
-        const grade = res.grade || res;
-        if (grade && grade._id && entry.examData) {
-          await gradesApi.updateMine(grade._id, { examData: entry.examData });
+        if (entry.gradeId) {
+          // Intento reabierto: se actualiza el mismo Grade (no consume intento).
+          await gradesApi.updateMine(entry.gradeId, {
+            score: entry.score,
+            max_score: entry.maxScore,
+            comments: entry.comments,
+            examData: entry.examData,
+            submittedAt: entry.createdAt || Date.now()
+          });
+        } else {
+          await gradesApi.submitMine({
+            subject: 'Algoritmos - Parcial 1',
+            score: entry.score,
+            max_score: entry.maxScore,
+            period: '2026-3',
+            comments: entry.comments,
+            examData: entry.examData,
+            submittedAt: entry.createdAt || Date.now()
+          });
         }
         removeFromSyncQueue(entry.createdAt);
         pendingSyncCount--;
+        await deleteDraftIfMatches(entry);
       } catch {
         break;
       }
@@ -355,25 +701,39 @@
   }
 
   async function attemptSubmitWithRetry(maxRetries = 3): Promise<{ success: boolean; gradeId?: string; error?: string; dfdSuccess?: boolean; dfdError?: string }> {
-    const attemptNumLocal = getAttemptCount() + 1;
+    const attemptNumLocal = resumeGradeId ? currentAttemptNumber : getAttemptCount() + 1;
+    const mcCount = questions.filter(q => q.type !== 'file').length;
+    const comments = `${getAttemptLabel(attemptNumLocal)} | MC: ${finalScore}/${mcCount} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`;
+    const examDataForServer = buildExamData(attemptNumLocal, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileNames);
 
     for (let i = 0; i < maxRetries; i++) {
       try {
-        const mcCount = questions.filter(q => q.type !== 'file').length;
-        const res = await gradesApi.submitMine({
-          subject: 'Algoritmos - Parcial 1',
-          score: finalScore,
-          max_score: questions.length,
-          period: '2026-3',
-          comments: `${getAttemptLabel(attemptNumLocal)} | MC: ${finalScore}/${mcCount} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
-          submittedAt: Date.now()
-        });
-        const grade = res.grade || res;
+        let grade;
+        if (resumeGradeId) {
+          // Mismo intento reabierto: actualiza el Grade existente (score incluido).
+          const res = await gradesApi.updateMine(resumeGradeId, {
+            score: finalScore,
+            max_score: questions.length,
+            comments,
+            examData: JSON.stringify(examDataForServer),
+            submittedAt: Date.now()
+          });
+          grade = res.grade || res;
+        } else {
+          // Intento nuevo: la nota y el examData viajan en el MISMO POST.
+          const res = await gradesApi.submitMine({
+            subject: 'Algoritmos - Parcial 1',
+            score: finalScore,
+            max_score: questions.length,
+            period: '2026-3',
+            comments,
+            examData: JSON.stringify(examDataForServer),
+            submittedAt: Date.now()
+          });
+          grade = res.grade || res;
+        }
+
         if (grade && grade._id) {
-          try {
-            const examDataForServer = buildExamData(attemptNumLocal, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileNames);
-            await gradesApi.updateMine(grade._id, { examData: JSON.stringify(examDataForServer) });
-          } catch {}
           // Subida DFD independiente: no bloquea la nota; si falla se puede reintentar desde la pantalla final
           let dfdSuccess = true;
           let dfdError: string | undefined;
@@ -433,7 +793,8 @@
 
     for (const q of questions) {
       if (q.type === 'file') {
-        res[q.id] = { correct: !!uploadedFileNames[String(q.id)], userAnswer: uploadedFileNames[String(q.id)] || null, correctAnswer: null };
+        const fileOk = isFileAnswered(q.id);
+        res[q.id] = { correct: fileOk, userAnswer: uploadedFileNames[String(q.id)] || null, correctAnswer: null };
         continue;
       }
       const userAnswer = answers[q.id];
@@ -445,11 +806,12 @@
     results = res;
     finished = true;
 
-    const attemptNum = getAttemptCount() + 1;
-    const localRecord = { date: new Date().toISOString(), score, total: questions.length, mcScore: score, mcTotal, tabSwitches: tabSwitchCount, timeUsed: TOTAL_TIME - timeLeft, gradeId: undefined as string | undefined };
+    const attemptNum = resumeGradeId ? currentAttemptNumber : getAttemptCount() + 1;
+    const localRecord = { date: new Date().toISOString(), score, total: questions.length, mcScore: score, mcTotal, tabSwitches: tabSwitchCount, timeUsed: TOTAL_TIME - timeLeft, attemptNumber: attemptNum, gradeId: undefined as string | undefined };
     const examData = buildExamData(attemptNum, tabSwitchCount, TOTAL_TIME - timeLeft, questions, answers, uploadedFileNames);
 
     let gradeId: string | undefined;
+    let queued = false;
     if ($currentUser?.id) {
       isSaving = true;
       const result = await attemptSubmitWithRetry(3);
@@ -459,6 +821,10 @@
         lastGradeId = result.gradeId;
         localRecord.gradeId = result.gradeId;
         saveSuccess = true;
+        serverDraft = null;
+        try {
+          await examDraftApi.deleteAlgoP1();
+        } catch {}
         if (result.dfdSuccess === false) {
           dfdUploadError = `${result.dfdError || 'Falló la subida DFD'}. La nota sí quedó guardada: reintenta la subida abajo (no gasta intento).`;
         }
@@ -473,23 +839,42 @@
           score,
           maxScore: questions.length,
           comments: `${getAttemptLabel(attemptNum)} | MC: ${score}/${mcTotal} | DFDs: ${Object.values(uploadedFileNames).join(', ') || 'No subidos'} | Cambios: ${tabSwitchCount} | Tiempo: ${formatTime(TOTAL_TIME - timeLeft)}`,
-          examData: JSON.stringify(examData)
+          examData: JSON.stringify(examData),
+          gradeId: resumeGradeId
         });
+        queued = true;
       }
     }
 
-    const localList = getLocalAttempts();
-    localList.push(localRecord);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
+    // Un intento reabierto ya existe en el servidor: no se agrega un registro
+    // local duplicado (inflaría el contador y consumiría el intento restante).
+    if (!resumeGradeId) {
+      const localList = getLocalAttempts();
+      localList.push(localRecord);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
+    }
     if (gradeId) await loadServerAttempts();
 
-    clearSavedAnswers();
+    // Solo se borra el borrador local si hay copia confirmada (servidor o cola).
+    if (gradeId || queued) clearSavedAnswers();
   }
 
   onDestroy(() => {
     if (timerInterval) {
       clearInterval(timerInterval);
       timerInterval = null;
+    }
+    if (draftSaveTimer) {
+      clearTimeout(draftSaveTimer);
+      draftSaveTimer = null;
+    }
+    if (draftInterval) {
+      clearInterval(draftInterval);
+      draftInterval = null;
+    }
+    if (started && !finished) {
+      // Último intento de guardado al abandonar la página.
+      saveAlgoP1DraftKeepalive(buildDraftPayload());
     }
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', handleVisibility);
@@ -547,7 +932,7 @@
           </div>
           {#if !isUnlimited}
           <div class="window-info">
-            <strong>📅 Ventana única (Intentos 1-2):</strong> Lunes 19 y martes 20 de octubre, todo el día<br>
+            <strong>📅 Ventana única (Intentos 1-2):</strong> Del lunes 19 al domingo 25 de octubre, hasta medianoche<br>
             <strong>📝 20 preguntas:</strong> 15 teóricas (5 por nivel) + 5 ejercicios prácticos DFD · <strong>⏱ 2 horas</strong>
           </div>
           {/if}
@@ -567,15 +952,34 @@
           </div>
         {/if}
 
+        {#if serverDraftLoading}
+          <p class="loading-text">Buscando un intento en progreso en el servidor...</p>
+        {:else if serverDraft}
+          <div class="draft-notice">
+            <h2>💾 Intento en progreso</h2>
+            <p>
+              Guardado en el servidor:
+              <strong>pregunta {Math.min((serverDraft.currentIndex || 0) + 1, serverDraft.questions.length)} de {serverDraft.questions.length}</strong>,
+              <strong>{Object.keys(serverDraft.answers || {}).length}</strong> respondidas,
+              <strong>{formatTime(serverDraft.timeLeft)}</strong> restantes.
+            </p>
+            <p class="draft-meta">
+              Último guardado: {new Date(serverDraft.updatedAt).toLocaleString('es-CO')}.
+              Puedes continuar desde este equipo o desde cualquier otro.
+            </p>
+          </div>
+        {/if}
+
         {#if loadingServer}
           <p class="loading-text">Cargando datos del servidor...</p>
-        {:else if slots.remaining > 0}
+        {:else if slots.remaining > 0 || serverDraft || serverDraftLoading}
           <div class="recommendations">
             <h2>📌 Recomendaciones importantes</h2>
             <ul>
               <li>
                 <strong>⏱ Tiempo límite:</strong> Dispondrás de <strong>2 horas (120 minutos)</strong> para completar las 20 preguntas
-                (15 teóricas + 5 prácticas), contadas desde que inicies el intento. El examen se enviará automáticamente al cumplirse el tiempo.
+                (15 teóricas + 5 prácticas), contadas desde que inicies el intento. Si cierras la página, el reloj se pausa y
+                al retomar continúa desde el tiempo restante. El examen se envía automáticamente al agotarse el tiempo.
               </li>
               <li>
                 <strong>📝 Parte 1 — Teóricas (15 preguntas):</strong> Selección única sobre los 3 niveles:
@@ -598,16 +1002,20 @@
                 Puedes volver atrás con el botón Anterior.
               </li>
               <li>
-                <strong>💾 Auto-guardado:</strong> Tus respuestas se guardan automáticamente al responder cada pregunta.
-                Si cierras el examen sin terminar, podrás retomarlo (los .dfd deberás seleccionarlos de nuevo).
+                <strong>💾 Auto-guardado en el servidor:</strong> Tus respuestas, la pregunta actual y los .dfd se guardan
+                automáticamente. Si cierras el examen o cambias de equipo, podrás retomarlo exactamente donde quedaste.
               </li>
             </ul>
           </div>
 
           {#if checkingServer}
             <p class="server-check">Verificando conexión con el servidor...</p>
-          {:else if !isUnlimited && !serverCheckOk && getAttemptCount() === 0}
+          {:else if !isUnlimited && !serverCheckOk && getAttemptCount() === 0 && !serverDraft}
             <p class="server-warning">⚠ No se pudo verificar el servidor. Si continúas, las respuestas se guardarán localmente.</p>
+          {/if}
+
+          {#if serverDraftLoadFailed && serverCheckOk && !serverDraftLoading && !serverDraft}
+            <p class="server-warning">⚠ No se pudo verificar si tienes un intento guardado. Se reintentará al comenzar.</p>
           {/if}
 
           {#if pendingSyncCount > 0}
@@ -619,9 +1027,26 @@
             </div>
           {/if}
 
-          <button onclick={startExam} class="start-btn" disabled={checkingServer}>
-            {checkingServer ? 'Verificando...' : (getAttemptCount() === 0 ? 'Comenzar Parcial' : `Iniciar ${getAttemptLabel(getAttemptCount() + 1)}`)}
-          </button>
+          {#if serverDraft}
+            <button onclick={startExam} class="start-btn" disabled={serverDraftLoading}>
+              {serverDraftLoading ? 'Buscando intento...' : `Continuar intento (pregunta ${Math.min((serverDraft.currentIndex || 0) + 1, serverDraft.questions.length)})`}
+            </button>
+            {#if !serverDraft.gradeId}
+              {#if isUnlimited || slots.remaining > 0}
+                <button onclick={startNewAttempt} class="new-attempt-btn" disabled={serverDraftLoading}>
+                  Descartar borrador y comenzar de nuevo
+                </button>
+              {:else}
+                <button onclick={discardDraftOnly} class="new-attempt-btn" disabled={serverDraftLoading}>
+                  Descartar borrador
+                </button>
+              {/if}
+            {/if}
+          {:else}
+            <button onclick={startExam} class="start-btn" disabled={checkingServer || serverDraftLoading}>
+              {serverDraftLoading ? 'Buscando intento en el servidor...' : checkingServer ? 'Verificando...' : (getAttemptCount() === 0 ? 'Comenzar Parcial' : `Iniciar ${getAttemptLabel(getAttemptCount() + 1)}`)}
+            </button>
+          {/if}
         {:else}
           <div class="no-attempts">
             <p>Has completado todos los intentos de este parcial. Si necesitas una revisión, contacta a tu docente.</p>
@@ -650,7 +1075,7 @@
             <div class="score-status auto">✓ Corregido automáticamente</div>
           </div>
           <div class="score-card">
-            <div class="score-value">{Object.keys(uploadedFileNames).length}/{questions.filter(q => q.type === 'file').length}</div>
+            <div class="score-value">{questions.filter(q => q.type === 'file' && isFileAnswered(q.id)).length}/{questions.filter(q => q.type === 'file').length}</div>
             <div class="score-label">Ejercicios DFD subidos</div>
             <div class="score-status pending">⏳ Revisión docente</div>
           </div>
@@ -675,8 +1100,10 @@
             {#each questions.filter(q => q.type === 'file') as q}
               <div class="review-item">
                 <span class="review-num">Ejercicio {q.id}</span>
-                {#if uploadedFileNames[String(q.id)]}
-                  <span class="review-status pending-review">📄 {uploadedFileNames[String(q.id)]}</span>
+                {#if isFileAnswered(q.id)}
+                  <span class="review-status pending-review">📄 {uploadedFileNames[String(q.id)] || 'Subido'}</span>
+                {:else if uploadedFileNames[String(q.id)]}
+                  <span class="review-status pending-review">⚠ {uploadedFileNames[String(q.id)]} (sin confirmar)</span>
                 {:else}
                   <span class="review-status unanswered">— Sin subir</span>
                 {/if}
@@ -695,7 +1122,7 @@
         <div class="summary">
           <div class="summary-item">
             <span class="summary-label">Preguntas respondidas</span>
-            <span class="summary-value">{Object.keys(answers).length} / {examTotal}</span>
+            <span class="summary-value">{answeredCount()} / {examTotal}</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">Tiempo utilizado</span>
@@ -713,8 +1140,10 @@
             <div class="review-item">
               <span class="review-num">Pregunta {i + 1}</span>
               {#if q.type === 'file'}
-                {#if uploadedFileNames[String(q.id)]}
+                {#if isFileAnswered(q.id)}
                   <span class="review-status pending-review">📐 Subido</span>
+                {:else if uploadedFileNames[String(q.id)]}
+                  <span class="review-status pending-review">⚠ Sin confirmar</span>
                 {:else}
                   <span class="review-status unanswered">— Sin subir</span>
                 {/if}
@@ -755,6 +1184,15 @@
           {#if tabSwitchCount > 0}
             <span class="tab-warning-badge">⚠ {tabSwitchCount} cambio(s)</span>
           {/if}
+          <span class="draft-status" class:error={!!draftSaveError}>
+            {#if draftSaveError}
+              ⚠ Sin guardar en el servidor
+            {:else if draftSaving || !draftSavedAt}
+              💾 Guardando...
+            {:else}
+              💾 Guardado
+            {/if}
+          </span>
           <div class="timer {timeLeft <= 300 ? 'timer-warning' : ''}">
             <span class="timer-icon">⏱</span>
             <span class="timer-text">{formatTime(timeLeft)}</span>
@@ -765,6 +1203,13 @@
       <div class="progress-bar-container">
         <div class="progress-bar" style="transform: scaleX({getProgressPercent() / 100})"></div>
       </div>
+
+      {#if offlinePaused}
+        <div class="offline-notice">
+          📴 Sin conexión: el reloj está pausado en <strong>{formatTime(timeLeft)}</strong>.
+          Se reanudará automáticamente al recuperar la conexión.
+        </div>
+      {/if}
 
       <div class="exam-body">
   <div class="question-card">
@@ -790,12 +1235,32 @@
               <label class="file-drop-zone {uploadedFileNames[String(questions[currentIndex].id)] ? 'has-file' : ''}">
                 <input type="file" accept=".dfd" onchange={handleFileSelect} style="display:none" />
                 {#if uploadedFileNames[String(questions[currentIndex].id)]}
-                  <div class="file-selected">
+                  <div class="file-selected {uploadStatuses[String(questions[currentIndex].id)] === 'error' ? 'error' : ''}">
                     <span class="file-icon">📄</span>
                     <span class="file-name">{uploadedFileNames[String(questions[currentIndex].id)]}</span>
-                    <span class="file-check">✅</span>
+                    <span class="file-check">
+                      {#if uploadStatuses[String(questions[currentIndex].id)] === 'error'}
+                        ⚠
+                      {:else if uploadStatuses[String(questions[currentIndex].id)] === 'uploading'}
+                        ⏳
+                      {:else if dfdSubmissions[String(questions[currentIndex].id)]}
+                        ✅
+                      {:else}
+                        📄
+                      {/if}
+                    </span>
                   </div>
-                  <p class="file-hint">Haz clic para cambiar el archivo</p>
+                  <p class="file-hint">
+                    {#if uploadStatuses[String(questions[currentIndex].id)] === 'error'}
+                      No se pudo subir. Haz clic para reintentar.
+                    {:else if uploadStatuses[String(questions[currentIndex].id)] === 'uploading'}
+                      Subiendo al servidor...
+                    {:else if dfdSubmissions[String(questions[currentIndex].id)]}
+                      Guardado en el servidor. Haz clic para cambiar el archivo.
+                    {:else}
+                      Pendiente de confirmar. Haz clic para cambiar el archivo.
+                    {/if}
+                  </p>
                 {:else}
                   <div class="file-prompt">
                     <span class="upload-icon">📤</span>
@@ -1030,6 +1495,56 @@
     margin-bottom: 1rem;
   }
 
+  .draft-notice {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    color: #065f46;
+  }
+
+  .draft-notice h2 {
+    font-size: 1rem;
+    margin: 0 0 0.4rem;
+    color: #047857;
+  }
+
+  .draft-notice p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .draft-meta {
+    color: #047857;
+    opacity: 0.85;
+  }
+
+  .new-attempt-btn {
+    display: block;
+    width: 100%;
+    margin-top: 0.6rem;
+    padding: 0.7rem;
+    background: transparent;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .new-attempt-btn:hover {
+    background: #f9fafb;
+    color: #374151;
+  }
+
+  .new-attempt-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
   .recommendations {
     background: #f0f7ff;
     border-radius: 12px;
@@ -1120,6 +1635,21 @@
     font-weight: 600;
   }
 
+  .draft-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #047857;
+    background: #ecfdf5;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  .draft-status.error {
+    color: #b45309;
+    background: #fffbeb;
+  }
+
   .timer {
     display: flex;
     align-items: center;
@@ -1145,6 +1675,17 @@
 
   .timer-icon {
     font-size: 1.1rem;
+  }
+
+  .offline-notice {
+    margin: 0.75rem 0 0;
+    padding: 0.7rem 1rem;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    text-align: center;
   }
 
   .progress-bar-container {
@@ -1786,6 +2327,7 @@
   .file-icon { font-size: 1.4rem; }
   .file-name { word-break: break-all; }
   .file-check { font-size: 1.1rem; }
+  .file-selected.error { color: #b91c1c; }
 
   .upload-error {
     margin-top: 0.6rem;

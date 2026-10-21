@@ -118,7 +118,9 @@ export async function api(method, path, data, { retry = true } = {}) {
       }
       notifySessionExpired();
     }
-    throw new Error(json.error || 'Error en la solicitud');
+    const error = new Error(json.error || 'Error en la solicitud');
+    error.status = res.status;
+    throw error;
   }
 
   return json;
@@ -146,6 +148,29 @@ export const gradesApi = {
 export const scheduleApi = {
   get: () => api('GET', '/schedule')
 };
+
+// Borrador del examen en el servidor: permite retomar en otro equipo/red.
+export const examDraftApi = {
+  getAlgoP1: () => api('GET', '/exams/algo-p1/draft'),
+  saveAlgoP1: (data) => api('PUT', '/exams/algo-p1/draft', data),
+  deleteAlgoP1: () => api('DELETE', '/exams/algo-p1/draft')
+};
+
+// Guardado final al cerrar/ocultar la pestaña. `keepalive` permite que el
+// navegador complete la petición aunque la página se esté descargando.
+export function saveAlgoP1DraftKeepalive(data) {
+  const token = getToken();
+  return fetch(`${API_URL}/exams/algo-p1/draft`, {
+    method: 'PUT',
+    credentials: 'include',
+    keepalive: true,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify(data)
+  }).catch(() => null);
+}
 
 export const enrollmentApi = {
   getMine: () => api('GET', '/enrollments/mine'),

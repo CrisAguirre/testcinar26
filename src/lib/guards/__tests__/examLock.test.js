@@ -33,9 +33,9 @@ const ESTUDIANTE = { role: 'student' };
 const ADMIN = { role: 'admin' };
 
 describe('constantes de fecha (hora Colombia, UTC-5)', () => {
-  it('Algoritmos P1: 19/10 00:00 → 20/10 23:59:59', () => {
+  it('Algoritmos P1: 19/10 00:00 → 25/10 23:59:59', () => {
     expect(ALGO_P1_OPEN.toISOString()).toBe('2026-10-19T05:00:00.000Z');
-    expect(ALGO_P1_CLOSE.toISOString()).toBe('2026-10-21T04:59:59.000Z');
+    expect(ALGO_P1_CLOSE.toISOString()).toBe('2026-10-26T04:59:59.000Z');
   });
 
   it('DW2 P1: prep 8–13/10 y evaluación del 19 al 21/10 (hasta medianoche)', () => {
@@ -57,16 +57,16 @@ describe('constantes de fecha (hora Colombia, UTC-5)', () => {
 });
 
 describe('isAlgoP1Open / isAlgoP1LockedFor', () => {
-  it('abre exactamente el 19/10 00:00 y cierra al terminar el 20/10', () => {
+  it('abre exactamente el 19/10 00:00 y cierra al terminar el 25/10', () => {
     setTime('2026-10-18T23:59:59-05:00');
     expect(isAlgoP1Open()).toBe(false);
     setTime('2026-10-19T00:00:00-05:00');
     expect(isAlgoP1Open()).toBe(true);
     setTime('2026-10-20T12:00:00-05:00');
     expect(isAlgoP1Open()).toBe(true);
-    setTime('2026-10-20T23:59:59-05:00');
+    setTime('2026-10-25T23:59:59-05:00');
     expect(isAlgoP1Open()).toBe(true);
-    setTime('2026-10-21T00:00:00-05:00');
+    setTime('2026-10-26T00:00:00-05:00');
     expect(isAlgoP1Open()).toBe(false);
   });
 

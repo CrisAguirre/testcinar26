@@ -4,6 +4,10 @@ import { gradesApi } from '$lib/api';
 import { get } from 'svelte/store';
 import { preloadedMyGrades } from '$lib/stores/preloaded';
 
+// Deshabilitar SSR: la página usa localStorage, timers y APIs del navegador
+// que no existen en el servidor. Evita el 500 en Vercel.
+export const ssr = false;
+
 export const load: PageLoad = async () => {
   if (browser) {
     const cached = get(preloadedMyGrades);

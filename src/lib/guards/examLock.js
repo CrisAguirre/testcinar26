@@ -15,11 +15,12 @@
 export const TALLER_ALGO_OPEN = new Date('2026-10-06T14:00:00-05:00');
 export const TALLER_ALGO_CLOSE = new Date('2026-10-07T23:59:59-05:00');
 
-// Parcial 1 Algoritmos: lunes 19 al domingo 25 de octubre de 2026, hasta medianoche (hora Colombia).
+// Parcial 1 Algoritmos: lunes 19 al miércoles 28 de octubre de 2026, hasta medianoche (hora Colombia).
 // 2 intentos (Preparación + Evaluación). Banco: 51 teóricas + 20 prácticas DFD.
 // Ampliación 21/10: cierre pasa del 20/10 al domingo 25/10 23:59:59.
+// Ampliación 24/10: cierre pasa del 25/10 al miércoles 28/10 23:59:59.
 export const ALGO_P1_OPEN = new Date('2026-10-19T00:00:00-05:00');
-export const ALGO_P1_CLOSE = new Date('2026-10-25T23:59:59-05:00');
+export const ALGO_P1_CLOSE = new Date('2026-10-28T23:59:59-05:00');
 
 /** Verifica si el Parcial 1 de Algoritmos está habilitado por fecha */
 export function isAlgoP1Open() {

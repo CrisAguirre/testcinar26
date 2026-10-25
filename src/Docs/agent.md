@@ -31,7 +31,7 @@ Cinar/
 │   │   │   │   ├── normativa/             # Estado de normas, descargas, cumplimiento institucional
 │   │   │   │   └── soporte/               # Asistencia remota, manuales, FAQ
 │   │   │   └── algoritmos/         # Algoritmos
-│   │   │       ├── parcial-1/      # BLOQUEADO no-admin
+│   │   │       ├── parcial-1/      # HABILITADO 19-28/10 (evaluación con DFD, ampliado 24/10)
 │   │   │       ├── parcial-2/      # BLOQUEADO no-admin
 │   │   │       ├── taller/         # BLOQUEADO no-admin (+ variantes algoritmia/taller x3 cursos)
 │   │   │       ├── notas/
@@ -337,8 +337,8 @@ Cinar/
 - Backend: `schedule.js` (fechas + mensajes "preparación hasta el 13/10 y evaluación del 19 al 21/10 (hasta medianoche)") y `gradeController.examLockError` (mismo mensaje). Tests `schedule.test.js` y `gradeController.test.js` actualizados.
 - Fix UX (heredado del taller): el botón "Realizar Intento N" de la pantalla final ahora vuelve al menú de intentos en lugar de reabrir el examen con el estado del intento anterior.
 
-### 23. Parcial 1 Algoritmos — lunes 19 y martes 20/10 (todo el día)
-- **Ventana única** 19/10 00:00 → 20/10 23:59, **2 intentos** (Intento 1 Preparación + Intento 2 Evaluación, estilo taller), **120 min (2 h)** por intento, contados desde que el estudiante lo inicia (ajuste 19/10, ver §26).
+### 23. Parcial 1 Algoritmos — lunes 19/10 al miércoles 28/10 (ampliado)
+- **Ventana** 19/10 00:00 → 28/10 23:59 (ampliada: original 20/10, luego 25/10, ahora 28/10 — ver §26, §34), **2 intentos** (Intento 1 Preparación + Intento 2 Evaluación, estilo taller), **sin límite de tiempo** por intento (ajuste 21/10, ver §33).
 - Banco nuevo `src/lib/data/parcial1_algo.js`: **51 teóricas** (17 por nivel; 34 de 4 opciones + 17 binarias, con explicación) + **20 prácticas DFD**. Composición del examen: **20 = 15 teóricas (5 por nivel, mezcladas) + 5 prácticas (≥1 por nivel)**; teóricas primero.
 - Módulo propio `src/lib/exam_algo_p1.js` (claves `algo_p1_*`, sin mezclar con DW1/DW2): snapshot retomable, cola de sincronización con `period: '2026-3'` y `submittedAt` del intento.
 - Página `algoritmos/parcial-1` reescrita para preguntas tipo archivo: `<input .dfd>` (valida extensión y 2 MB), subida a `POST /dfd/upload` con `examType: 'parcial-1'` (3 reintentos con backoff) **independiente de la nota** — si la nota falla, el DFD igual se sube y queda botón "Reintentar subida DFD" (no gasta intento). Nota = aciertos teóricos (0–15) con `max_score` 20; DFD revisados por el docente (espejo del taller).
@@ -439,5 +439,15 @@ Cinar/
   - **Algoritmos Parcial 1**: Retiro de la visualización del temporizador del encabezado.
   - **Algoritmos Parcial 2**: Eliminación del `$effect` de auto-envío por tiempo (`timeLeft <= 0`), retiro de la cuenta atrás del encabezado y actualización de las recomendaciones iniciales indicando que es sin límite de tiempo.
 - **Verificación**: Tests unitarios de backend ejecutados (37/37 PASS); compilación frontend exitosa (`npm run build` code 0).
-
+### 34. Ampliación ventana + calificación DFD Parcial 1 Algoritmos (24/10)
+- **Ventana extendida al miércoles 28/10 23:59:59** (hora Colombia). Archivos modificados:
+  - Backend: `schedule.js` (`ALGO_P1_CLOSE` → `2026-10-28T23:59:59-05:00`, comentario de ampliación, mensaje de error), `exams.js` (mensaje de cierre), `gradeController.js` (mensaje de error).
+  - Frontend: `examLock.js` (`ALGO_P1_CLOSE` → `2026-10-28T23:59:59-05:00`, comentario de ampliación), `parcial-1/+page.svelte` (3 labels: comentario de bloqueo, `windowLabel`, texto HTML de la ventana), `parcial1_algo.js` (`dateLabel`).
+- **Calificación de algoritmos DFD** para estudiantes que presentaron después del miércoles 22/10 (registros anteriores se mantienen vigentes). Script `apply_algo_dfd_grades.js`:
+  - David Felipe Narváez (intento 2): MC 15/15 + DFD 0/5 = **15/20** (archivos no resuelven los ejercicios asignados).
+  - Andrés Felipe Mena Oviedo (intento 1): MC 15/15 + DFD 0/5 = **15/20** (archivos de operaciones básicas subidos en lugar de los ejercicios asignados).
+  - Andrés Felipe Mena Oviedo (intento 2): MC 15/15 + DFD 0/5 = **15/20** (mismos archivos incorrectos).
+  - Johan Sebastián Rodríguez Rosero (intento 1): MC 15/15 + DFD 4/5 = **19/20** (factorial, pos/neg/cero, descuento y radio correctos; falla mensaje exacto en ambos positivos).
+  - Johan Sebastián Rodríguez Rosero (intento 2): MC 15/15 + DFD 4/5 = **19/20** (radio, unitario, promedio y factorial correctos; falla comparación de mayor).
+- Listado final completo de notas Algoritmos Parcial 1 (11 registros vigentes, 7 estudiantes).
 

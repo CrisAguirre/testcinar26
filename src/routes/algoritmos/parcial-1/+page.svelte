@@ -7,7 +7,7 @@
   import { goto } from '$app/navigation';
   import { isAlgoP1LockedFor, ALGO_P1_OPEN, ALGO_P1_CLOSE } from '$lib/guards/examLock';
 
-  // Bloqueo temporal: Parcial 1 de Algoritmos habilitado del lunes 19 al domingo 25/10 (o admin).
+  // Bloqueo temporal: Parcial 1 de Algoritmos habilitado del lunes 19 al miércoles 28/10 (o admin).
   let examLocked = $derived(isAlgoP1LockedFor($currentUser));
   $effect(() => {
     if (!$currentUser) { goto('/login'); return; }
@@ -272,7 +272,7 @@
       total: MAX_ATTEMPTS,
       used,
       remaining: Math.max(0, MAX_ATTEMPTS - used),
-      windowLabel: inWindow ? 'Habilitado: lunes 19 al domingo 25/10 (hasta medianoche)' : 'Fuera de la ventana del parcial',
+      windowLabel: inWindow ? 'Habilitado: lunes 19 al miércoles 28/10 (hasta medianoche)' : 'Fuera de la ventana del parcial',
       enabled: used < MAX_ATTEMPTS
     };
   }
@@ -938,7 +938,7 @@
           </div>
           {#if !isUnlimited}
           <div class="window-info">
-            <strong>📅 Ventana única (Intentos 1-2):</strong> Del lunes 19 al domingo 25 de octubre, hasta medianoche<br>
+            <strong>📅 Ventana única (Intentos 1-2):</strong> Del lunes 19 al miércoles 28 de octubre, hasta medianoche<br>
             <strong>📝 20 preguntas:</strong> 15 teóricas (5 por nivel) + 5 ejercicios prácticos DFD · <strong>⏱ Sin límite de tiempo</strong>
           </div>
           {/if}

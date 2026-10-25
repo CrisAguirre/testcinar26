@@ -13,7 +13,7 @@
 
 export const examConfig = {
   title: 'Parcial 1 - Algoritmos',
-  dateLabel: 'Del lunes 19 al domingo 25/10/2026 · hasta medianoche',
+  dateLabel: 'Del lunes 19 al miércoles 28/10/2026 · hasta medianoche',
   duration: 120 * 60, // 2 horas (120 min) por intento, contadas desde el inicio
   totalQuestions: 20,
   theoryPerLevel: 5,

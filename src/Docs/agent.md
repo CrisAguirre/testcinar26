@@ -481,3 +481,24 @@ Cinar/
   - Nivel Alto/Superior: 6 estudiantes (54.5%), Nivel Medio: 5 estudiantes (45.5%), Nivel Básico: 0 estudiantes (0%).
 - **Regeneración del PDF**:
   - Archivo re-compilado en el Escritorio: [Informe_Resultados_y_Retroalimentacion_Parcial1_Algoritmos.pdf](file:///c:/Users/USUARIO/Desktop/Informe_Resultados_y_Retroalimentacion_Parcial1_Algoritmos.pdf) reflejando la nueva nota de 14/20 (3.5) y las métricas actualizadas.
+
+### 38. Calificación de Andrea Lisseth Quiscualtud y actualización del informe PDF (27/10)
+- **Estudiante**: **Andrea Lisseth Quiscualtud** (`algo2@cinar.edu.co` - Grade ID: `6ae14d983cb36e299c5cf5ad`).
+- **Evaluación del Parcial 1 de Algoritmos**:
+  - Presentó su evaluación el martes 27/10 por la noche (8:19 p. m.).
+  - **Componente Teórico**: **15/15** (100% de aciertos en preguntas de opción múltiple).
+  - **Componente Práctico DFD**: **4/5**
+    * Pregunta 120 (Factorial con ciclo Mientras): **1/1** (bucles y acumulador multiplicativo correctos).
+    * Pregunta 109 (Mayor de dos números con condicionales anidados e igualdad): **1/1** (lógica y ramas Sí/No completas).
+    * Pregunta 107 (Precio unitario y total pagar): **1/1** (producto y salida correctos).
+    * Pregunta 114 (Ambos números positivos con operador Y): **1/1** (condición compuesta y mensajes exactos requeridos).
+    * Pregunta 112 (Descuento 10% si compra > 100.000): **0/1** (lógica de cálculo correcta en ambas ramas, pero en el nodo de salida escribió `'total a pagar'` como texto literal sin concatenar la variable `total`).
+  - **Nota Definitiva**: **19/20** (equivalente a **4.8 / 5.0** · Desempeño Sobresaliente).
+- **Actualización en MongoDB Atlas**:
+  - Colección `grades` actualizada con `score: 19`, `max_score: 20`, `comments: ... | DFD: 4/5 | Definitiva: 19/20` y `examData` con desglose por ejercicio.
+- **Métricas globales del curso actualizadas**:
+  - Total estudiantes: **12** (17 intentos en total).
+  - Promedio general: **17.0 / 20** (**4.3 / 5.0**).
+  - Aprobados: **100%** (12 de 12 con nota ≥ 3.5).
+- **PDF actualizado en el Escritorio**:
+  - [Informe_Resultados_y_Retroalimentacion_Parcial1_Algoritmos.pdf](file:///c:/Users/USUARIO/Desktop/Informe_Resultados_y_Retroalimentacion_Parcial1_Algoritmos.pdf) re-generado con 12 estudiantes, nueva tabla, métricas consolidadas y la ficha individual de retroalimentación de Andrea Lisseth Quiscualtud.

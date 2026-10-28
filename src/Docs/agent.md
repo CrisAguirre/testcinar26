@@ -451,3 +451,33 @@ Cinar/
   - Johan Sebastián Rodríguez Rosero (intento 2): MC 15/15 + DFD 4/5 = **19/20** (radio, unitario, promedio y factorial correctos; falla comparación de mayor).
 - Listado final completo de notas Algoritmos Parcial 1 (11 registros vigentes, 7 estudiantes).
 
+### 35. Calificación DFD nuevos estudiantes Parcial 1 Algoritmos (27/10)
+- **Calificación de algoritmos DFD** para nuevos estudiantes que presentaron su evaluación el lunes 26/10 (ventana ampliada al 28/10). Script `apply_new_students_grades.js`:
+  - **David Santiago Erazo Moncayo** (`algo11@cinar.edu.co` - Intento 1): MC 15/15 + DFD 2/5 = **17/20** (equiv. 4.3/5.0).
+    - Ejercicios aprobados (2/5): Pregunta 103 (Celsius a Fahrenheit `C*1.8+32` correcto) y Pregunta 107 (Precio unitario * cantidad correcto).
+    - Ejercicios no aprobados (0/5): Pregunta 112 (salida con variable indefinida `x`), Pregunta 120 (usó condicional `Si` en vez de ciclo, salida indefinida `x`), Pregunta 118 (subió algoritmo de promedio de 3 notas en lugar de suma hasta 0).
+  - **Julián David Reina Cabrera** (`jd.reina@cinar.edu.co` - Intento 1): MC 12/15 + DFD 0/5 = **12/20** (equiv. 3.0/5.0).
+    - Ejercicios no aprobados (0/5): Pregunta 104 (sintaxis rota sin cálculo real), Pregunta 112 (sintaxis inválida en condición y asignación), Pregunta 101 (valores hardcodeados para 3 y 5 sin lectura dinámica), Pregunta 118 (incompleto con salida indefinida), Pregunta 116 (sin archivo subido).
+- **Total consolidado**: 16 registros vigentes en Algoritmos - Parcial 1 en MongoDB Atlas (11 estudiantes únicos, 100% aprobados con promedio 16.5/20 = 4.1/5.0).
+
+### 36. Generación de informe PDF de resultados y retroalimentación (27/10)
+- **Documento generado**: [Informe_Resultados_y_Retroalimentacion_Parcial1_Algoritmos.pdf](file:///c:/Users/USUARIO/Desktop/Informe_Resultados_y_Retroalimentacion_Parcial1_Algoritmos.pdf) ubicado en el Escritorio del usuario (`C:\Users\USUARIO\Desktop`).
+- **Contenido del informe**:
+  1. *Resumen Ejecutivo y Métricas Globales*: 11 estudiantes evaluados, 16 intentos, 100% de aprobación, nota promedio general de 16.5/20 (4.1/5.0).
+  2. *Tabla Consolidada de Notas*: Detalle por estudiante con intentos, puntaje teórico, puntaje DFD y nota final en escala 20 y escala 5.0.
+  3. *Banco de Corrección y Retroalimentación Teórica*: Análisis detallado de las preguntas conceptuales con mayor tasa de error (precedencia de operadores en promedios, fórmulas horarias, jerarquía aritmética, simbología de lectura en DFD, operador lógico Y, contadores vs acumuladores y condiciones en ciclos mientras).
+  4. *Solucionario y Patrones de Diseño DFD*: Errores típicos identificados en las entregas y pseudocódigos estándar óptimos para secuenciales, condicionales y ciclos (centinela y factorial).
+  5. *Fichas Individuales de Retroalimentación*: 11 fichas personalizadas con desglose de aciertos/errores en cada uno de los 5 ejercicios prácticos DFD y recomendaciones pedagógicas para el Parcial 2.
+- **Herramienta de compilación**: Script `generate_pdf_report.js` y renderizado de alta fidelidad vía Microsoft Edge headless.
+
+### 37. Ajuste de calificación a Julián Reina y actualización del PDF (27/10)
+- **Ajuste en MongoDB Atlas**:
+  - Estudiante: **Julián David Reina Cabrera** (`jd.reina@cinar.edu.co` - Grade ID: `6adfceb6155f0fa14ea52f93`).
+  - Asignación de **2/5 puntos en DFD** a solicitud del docente (reconociendo planteamiento en preguntas 101 y 104).
+  - Nota definitiva actualizada: **14/20** (Teoría 12/15 + DFD 2/5 = 14/20, equivalente a **3.5 / 5.0**).
+  - `comments` y `examData` actualizados con metadatos de ajuste docente.
+- **Actualización de estadísticas del grupo**:
+  - Promedio general sube a **16.8 / 20** (**4.2 / 5.0**).
+  - Nivel Alto/Superior: 6 estudiantes (54.5%), Nivel Medio: 5 estudiantes (45.5%), Nivel Básico: 0 estudiantes (0%).
+- **Regeneración del PDF**:
+  - Archivo re-compilado en el Escritorio: [Informe_Resultados_y_Retroalimentacion_Parcial1_Algoritmos.pdf](file:///c:/Users/USUARIO/Desktop/Informe_Resultados_y_Retroalimentacion_Parcial1_Algoritmos.pdf) reflejando la nueva nota de 14/20 (3.5) y las métricas actualizadas.

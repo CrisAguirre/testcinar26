@@ -29,12 +29,17 @@
     loading = true;
     error = '';
     try {
-      const all = await gradesApi.getAll({});
-      const examGrades = all.filter((g: any) => g.subject === 'Algoritmos - Parcial 1');
+      let all: any[] = [];
+      try {
+        all = await gradesApi.getAll({});
+      } catch {
+        all = await gradesApi.getMine();
+      }
+      const examGrades = (all || []).filter((g: any) => g.subject === 'Algoritmos - Parcial 1');
 
       const byStudent: Record<string, any[]> = {};
       for (const g of examGrades) {
-        const name = g.student?.full_name || 'Unknown';
+        const name = g.student?.full_name || g.student?.username || 'Estudiante';
         if (!byStudent[name]) byStudent[name] = [];
         byStudent[name].push(g);
       }

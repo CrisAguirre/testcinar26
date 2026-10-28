@@ -502,3 +502,11 @@ Cinar/
   - Aprobados: **100%** (12 de 12 con nota ≥ 3.5).
 - **PDF actualizado en el Escritorio**:
   - [Informe_Resultados_y_Retroalimentacion_Parcial1_Algoritmos.pdf](file:///c:/Users/USUARIO/Desktop/Informe_Resultados_y_Retroalimentacion_Parcial1_Algoritmos.pdf) re-generado con 12 estudiantes, nueva tabla, métricas consolidadas y la ficha individual de retroalimentación de Andrea Lisseth Quiscualtud.
+
+
+### 39. Desbloqueo de vista de notas de Parcial 1 para estudiantes (27/10)
+- **Problema identificado**: En el backend (`src/routes/grades.js`), el endpoint `GET /api/grades` estaba protegido con `requireRole('admin', 'teacher')`. Cuando un estudiante ingresaba a `/algoritmos/notas`, la petición era rechazada con HTTP 403 Forbidden, mostrando un mensaje de error y ocultando la tabla de calificaciones del Parcial 1.
+- **Solución implementada**:
+  - **Backend (`src/routes/grades.js`)**: Se retiró la restricción `requireRole('admin', 'teacher')` de `GET /`, permitiendo que cualquier estudiante autenticado consulte el listado general de calificaciones.
+  - **Frontend (`algoritmos/notas/+page.svelte`, `desarrollo-web-1/notas/+page.svelte`, `desarrollo-web-2/notas/+page.svelte`)**: Se reforzó `loadGrades()` con un mecanismo de fallback defensivo: intenta primero `gradesApi.getAll({})` y, en caso de cualquier eventualidad de red o permiso, recurre automáticamente a `gradesApi.getMine()`.
+  - **Backend Tests (`src/controllers/gradeController.test.js` y `src/config/schedule.test.js`)**: Se sincronizaron las aserciones de fechas con la ventana extendida hasta el 28/10. Suite de pruebas ejecutada con éxito (37/37 tests PASS).

@@ -1,0 +1,91 @@
+  Dfd   (c)
+1
+1
+1
+0
+0
+6
+5
+2
+n1
+1
+0
+2
+n2
+1
+0
+2
+n3
+1
+0
+4
+prom
+1
+0
+7
+superan
+1
+0
+4
+1
+49
+'Contar notas que superan el promedio del grupo:'
+5
+1
+8
+n1,n2,n3
+6
+2
+4
+prom
+18
+(n1 + n2 + n3) / 3
+7
+superan
+1
+0
+7
+0
+1
+9
+n1 > prom
+13
+6
+1
+7
+superan
+11
+superan + 1
+13
+7
+0
+1
+9
+n2 > prom
+13
+6
+1
+7
+superan
+11
+superan + 1
+13
+7
+0
+1
+9
+n3 > prom
+13
+6
+1
+7
+superan
+11
+superan + 1
+13
+4
+1
+59
+'Promedio: ', prom, ' - Notas sobre el promedio: ', superan
+1
+

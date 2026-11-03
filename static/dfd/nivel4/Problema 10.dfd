@@ -1,0 +1,67 @@
+  Dfd   (c)
+1
+1
+1
+0
+0
+6
+6
+6
+precio
+1
+0
+8
+cantidad
+1
+0
+7
+pctDesc
+1
+0
+8
+subtotal
+1
+0
+6
+ahorro
+1
+0
+5
+total
+1
+0
+4
+1
+33
+'Cálculo de Descuento Comercial:'
+5
+1
+23
+precio,cantidad,pctDesc
+12
+1
+16
+aplicarDescuento
+1
+25
+precio, cantidad, pctDesc
+6
+3
+8
+subtotal
+17
+precio * cantidad
+6
+ahorro
+26
+subtotal * (pctDesc / 100)
+5
+total
+17
+subtotal - ahorro
+4
+1
+69
+'Subtotal: ', subtotal, ' - Descuento: ', ahorro, ' - Total: ', total
+1
+

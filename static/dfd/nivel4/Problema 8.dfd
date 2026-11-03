@@ -1,0 +1,70 @@
+  Dfd   (c)
+1
+1
+1
+0
+0
+6
+4
+4
+base
+1
+0
+3
+exp
+1
+0
+3
+pot
+1
+0
+1
+i
+1
+0
+4
+1
+28
+'Función de Potencia (B^E):'
+5
+1
+8
+base,exp
+12
+1
+16
+calcularPotencia
+1
+9
+base, exp
+6
+2
+3
+pot
+1
+1
+1
+i
+1
+1
+9
+1
+8
+i <= exp
+6
+2
+3
+pot
+10
+pot * base
+1
+i
+5
+i + 1
+11
+4
+1
+50
+base, ' elevado a la potencia ', exp, ' es: ', pot
+1
+

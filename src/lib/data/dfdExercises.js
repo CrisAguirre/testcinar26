@@ -1,5 +1,5 @@
 // Enunciados de ejercicios DFD — fuente única para Actividad de la semana y Editor DFD.
-// Nivel 1: Operadores secuenciales (16) · Nivel 2: Condicionales Si/No (22) · Nivel 3: Ciclos (12)
+// Nivel 1: Operadores secuenciales (16) · Nivel 2: Condicionales Si/No (22) · Nivel 3: Ciclos (12) · Nivel 4: Funciones (10) · Nivel 5: Arreglos (10)
 
 export const problemsN1 = [
 	{ id: 1, text: 'Pedir 2 números al usuario y sumarlos, restarlos, multiplicarlos y dividirlos.', propuesto: false },
@@ -60,11 +60,39 @@ export const problemsN3 = [
 	{ id: 12, text: 'Pedir un número N y mostrar los primeros N términos de la serie de Fibonacci (0, 1, 1, 2, 3, 5, …).', propuesto: true }
 ];
 
+export const problemsN4 = [
+	{ id: 1, text: 'Diseñar un algoritmo modular con una función que reciba la base y la altura de un rectángulo, calcule su área y retorne el resultado al programa principal para mostrarlo.', propuesto: false },
+	{ id: 2, text: 'Diseñar una función que reciba un número entero como parámetro y devuelva 1 si es par o 0 si es impar. El programa principal muestra el resultado.', propuesto: true },
+	{ id: 3, text: 'Crear una función matemática que reciba un valor numérico X y retorne su valor elevado al cubo (X * X * X).', propuesto: false },
+	{ id: 4, text: 'Diseñar una función que reciba dos números A y B y retorne el mayor de ellos. Probarla leyendo dos valores desde el teclado.', propuesto: true },
+	{ id: 5, text: 'Modularizar la conversión térmica: crear una función que reciba grados Celsius y retorne los grados Fahrenheit equivalentes.', propuesto: false },
+	{ id: 6, text: 'Diseñar una función que reciba el salario bruto y el porcentaje de retención, y devuelva el salario neto a pagar tras la deducción.', propuesto: true },
+	{ id: 7, text: 'Crear una función que reciba un entero N y calcule su factorial mediante un ciclo acumulador, retornando el resultado final.', propuesto: false },
+	{ id: 8, text: 'Diseñar una función que reciba dos parámetros (base B y exponente E) y retorne el resultado de elevar B a la potencia E.', propuesto: true },
+	{ id: 9, text: 'Diseñar una función que reciba un valor y dos límites (mínimo y máximo) y retorne 1 si el valor se encuentra dentro del rango inclusivo o 0 en caso contrario.', propuesto: false },
+	{ id: 10, text: 'Diseñar una función que reciba el precio unitario, la cantidad y el porcentaje de descuento; debe calcular y retornar el monto final con descuento aplicado.', propuesto: true }
+];
+
+export const problemsN5 = [
+	{ id: 1, text: 'Crear un algoritmo que declare un arreglo de 5 posiciones, solicite 5 números al usuario para llenarlo y luego los recorra mostrando cada elemento.', propuesto: false },
+	{ id: 2, text: 'Pedir 5 números para almacenar en un vector, calcular la suma de todos sus elementos y mostrar el promedio final.', propuesto: true },
+	{ id: 3, text: 'Cargar 5 valores en un vector y encontrar cuál es el elemento con el valor más alto y mostrarlo.', propuesto: false },
+	{ id: 4, text: 'Almacenar 6 números enteros en un arreglo y contar cuántos de ellos son números pares y cuántos impares.', propuesto: true },
+	{ id: 5, text: 'Cargar un arreglo de 5 elementos. Luego pedir un número a buscar e indicar si el número existe en el vector o no.', propuesto: false },
+	{ id: 6, text: 'Llenar un arreglo de 5 números, solicitar un factor multiplicador K y mostrar el nuevo valor de cada posición multiplicado por K.', propuesto: true },
+	{ id: 7, text: 'Almacenar las calificaciones de 5 estudiantes en un vector, calcular su promedio y determinar cuántos estudiantes obtuvieron una nota superior al promedio.', propuesto: false },
+	{ id: 8, text: 'Leer 5 números en un vector y mostrarlos en pantalla en orden inverso al que fueron ingresados (desde la última posición hasta la primera).', propuesto: true },
+	{ id: 9, text: 'Ingresar 6 números en un arreglo y clasificar cuántos son mayores que cero, cuántos menores que cero y cuántos son iguales a cero.', propuesto: false },
+	{ id: 10, text: 'Llenar un vector A con 5 números y generar un segundo vector B donde cada posición almacene la suma acumulada de los elementos hasta esa posición.', propuesto: true }
+];
+
 /** @type {Record<string, { list: Array<{ id: number, text: string, propuesto: boolean }>, nivel: string, nivelLabel: string }>} */
 const LEVELS_CONFIG = {
 	'1': { list: problemsN1, nivel: 'nivel1', nivelLabel: 'Nivel 1 — Operadores' },
 	'2': { list: problemsN2, nivel: 'nivel2', nivelLabel: 'Nivel 2 — Condicionales' },
-	'3': { list: problemsN3, nivel: 'nivel3', nivelLabel: 'Nivel 3 — Ciclos' }
+	'3': { list: problemsN3, nivel: 'nivel3', nivelLabel: 'Nivel 3 — Ciclos' },
+	'4': { list: problemsN4, nivel: 'nivel4', nivelLabel: 'Nivel 4 — Funciones' },
+	'5': { list: problemsN5, nivel: 'nivel5', nivelLabel: 'Nivel 5 — Arreglos' }
 };
 
 /**
@@ -72,11 +100,12 @@ const LEVELS_CONFIG = {
  * @returns {{ nivel: string, nivelLabel: string, id: number, text: string, propuesto: boolean, label: string } | null}
  */
 export function getExerciseStatement(key) {
-	// key: "N1-5" | "N2-12" | "N3-3"
+	// key: "N1-5" | "N2-12" | "N3-3" | "N4-2" | "N5-4"
 	if (!key || typeof key !== 'string') return null;
-	const m = key.match(/^N([123])-(\d{1,2})$/i);
+	const m = key.match(/^N([1-5])-(\d{1,2})$/i);
 	if (!m) return null;
 	const level = LEVELS_CONFIG[m[1]];
+	if (!level) return null;
 	const id = parseInt(m[2], 10);
 	const found = level.list.find((p) => p.id === id);
 	if (!found) return null;

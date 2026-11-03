@@ -510,3 +510,18 @@ Cinar/
   - **Backend (`src/routes/grades.js`)**: Se retiró la restricción `requireRole('admin', 'teacher')` de `GET /`, permitiendo que cualquier estudiante autenticado consulte el listado general de calificaciones.
   - **Frontend (`algoritmos/notas/+page.svelte`, `desarrollo-web-1/notas/+page.svelte`, `desarrollo-web-2/notas/+page.svelte`)**: Se reforzó `loadGrades()` con un mecanismo de fallback defensivo: intenta primero `gradesApi.getAll({})` y, en caso de cualquier eventualidad de red o permiso, recurre automáticamente a `gradesApi.getMine()`.
   - **Backend Tests (`src/controllers/gradeController.test.js` y `src/config/schedule.test.js`)**: Se sincronizaron las aserciones de fechas con la ventana extendida hasta el 28/10. Suite de pruebas ejecutada con éxito (37/37 tests PASS).
+
+### 40. Habilitación de ejercicios de Nivel 4 (Funciones) y Nivel 5 (Arreglos) en el Editor DFD (03/11/2026)
+- **Banco de Enunciados (`src/lib/data/dfdExercises.js`)**:
+  - Incorporadas 10 nuevas problemáticas para el **Nivel 4 — Funciones y Modularidad** (`problemsN4`: cálculo de área, paridad, cubo, mayor de dos números, conversión térmica, salario neto, factorial modular, potencias, validación de rangos y descuentos comerciales).
+  - Incorporadas 10 nuevas problemáticas para el **Nivel 5 — Arreglos y Vectores** (`problemsN5`: llenado y recorrido de arreglos, suma y promedios, búsqueda del mayor, conteo de pares/impares, búsqueda secuencial, multiplicación escalar por constante K, notas sobre el promedio, inversión de orden de elementos, clasificación de signos y vector acumulado).
+  - Configuración generalizada en `LEVELS_CONFIG` para los niveles del 1 al 5 y actualización de `getExerciseStatement` aceptando claves `N1-X` a `N5-X`.
+- **Editor Visual DFD (`src/routes/algoritmos/dfd/+page.svelte`)**:
+  - `parseLoadParam`: Ahora procesa y enruta parámetros `N4-X` y `N5-X`, así como formatos textuales compatibles.
+  - `loadExercise` y `exerciseKey`: Soporte ampliado para carpetas `static/dfd/nivel4/` y `static/dfd/nivel5/`.
+  - Selector en la barra de herramientas: Se expandió el selector con dos nuevos `<optgroup>`: "Nivel 4 — Funciones (10)" y "Nivel 5 — Arreglos (10)", totalizando 68 ejercicios disponibles en la plataforma.
+- **Actividad de la Semana (`src/routes/algoritmos/actividad-de-la-semana/+page.svelte`)**:
+  - Incorporadas dos nuevas pestañas interactivas: `🟪 Nivel 4 — Funciones (10)` y `🟧 Nivel 5 — Arreglos (10)`.
+  - Añadidas funciones de retroalimentación pedagógica y análisis guiado `analisisN4` y `analisisN5` con redirección directa al editor DFD (`?load=N4-X` y `?load=N5-X`).
+- **Archivos Estáticos DFD**:
+  - Generados y serializados los 20 nuevos archivos `.dfd` compatibles con FreeDFD en `static/dfd/nivel4/Problema 1..10.dfd` y `static/dfd/nivel5/Problema 1..10.dfd`.

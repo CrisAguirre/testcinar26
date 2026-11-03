@@ -1,0 +1,43 @@
+  Dfd   (c)
+1
+1
+1
+0
+0
+6
+2
+1
+x
+1
+0
+4
+cubo
+1
+0
+4
+1
+42
+'Cálculo del Cubo con Función Matemática:'
+5
+1
+1
+x
+12
+1
+12
+calcularCubo
+1
+1
+x
+6
+1
+4
+cubo
+9
+x * x * x
+4
+1
+31
+'El cubo de ', x, ' es: ', cubo
+1
+

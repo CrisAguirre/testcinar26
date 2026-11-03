@@ -1,0 +1,66 @@
+  Dfd   (c)
+1
+1
+1
+0
+0
+6
+3
+1
+n
+1
+0
+4
+fact
+1
+0
+1
+k
+1
+0
+4
+1
+35
+'Función Factorial de un Número N:'
+5
+1
+1
+n
+12
+1
+17
+calcularFactorial
+1
+1
+n
+6
+2
+4
+fact
+1
+1
+1
+k
+1
+1
+9
+1
+6
+k <= n
+6
+2
+4
+fact
+8
+fact * k
+1
+k
+5
+k + 1
+11
+4
+1
+36
+'El factorial de ', n, ' es: ', fact
+1
+

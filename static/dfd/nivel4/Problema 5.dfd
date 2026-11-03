@@ -1,0 +1,43 @@
+  Dfd   (c)
+1
+1
+1
+0
+0
+6
+2
+7
+celsius
+1
+0
+10
+fahrenheit
+1
+0
+4
+1
+37
+'Conversión Térmica con Subprograma:'
+5
+1
+7
+celsius
+12
+1
+18
+celsiusAFahrenheit
+1
+7
+celsius
+6
+1
+10
+fahrenheit
+20
+(celsius * 1.8) + 32
+4
+1
+46
+celsius, ' °C equivalen a ', fahrenheit, ' °F'
+1
+

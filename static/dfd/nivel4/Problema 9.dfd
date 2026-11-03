@@ -1,0 +1,52 @@
+  Dfd   (c)
+1
+1
+1
+0
+0
+6
+3
+5
+valor
+1
+0
+3
+min
+1
+0
+3
+max
+1
+0
+4
+1
+31
+'Validación de Rango Numérico:'
+5
+1
+13
+valor,min,max
+12
+1
+7
+enRango
+1
+15
+valor, min, max
+7
+0
+1
+29
+valor >= min and valor <= max
+4
+1
+43
+valor, ' está FUERA del rango especificado'
+13
+4
+1
+39
+valor, ' se encuentra DENTRO del rango'
+13
+1
+

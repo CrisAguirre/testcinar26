@@ -1,0 +1,55 @@
+  Dfd   (c)
+1
+1
+1
+0
+0
+6
+4
+12
+salarioBruto
+1
+0
+9
+retencion
+1
+0
+9
+descuento
+1
+0
+11
+salarioNeto
+1
+0
+4
+1
+38
+'Cálculo de Salario Neto con Función:'
+5
+1
+22
+salarioBruto,retencion
+12
+1
+17
+calcularDeduccion
+1
+23
+salarioBruto, retencion
+6
+2
+9
+descuento
+32
+salarioBruto * (retencion / 100)
+11
+salarioNeto
+24
+salarioBruto - descuento
+4
+1
+58
+'Descuento: ', descuento, ' - Salario Neto: ', salarioNeto
+1
+

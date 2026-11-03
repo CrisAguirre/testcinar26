@@ -1,0 +1,87 @@
+  Dfd   (c)
+1
+1
+1
+0
+0
+6
+4
+6
+buscar
+1
+0
+10
+encontrado
+1
+0
+1
+i
+1
+0
+4
+elem
+1
+0
+4
+1
+55
+'Búsqueda de un valor en una secuencia de 5 elementos:'
+5
+1
+6
+buscar
+6
+2
+10
+encontrado
+1
+0
+1
+i
+1
+1
+9
+1
+26
+i <= 5 and encontrado == 0
+5
+1
+4
+elem
+7
+0
+1
+14
+elem == buscar
+13
+6
+1
+10
+encontrado
+1
+1
+13
+6
+1
+1
+i
+5
+i + 1
+11
+7
+0
+1
+15
+encontrado == 1
+4
+1
+47
+'El valor ', buscar, ' NO existe en el arreglo'
+13
+4
+1
+55
+'El valor ', buscar, ' SÍ fue encontrado en el arreglo'
+13
+1
+

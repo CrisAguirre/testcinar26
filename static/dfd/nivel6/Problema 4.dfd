@@ -1,0 +1,132 @@
+  Dfd   (c)
+1
+1
+1
+0
+0
+6
+6
+3
+m11
+1
+0
+3
+m12
+1
+0
+3
+m21
+1
+0
+3
+m22
+1
+0
+5
+pares
+1
+0
+7
+impares
+1
+0
+4
+1
+39
+'Contar Pares e Impares en Matriz 2x2:'
+5
+1
+15
+m11,m12,m21,m22
+6
+2
+5
+pares
+1
+0
+7
+impares
+1
+0
+7
+0
+1
+14
+m11 mod 2 == 0
+6
+1
+7
+impares
+11
+impares + 1
+13
+6
+1
+5
+pares
+9
+pares + 1
+13
+7
+0
+1
+14
+m12 mod 2 == 0
+6
+1
+7
+impares
+11
+impares + 1
+13
+6
+1
+5
+pares
+9
+pares + 1
+13
+7
+0
+1
+14
+m21 mod 2 == 0
+6
+1
+7
+impares
+11
+impares + 1
+13
+6
+1
+5
+pares
+9
+pares + 1
+13
+7
+0
+1
+14
+m22 mod 2 == 0
+6
+1
+7
+impares
+11
+impares + 1
+13
+6
+1
+5
+pares
+9
+pares + 1
+13
+4
+1
+63
+'Total elementos pares: ', pares, ' - Total impares: ', impares
+1
+

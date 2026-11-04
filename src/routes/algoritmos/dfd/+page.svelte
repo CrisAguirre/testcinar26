@@ -31,41 +31,47 @@
   let currentExecutor = $state<any>(null);
   let showVariables = $state(true);
 
-  function parseLoadParam(loadParam: string | null): { nivel: 'nivel1' | 'nivel2' | 'nivel3' | 'nivel4' | 'nivel5'; id: number } | null {
+  function parseLoadParam(loadParam: string | null): { nivel: 'nivel1' | 'nivel2' | 'nivel3' | 'nivel4' | 'nivel5' | 'nivel6' | 'nivel7'; id: number } | null {
     if (!loadParam) return null;
     // Nuevos: N1-5, N2-12, N3-3
-    let m = loadParam.match(/^N([1-5])-(\d{1,2})$/i);
+    let m = loadParam.match(/^N([1-7])-(\d{1,2})$/i);
     if (m) {
       const lvl = m[1];
-      const nivel = lvl === '1' ? 'nivel1' : lvl === '2' ? 'nivel2' : lvl === '3' ? 'nivel3' : lvl === '4' ? 'nivel4' : 'nivel5';
+      const nivel = lvl === '1' ? 'nivel1' : lvl === '2' ? 'nivel2' : lvl === '3' ? 'nivel3' : lvl === '4' ? 'nivel4' : lvl === '5' ? 'nivel5' : lvl === '6' ? 'nivel6' : 'nivel7';
       const id = parseInt(m[2]);
-      const max = lvl === '1' ? 16 : lvl === '2' ? 22 : lvl === '3' ? 12 : 10;
+      const max = lvl === '1' ? 16 : lvl === '2' ? 22 : lvl === '3' ? 12 : (lvl === '4' || lvl === '5') ? 10 : 8;
       if (!isNaN(id) && id >= 1 && id <= max) return { nivel, id };
       return null;
     }
     // Compatibles: "Problema 5" (N1), "N2-Problema 5", "Problema N2-5", "N3-Problema 3"
-    m = loadParam.match(/Problema\s+N?([2345])?-?(\d{1,2})/i);
+    m = loadParam.match(/Problema\s+N?([2-7])?-?(\d{1,2})/i);
     if (m) {
       const id = parseInt(m[2] || m[1]);
-      const isN5 = /N5/i.test(loadParam);
+      const isN7 = /N7/i.test(loadParam);
+      const isN6 = !isN7 && /N6/i.test(loadParam);
+      const isN5 = !isN7 && !isN6 && /N5/i.test(loadParam);
       const isN4 = !isN5 && /N4/i.test(loadParam);
       const isN3 = !isN5 && !isN4 && /N3/i.test(loadParam);
       const isN2 = !isN5 && !isN4 && !isN3 && /N2/i.test(loadParam);
+      if (isN7 && id >= 1 && id <= 8) return { nivel: 'nivel7', id };
+      if (isN6 && id >= 1 && id <= 8) return { nivel: 'nivel6', id };
       if (isN5 && id >= 1 && id <= 10) return { nivel: 'nivel5', id };
       if (isN4 && id >= 1 && id <= 10) return { nivel: 'nivel4', id };
       if (isN3 && id >= 1 && id <= 12) return { nivel: 'nivel3', id };
       if (isN2 && id >= 1 && id <= 22) return { nivel: 'nivel2', id };
-      if (!isN2 && !isN3 && !isN4 && !isN5 && id >= 1 && id <= 16) return { nivel: 'nivel1', id };
+      if (!isN2 && !isN3 && !isN4 && !isN5 && !isN6 && !isN7 && id >= 1 && id <= 16) return { nivel: 'nivel1', id };
     }
     return null;
   }
 
-  function exerciseKey(nivel: 'nivel1' | 'nivel2' | 'nivel3' | 'nivel4' | 'nivel5', id: number) {
+  function exerciseKey(nivel: 'nivel1' | 'nivel2' | 'nivel3' | 'nivel4' | 'nivel5' | 'nivel6' | 'nivel7', id: number) {
     if (nivel === 'nivel1') return `N1-${id}`;
     if (nivel === 'nivel2') return `N2-${id}`;
     if (nivel === 'nivel3') return `N3-${id}`;
     if (nivel === 'nivel4') return `N4-${id}`;
-    return `N5-${id}`;
+    if (nivel === 'nivel5') return `N5-${id}`;
+    if (nivel === 'nivel6') return `N6-${id}`;
+    return `N7-${id}`;
   }
 
   let currentExercise = $derived.by(() => getExerciseStatement(selectedExerciseId));
@@ -81,13 +87,13 @@
     }
   });
 
-  async function loadExercise(id: number, nivel: 'nivel1' | 'nivel2' | 'nivel3' | 'nivel4' | 'nivel5' = 'nivel1') {
+  async function loadExercise(id: number, nivel: 'nivel1' | 'nivel2' | 'nivel3' | 'nivel4' | 'nivel5' | 'nivel6' | 'nivel7' = 'nivel1') {
     if (!id) return;
     selectedExerciseId = exerciseKey(nivel, id);
     try {
       const filename = `Problema ${id}.dfd`;
       const folder = nivel;
-      const prefix = nivel === 'nivel1' ? 'N1' : nivel === 'nivel2' ? 'N2' : nivel === 'nivel3' ? 'N3' : nivel === 'nivel4' ? 'N4' : 'N5';
+      const prefix = nivel === 'nivel1' ? 'N1' : nivel === 'nivel2' ? 'N2' : nivel === 'nivel3' ? 'N3' : nivel === 'nivel4' ? 'N4' : nivel === 'nivel5' ? 'N5' : nivel === 'nivel6' ? 'N6' : 'N7';
       const label = `${prefix}-Problema ${id}`;
       const res = await fetch(`/dfd/${folder}/${filename}`);
       if (!res.ok) throw new Error('No se pudo cargar el archivo');
@@ -100,7 +106,7 @@
       consoleOutput = [`--- ${label} cargado: revisa el pseudocódigo Legible y ejecútalo en Paso a paso ---`];
     } catch (err) {
       console.error(err);
-      consoleOutput = ['--- Error al cargar el ejercicio: verifica Nivel 1 (1-16), Nivel 2 (1-22), Nivel 3 (1-12), Nivel 4 (1-10) o Nivel 5 (1-10) ---'];
+      consoleOutput = ['--- Error al cargar el ejercicio: verifica Nivel 1 (1-16), Nivel 2 (1-22), Nivel 3 (1-12), Nivel 4 (1-10), Nivel 5 (1-10), Nivel 6 (1-8) o Nivel 7 (1-8) ---'];
     }
   }
   
@@ -748,8 +754,8 @@
       </div>
 
       <div class="tool-group group-exercise" aria-label="Ejercicios">
-        <span class="group-label">Ejercicios N1 al N5</span>
-        <select class="btn btn-secondary exercise-select" bind:value={selectedExerciseId} onchange={() => { if (selectedExerciseId) { const [n, idStr] = String(selectedExerciseId).split('-'); const lvl = n === 'N1' ? 'nivel1' : n === 'N2' ? 'nivel2' : n === 'N3' ? 'nivel3' : n === 'N4' ? 'nivel4' : 'nivel5'; loadExercise(parseInt(idStr), lvl); } }} aria-label="Elegir ejercicio de Nivel 1 a Nivel 5">
+        <span class="group-label">Ejercicios N1 al N7</span>
+        <select class="btn btn-secondary exercise-select" bind:value={selectedExerciseId} onchange={() => { if (selectedExerciseId) { const [n, idStr] = String(selectedExerciseId).split('-'); const lvl = n === 'N1' ? 'nivel1' : n === 'N2' ? 'nivel2' : n === 'N3' ? 'nivel3' : n === 'N4' ? 'nivel4' : n === 'N5' ? 'nivel5' : n === 'N6' ? 'nivel6' : 'nivel7'; loadExercise(parseInt(idStr), lvl); } }} aria-label="Elegir ejercicio de Nivel 1 a Nivel 7">
           <option value="">-- Elegir --</option>
           <optgroup label="Nivel 1 — Operadores (16)">
             {#each Array.from({ length: 16 }, (_, i) => i + 1) as i}
@@ -774,6 +780,16 @@
           <optgroup label="Nivel 5 — Arreglos (10)">
             {#each Array.from({ length: 10 }, (_, i) => i + 1) as i}
               <option value={`N5-${i}`}>N5 · Problema {i}</option>
+            {/each}
+          </optgroup>
+          <optgroup label="Nivel 6 — Matrices (8)">
+            {#each Array.from({ length: 8 }, (_, i) => i + 1) as i}
+              <option value={`N6-${i}`}>N6 · Problema {i}</option>
+            {/each}
+          </optgroup>
+          <optgroup label="Nivel 7 — Sistemas de Menú (8)">
+            {#each Array.from({ length: 8 }, (_, i) => i + 1) as i}
+              <option value={`N7-${i}`}>N7 · Problema {i}</option>
             {/each}
           </optgroup>
         </select>

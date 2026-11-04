@@ -525,3 +525,19 @@ Cinar/
   - Añadidas funciones de retroalimentación pedagógica y análisis guiado `analisisN4` y `analisisN5` con redirección directa al editor DFD (`?load=N4-X` y `?load=N5-X`).
 - **Archivos Estáticos DFD**:
   - Generados y serializados los 20 nuevos archivos `.dfd` compatibles con FreeDFD en `static/dfd/nivel4/Problema 1..10.dfd` y `static/dfd/nivel5/Problema 1..10.dfd`.
+
+### 41. Habilitación de ejercicios de Nivel 6 (Matrices) y Nivel 7 (Sistemas de Menú) en el Editor DFD (04/11/2026)
+- **Banco de Enunciados (`src/lib/data/dfdExercises.js`)**:
+  - Incorporadas 8 nuevas problemáticas para el **Nivel 6 — Matrices 2D** (`problemsN6`: llenado e impresión fila por fila de matriz 2x2, suma total de matriz 2x3, suma de diagonal principal 3x3, conteo de pares/impares 2x2, búsqueda del mayor elemento 2x3, producto por constante escalar K 2x2, generación de matriz identidad 3x3, suma de fila específica seleccionada por el usuario en matriz 3x3).
+  - Incorporadas 8 nuevas problemáticas para el **Nivel 7 — Sistemas de Menú** (`problemsN7`: menú aritmético repetitivo mientras opción <> 0, simulador de cajero automático con validación de saldo, convertidor de unidades de longitud métrica, cálculo de áreas geométricas planas, control de calificaciones y promedio estudiantil con reinicio, caja registradora comercial con acumuladores y descuento, control de acceso por clave PIN 2026 y panel, y control de inventario de bodega con validación de despacho).
+  - Total de ejercicios en la plataforma ampliado a **86 ejercicios interactivos** (N1: 16, N2: 22, N3: 12, N4: 10, N5: 10, N6: 8, N7: 8).
+  - Actualización de `LEVELS_CONFIG` para los niveles del 1 al 7 y soporte de claves `N1-X` a `N7-X` en `getExerciseStatement()`.
+- **Editor Visual DFD (`src/routes/algoritmos/dfd/+page.svelte`)**:
+  - `parseLoadParam`: Procesa parámetros `N6-X` y `N7-X` mapeando a `nivel6` y `nivel7`.
+  - Selector en la barra de herramientas: Incorporados `<optgroup>` para "Nivel 6 — Matrices (8)" y "Nivel 7 — Sistemas de Menú (8)".
+- **Actividad de la Semana (`src/routes/algoritmos/actividad-de-la-semana/+page.svelte`)**:
+  - Añadidas las pestañas de selección: `🟥 Nivel 6 — Matrices (8)` y `⬛ Nivel 7 — Sist. de Menú (8)`.
+  - Integradas las funciones de análisis pedagógico `analisisN6()` y `analisisN7()` en el acordeón de cada ejercicio con redirección al editor (`?load=N6-X` y `?load=N7-X`).
+  - Actualizados el texto del encabezado hero y el banner informativo con las metodologías para matrices y sistemas de menú interactivos.
+- **Archivos Estáticos DFD**:
+  - Creados los archivos `.dfd` serializados para Nivel 6 (`static/dfd/nivel6/Problema 1..8.dfd`) y Nivel 7 (`static/dfd/nivel7/Problema 1..4.dfd`). El resto de archivos de Nivel 7 quedan pre-generados en el scratch JSON (`dfd_output_n6_n7.json`).

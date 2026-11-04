@@ -1,0 +1,131 @@
+  Dfd   (c)
+1
+1
+1
+0
+0
+6
+3
+6
+opcion
+1
+1
+6
+metros
+1
+0
+4
+conv
+1
+0
+6
+1
+6
+opcion
+1
+1
+9
+1
+11
+opcion != 0
+4
+1
+75
+'--- CONVERTIDOR DE LONGITUD --- 1: m a km, 2: m a cm, 3: m a mm, 0: Salir'
+5
+1
+6
+opcion
+7
+0
+1
+11
+opcion == 1
+7
+0
+1
+11
+opcion == 2
+7
+0
+1
+11
+opcion == 3
+7
+0
+1
+11
+opcion == 0
+4
+1
+18
+'Opción inválida.'
+13
+4
+1
+33
+'Fin del programa de conversión.'
+13
+13
+4
+1
+29
+'Ingrese cantidad en metros:'
+5
+1
+6
+metros
+6
+1
+4
+conv
+13
+metros * 1000
+4
+1
+43
+metros, ' metros equivalen a ', conv, ' mm'
+13
+13
+4
+1
+29
+'Ingrese cantidad en metros:'
+5
+1
+6
+metros
+6
+1
+4
+conv
+12
+metros * 100
+4
+1
+43
+metros, ' metros equivalen a ', conv, ' cm'
+13
+13
+4
+1
+29
+'Ingrese cantidad en metros:'
+5
+1
+6
+metros
+6
+1
+4
+conv
+13
+metros / 1000
+4
+1
+43
+metros, ' metros equivalen a ', conv, ' km'
+13
+11
+1
+

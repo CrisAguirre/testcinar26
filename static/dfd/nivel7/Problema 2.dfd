@@ -1,0 +1,143 @@
+  Dfd   (c)
+1
+1
+1
+0
+0
+6
+3
+6
+opcion
+1
+1
+5
+saldo
+4
+1000
+5
+monto
+1
+0
+6
+2
+5
+saldo
+4
+1000
+6
+opcion
+1
+1
+9
+1
+11
+opcion != 0
+4
+1
+82
+'--- CAJERO AUTOMÁTICO --- 1: Consultar saldo, 2: Consignar, 3: Retirar, 0: Salir'
+5
+1
+6
+opcion
+7
+0
+1
+11
+opcion == 1
+7
+0
+1
+11
+opcion == 2
+7
+0
+1
+11
+opcion == 3
+7
+0
+1
+11
+opcion == 0
+4
+1
+18
+'Opción inválida.'
+13
+4
+1
+38
+'Gracias por utilizar nuestro cajero.'
+13
+13
+4
+1
+26
+'Ingrese monto a retirar:'
+5
+1
+5
+monto
+7
+0
+1
+28
+monto <= saldo and monto > 0
+4
+1
+39
+'Fondos insuficientes o monto inválido'
+13
+6
+1
+5
+saldo
+13
+saldo - monto
+4
+1
+42
+'Retiro exitoso. Saldo restante: $', saldo
+13
+13
+13
+4
+1
+28
+'Ingrese monto a consignar:'
+5
+1
+5
+monto
+7
+0
+1
+9
+monto > 0
+4
+1
+16
+'Monto inválido'
+13
+6
+1
+5
+saldo
+13
+saldo + monto
+4
+1
+45
+'Consignación exitosa. Nuevo saldo: $', saldo
+13
+13
+13
+4
+1
+30
+'Su saldo actual es: $', saldo
+13
+11
+1
+

@@ -1,5 +1,5 @@
 // Enunciados de ejercicios DFD — fuente única para Actividad de la semana y Editor DFD.
-// Nivel 1: Operadores secuenciales (16) · Nivel 2: Condicionales Si/No (22) · Nivel 3: Ciclos (12) · Nivel 4: Funciones (10) · Nivel 5: Arreglos (10)
+// Nivel 1: Operadores secuenciales (16) · Nivel 2: Condicionales Si/No (22) · Nivel 3: Ciclos (12) · Nivel 4: Funciones (10) · Nivel 5: Arreglos (10) · Nivel 6: Matrices (8) · Nivel 7: Sistemas de Menú (8)
 
 export const problemsN1 = [
 	{ id: 1, text: 'Pedir 2 números al usuario y sumarlos, restarlos, multiplicarlos y dividirlos.', propuesto: false },
@@ -86,13 +86,37 @@ export const problemsN5 = [
 	{ id: 10, text: 'Llenar un vector A con 5 números y generar un segundo vector B donde cada posición almacene la suma acumulada de los elementos hasta esa posición.', propuesto: true }
 ];
 
+export const problemsN6 = [
+	{ id: 1, text: 'Llenar una matriz cuadrada de 2x2 solicitando sus 4 elementos e imprimirlos fila por fila.', propuesto: false },
+	{ id: 2, text: 'Cargar una matriz de 2 filas y 3 columnas (2x3), calcular la suma de todos sus elementos y mostrar el resultado.', propuesto: true },
+	{ id: 3, text: 'Diseñar un algoritmo que calcule la suma de los elementos ubicados en la diagonal principal de una matriz cuadrada de 3x3.', propuesto: false },
+	{ id: 4, text: 'Cargar una matriz de 2x2 y contar cuántos de sus elementos son pares y cuántos son impares.', propuesto: true },
+	{ id: 5, text: 'Encontrar y mostrar el número con mayor valor dentro de una matriz de 2x3.', propuesto: false },
+	{ id: 6, text: 'Pedir una constante K y multiplicar cada uno de los elementos de una matriz de 2x2 por dicha constante, mostrando la matriz resultante.', propuesto: true },
+	{ id: 7, text: 'Generar e imprimir una matriz identidad de 3x3 (valores 1 en la diagonal principal y 0 en las demás posiciones).', propuesto: false },
+	{ id: 8, text: 'Cargar una matriz de 3x3, pedir al usuario el número de una fila (1, 2 o 3) y calcular la suma de los elementos de esa fila.', propuesto: true }
+];
+
+export const problemsN7 = [
+	{ id: 1, text: 'Diseñar un sistema de menú aritmético que se repita hasta que el usuario elija 0: Opción 1: Sumar dos números, Opción 2: Restar dos números, Opción 3: Multiplicar dos números, Opción 0: Salir.', propuesto: false },
+	{ id: 2, text: 'Simular un cajero automático con menú interactivo: 1: Consultar saldo, 2: Consignar dinero, 3: Retirar dinero, 0: Salir. Validar saldo suficiente al retirar.', propuesto: true },
+	{ id: 3, text: 'Menú de conversión de longitud (repetitivo): 1: Metros a Kilómetros, 2: Metros a Centímetros, 3: Metros a Milímetros, 0: Salir.', propuesto: false },
+	{ id: 4, text: 'Menú de cálculo de áreas geométricas: 1: Círculo (π*r²), 2: Triángulo (b*h/2), 3: Rectángulo (b*h), 0: Salir.', propuesto: true },
+	{ id: 5, text: 'Menú de gestión de notas estudiantiles: 1: Ingresar 3 notas y calcular promedio, 2: Determinar si aprueba (>= 3.0), 3: Reiniciar notas, 0: Salir.', propuesto: false },
+	{ id: 6, text: 'Menú de caja registradora comercial: 1: Registrar compra y acumular total, 2: Ver total acumulado y cantidad de ventas, 3: Aplicar descuento general del 10%, 0: Cerrar caja.', propuesto: true },
+	{ id: 7, text: 'Menú con control de acceso: Solicitar clave numérica (2026). Al acertar, abrir menú de opciones del sistema con opción de salir.', propuesto: false },
+	{ id: 8, text: 'Menú de control de inventario de bodega: 1: Ingresar stock inicial, 2: Despachar productos (restar existencias validando que no quede negativo), 3: Ver existencias actuales, 0: Salir.', propuesto: true }
+];
+
 /** @type {Record<string, { list: Array<{ id: number, text: string, propuesto: boolean }>, nivel: string, nivelLabel: string }>} */
 const LEVELS_CONFIG = {
 	'1': { list: problemsN1, nivel: 'nivel1', nivelLabel: 'Nivel 1 — Operadores' },
 	'2': { list: problemsN2, nivel: 'nivel2', nivelLabel: 'Nivel 2 — Condicionales' },
 	'3': { list: problemsN3, nivel: 'nivel3', nivelLabel: 'Nivel 3 — Ciclos' },
 	'4': { list: problemsN4, nivel: 'nivel4', nivelLabel: 'Nivel 4 — Funciones' },
-	'5': { list: problemsN5, nivel: 'nivel5', nivelLabel: 'Nivel 5 — Arreglos' }
+	'5': { list: problemsN5, nivel: 'nivel5', nivelLabel: 'Nivel 5 — Arreglos' },
+	'6': { list: problemsN6, nivel: 'nivel6', nivelLabel: 'Nivel 6 — Matrices' },
+	'7': { list: problemsN7, nivel: 'nivel7', nivelLabel: 'Nivel 7 — Sistemas de Menú' }
 };
 
 /**
@@ -100,9 +124,9 @@ const LEVELS_CONFIG = {
  * @returns {{ nivel: string, nivelLabel: string, id: number, text: string, propuesto: boolean, label: string } | null}
  */
 export function getExerciseStatement(key) {
-	// key: "N1-5" | "N2-12" | "N3-3" | "N4-2" | "N5-4"
+	// key: "N1-5" | "N2-12" | "N3-3" | "N4-2" | "N5-4" | "N6-1" | "N7-3"
 	if (!key || typeof key !== 'string') return null;
-	const m = key.match(/^N([1-5])-(\d{1,2})$/i);
+	const m = key.match(/^N([1-7])-(\d{1,2})$/i);
 	if (!m) return null;
 	const level = LEVELS_CONFIG[m[1]];
 	if (!level) return null;

@@ -1,0 +1,135 @@
+  Dfd   (c)
+1
+1
+1
+0
+0
+6
+4
+6
+opcion
+1
+1
+1
+a
+1
+0
+1
+b
+1
+0
+3
+res
+1
+0
+6
+1
+6
+opcion
+1
+1
+9
+1
+11
+opcion != 0
+4
+1
+71
+'--- MENÚ ARITMÉTICO --- 1: Sumar, 2: Restar, 3: Multiplicar, 0: Salir'
+5
+1
+6
+opcion
+7
+0
+1
+11
+opcion == 1
+7
+0
+1
+11
+opcion == 2
+7
+0
+1
+11
+opcion == 3
+7
+0
+1
+11
+opcion == 0
+4
+1
+36
+'Opción inválida. Intente de nuevo.'
+13
+4
+1
+33
+'Saliendo del menú aritmético...'
+13
+13
+4
+1
+36
+'Ingrese dos números a multiplicar:'
+5
+1
+3
+a,b
+6
+1
+3
+res
+5
+a * b
+4
+1
+31
+'Resultado del producto: ', res
+13
+13
+4
+1
+31
+'Ingrese dos números a restar:'
+5
+1
+3
+a,b
+6
+1
+3
+res
+5
+a - b
+4
+1
+30
+'Resultado de la resta: ', res
+13
+13
+4
+1
+30
+'Ingrese dos números a sumar:'
+5
+1
+3
+a,b
+6
+1
+3
+res
+5
+a + b
+4
+1
+29
+'Resultado de la suma: ', res
+13
+11
+1
+

@@ -1,13 +1,13 @@
 <script lang="ts">
   import { isAuthenticated } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
-  import { problemsN1, problemsN2, problemsN3, problemsN4, problemsN5 } from '$lib/data/dfdExercises';
+  import { problemsN1, problemsN2, problemsN3, problemsN4, problemsN5, problemsN6, problemsN7 } from '$lib/data/dfdExercises';
 
   $effect(() => {
     if (!$isAuthenticated) goto('/login');
   });
 
-  let nivel = $state<'n1' | 'n2' | 'n3' | 'n4' | 'n5'>('n1');
+  let nivel = $state<'n1' | 'n2' | 'n3' | 'n4' | 'n5' | 'n6' | 'n7'>('n1');
   let analisisAbierto = $state<string | null>(null);
 
   let problems = $derived.by(() => {
@@ -15,7 +15,9 @@
     if (nivel === 'n2') return problemsN2;
     if (nivel === 'n3') return problemsN3;
     if (nivel === 'n4') return problemsN4;
-    return problemsN5;
+    if (nivel === 'n5') return problemsN5;
+    if (nivel === 'n6') return problemsN6;
+    return problemsN7;
   });
 
   function analisisN1(p: { id: number }) {
@@ -33,12 +35,20 @@
   function analisisN5(p: { id: number }) {
     return `Analizar (arreglos/vectores): 1) ¿Cuántas posiciones tiene el arreglo y cómo se indexan? 2) ¿Qué ciclo se utiliza para recorrer o llenar las posiciones? 3) ¿Qué acumulación, cálculo o búsqueda se realiza en cada posición? Carga en el editor y observa cómo cambian las variables en "Paso a paso". Ejercicio N5-${p.id}.`;
   }
+  function analisisN6(p: { id: number }) {
+    return `Analizar (matrices 2D): 1) ¿Cuántas filas y columnas tiene la matriz? 2) ¿Qué ciclos anidados o variables se usan para recorrer filas y columnas? 3) ¿Qué operación se realiza en cada posición (suma, comparación, asignación)? Prueba con valores pequeños y observa las variables en "Paso a paso". Ejercicio N6-${p.id}.`;
+  }
+  function analisisN7(p: { id: number }) {
+    return `Analizar (sistema de menú): 1) ¿Qué estructura repetitiva envuelve todo el menú (Mientras opción <> 0)? 2) ¿Qué condicionales internos procesan cada opción? 3) ¿Qué variables persisten entre iteraciones del menú (saldo, total, contador)? Carga en el editor y prueba distintas secuencias de opciones. Ejercicio N7-${p.id}.`;
+  }
   function getAnalisis(p: { id: number }) {
     if (nivel === 'n1') return analisisN1(p);
     if (nivel === 'n2') return analisisN2(p);
     if (nivel === 'n3') return analisisN3(p);
     if (nivel === 'n4') return analisisN4(p);
-    return analisisN5(p);
+    if (nivel === 'n5') return analisisN5(p);
+    if (nivel === 'n6') return analisisN6(p);
+    return analisisN7(p);
   }
 </script>
 
@@ -54,7 +64,7 @@
   <div class="hero">
     <span class="hero-icon">💻</span>
     <h1>Actividad de la semana</h1>
-    <p class="hero-desc">Ejercicios DFD — Nivel 1: Operadores, Nivel 2: Condicionales, Nivel 3: Ciclos, Nivel 4: Funciones y Nivel 5: Arreglos</p>
+    <p class="hero-desc">Ejercicios DFD — Nivel 1: Operadores, Nivel 2: Condicionales, Nivel 3: Ciclos, Nivel 4: Funciones, Nivel 5: Arreglos, Nivel 6: Matrices y Nivel 7: Sistemas de Menú</p>
   </div>
 
   <div class="info-banner">
@@ -64,7 +74,7 @@
       <b>Paso a paso</b>. Los marcados como
       <span class="badge badge-propuesto">Propuesto</span> los desarrolla el estudiante.
       Nivel 1 = secuencial (Leer → Calcular → Mostrar). Nivel 2 = condicional (Si / No).
-      Nivel 3 = ciclos (Mientras / Repetir hasta). Nivel 4 = funciones (Parámetros y Retorno). Nivel 5 = arreglos (Vectores, Índices y Recorridos).
+      Nivel 3 = ciclos (Mientras / Repetir hasta). Nivel 4 = funciones (Parámetros y Retorno). Nivel 5 = arreglos (Vectores, Índices y Recorridos). Nivel 6 = matrices (Filas, Columnas y Recorridos). Nivel 7 = sistemas de menú (Integración y Bucles interactivos).
     </div>
   </div>
 
@@ -118,6 +128,26 @@
       onclick={() => { nivel = 'n5'; analisisAbierto = null; }}
     >
       🟧 Nivel 5 — Arreglos (10)
+    </button>
+    <button
+      type="button"
+      role="tab"
+      aria-selected={nivel === 'n6'}
+      class="level-tab"
+      class:active={nivel === 'n6'}
+      onclick={() => { nivel = 'n6'; analisisAbierto = null; }}
+    >
+      🟥 Nivel 6 — Matrices (8)
+    </button>
+    <button
+      type="button"
+      role="tab"
+      aria-selected={nivel === 'n7'}
+      class="level-tab"
+      class:active={nivel === 'n7'}
+      onclick={() => { nivel = 'n7'; analisisAbierto = null; }}
+    >
+      ⬛ Nivel 7 — Sist. de Menú (8)
     </button>
   </div>
 

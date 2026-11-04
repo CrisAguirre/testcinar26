@@ -541,3 +541,23 @@ Cinar/
   - Actualizados el texto del encabezado hero y el banner informativo con las metodologías para matrices y sistemas de menú interactivos.
 - **Archivos Estáticos DFD**:
   - Creados los archivos `.dfd` serializados para Nivel 6 (`static/dfd/nivel6/Problema 1..8.dfd`) y Nivel 7 (`static/dfd/nivel7/Problema 1..4.dfd`). El resto de archivos de Nivel 7 quedan pre-generados en el scratch JSON (`dfd_output_n6_n7.json`).
+
+### 42. Registro del estudiante Andrés Ojeda en el curso de Algoritmos (04/11/2026)
+- **Datos del Estudiante**:
+  - Nombre completo: **Andrés Ojeda**
+  - Correo institucional: **`g.ojeda@cinar.edu.co`**
+  - Documento de identidad (CC): **`1004235398`**
+  - Código y usuario del sistema: **`AO15@LgC26`** (código 15 en la secuencia del curso de Algoritmos)
+  - Rol: **`student`**
+  - Curso asignado: **`algoritmos`** (`canPresent: true`)
+- **Base de Datos MongoDB Atlas (Cluster0)**:
+  - Usuario registrado/actualizado en la colección `users` (`_id: 6aeb9ec53cbc4121c5ef35cc`) con contraseña base encriptada con bcrypt (`@cc3500`) y campo `document_id: "1004235398"`.
+  - Inscripción registrada en la colección `enrollments` (`_id: 6aeb9ec53cbc4121c5ef35cd`) para el curso `algoritmos` con habilitación de presentación (`canPresent: true`).
+- **Autenticación flexible y tolerante (`authController.js`)**:
+  - `login`: Se adaptó la búsqueda para que el estudiante pueda identificarse usando su correo (`g.ojeda@cinar.edu.co`), su usuario institucional (`AO15@LgC26`), el prefijo de su correo (`g.ojeda`) o su número de cédula (`1004235398`).
+  - Validación de contraseña: Se admite tanto la contraseña estándar institucional del curso (`@cc3500`) como su número de documento CC (`1004235398`).
+- **Persistencia en Semillero (`testcinar26bknd/src/seed.js`)**:
+  - Incorporado a la lista `algoStudents` con código 15, garantizando que futuras ejecuciones de `seed.js` mantengan su cuenta y su inscripción en Algoritmos sin sobrescribirla ni alterarla.
+- **Validación técnica**:
+  - Suite de 37 tests unitarios de backend ejecutada exitosamente (37/37 PASS).
+  - Linter ESLint verificado con 0 errores y 0 advertencias.

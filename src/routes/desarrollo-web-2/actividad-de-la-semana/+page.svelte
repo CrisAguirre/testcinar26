@@ -8,15 +8,27 @@
 
   let activeClass = $state(1);
   let expandedExample = $state<string | null>(null);
+  let selectedPeriod = $state<'all' | 'p1' | 'p2'>('all');
 
   function toggleExample(id: string) {
     expandedExample = expandedExample === id ? null : id;
+  }
+
+  function setPeriodFilter(period: 'all' | 'p1' | 'p2') {
+    selectedPeriod = period;
+    expandedExample = null;
+    if (period === 'p1' && activeClass > 5) {
+      activeClass = 1;
+    } else if (period === 'p2' && activeClass <= 5) {
+      activeClass = 6;
+    }
   }
 
   const classes = [
     {
       id: 1,
       number: 'Clase 1',
+      period: '1er Parcial',
       title: 'Introducción a conceptos avanzados',
       hours: '2 horas',
       objective: 'Comprender el manejo avanzado de rutas en Svelte.js para construir aplicaciones dinámicas.',
@@ -104,6 +116,7 @@ function handleLogout() {
     {
       id: 2,
       number: 'Clase 2',
+      period: '1er Parcial',
       title: 'Profundización en componentes',
       hours: '2 horas',
       objective: 'Explorar características avanzadas de componentes en Svelte.js y su estructura modular.',
@@ -198,6 +211,7 @@ src/routes/Header.svelte → Barra de navegación global`,
     {
       id: 3,
       number: 'Clase 3',
+      period: '1er Parcial',
       title: 'Propiedades en componentes',
       hours: '2 horas',
       objective: 'Aplicar el uso de props para el paso de datos entre componentes en Svelte.js.',
@@ -308,6 +322,7 @@ let {
     {
       id: 4,
       number: 'Clase 4',
+      period: '1er Parcial',
       title: 'Integración de diseño con CSS puro y variables',
       hours: '2 horas',
       objective: 'Adaptar interfaces usando CSS puro (Vanilla CSS) y variables globales en un entorno Svelte.',
@@ -376,6 +391,7 @@ body {
     {
       id: 5,
       number: 'Clase 5',
+      period: '1er Parcial',
       title: 'Buenas prácticas en organización',
       hours: '2 horas',
       objective: 'Identificar e implementar patrones de arquitectura limpia y estructura de directorios en SvelteKit.',
@@ -430,8 +446,449 @@ export const categories = [
         description: 'Equipos grandes como Airbnb escalan sus aplicaciones separando estrictamente los "Componentes Tontos" (UI pura como un botón, sin lógica de negocio) de los "Contenedores" (Lógica). Además, extraen toda la configuración estática a archivos independientes. Esto permite que el equipo de diseño actualice la UI sin miedo a romper la lógica de pagos o reservas.',
         link: 'https://es.reactjs.org/docs/faq-structure.html'
       }
+    },
+    {
+      id: 6,
+      number: 'Clase 6',
+      period: '2do Parcial',
+      title: 'Persistencia de datos',
+      hours: '2 horas',
+      objective: 'Implementar la persistencia de datos (como borradores, respuestas y credenciales) utilizando memoria reactiva, almacenamiento local (localStorage) y resiliencia offline en Svelte.',
+      icon: '💾',
+      color: '#0284c7',
+      concepts: [
+        { term: 'localStorage', desc: 'API web nativa para almacenar pares clave-valor de forma persistente en el navegador entre recargas y sesiones.' },
+        { term: 'JSON.stringify / parse', desc: 'Funciones para serializar estructuras de datos complejas (objetos, arrays) en strings y deserializarlas al recuperarlas.' },
+        { term: 'Autoguardado resiliente', desc: 'Patrón de persistencia periódica o ante eventos (input, pagehide) que previene la pérdida de avance en formularios extensos.' },
+        { term: 'Cola offline (Sync Queue)', desc: 'Estrategia para retener envíos pendientes localmente ante cortes de red y sincronizarlos automáticamente al reconectar.' },
+        { term: 'Manejo defensivo de cuotas', desc: 'Protección mediante try/catch para evitar bloqueos por almacenamiento saturado o modos de navegación privada estrictos.' }
+      ],
+      codeExamples: [
+        {
+          id: 'auth-localstorage',
+          title: '🔑 Persistencia de sesión con localStorage',
+          description: 'En src/lib/stores/auth.js guardamos el token JWT y los datos del usuario para restaurar la sesión automáticamente al recargar:',
+          code: `// src/lib/stores/auth.js — Restauración y guardado persistente
+import { writable } from 'svelte/store';
+
+// 1. Leer token almacenado previamente en el navegador
+const storedToken = typeof localStorage !== 'undefined' 
+  ? localStorage.getItem('token') 
+  : null;
+
+export const token = writable(storedToken);
+
+// 2. Función de login: guarda en disco local y actualiza los stores
+export function login(userData, tokenValue) {
+  localStorage.setItem('token', tokenValue);
+  localStorage.setItem('user', JSON.stringify(userData));
+  token.set(tokenValue);
+  currentUser.set(userData);
+}
+
+// 3. Función de logout: elimina del almacenamiento local
+export function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  token.set(null);
+  currentUser.set(null);
+}`,
+          file: 'src/lib/stores/auth.js → líneas 1-35'
+        },
+        {
+          id: 'exam-autosave-sync',
+          title: '📝 Autoguardado local y cola de sincronización',
+          description: 'En los parciales de nuestra plataforma, cada respuesta se persiste localmente para asegurar que no se pierdan datos por fallos de red:',
+          code: `// src/lib/exam.js — Persistencia local de respuestas y cola offline
+export function saveAnswersLocal(examId, answers) {
+  try {
+    const payload = JSON.stringify({
+      answers,
+      timestamp: new Date().toISOString()
+    });
+    // Guarda el borrador bajo una clave única por examen
+    localStorage.setItem(\`dw2_p1_saved_answers_\${examId}\`, payload);
+  } catch (err) {
+    console.warn('Almacenamiento local no disponible:', err);
+  }
+}
+
+// Encolar envío si el servidor no responde
+export function enqueueOfflineSubmission(submission) {
+  const queue = JSON.parse(localStorage.getItem('dw2_sync_queue') || '[]');
+  queue.push({ ...submission, queuedAt: Date.now() });
+  localStorage.setItem('dw2_sync_queue', JSON.stringify(queue));
+}`,
+          file: 'src/lib/exam.js → Persistencia y resiliencia offline'
+        }
+      ],
+      externalExample: {
+        title: '🌐 Ejemplo Práctico: MercadoLibre / Carritos de Compra',
+        description: 'Cuando agregas productos al carrito en MercadoLibre o Amazon sin haber iniciado sesión, los artículos no desaparecen al refrescar la página. La aplicación los guarda en el localStorage del navegador. Cuando finalmente inicias sesión, el sistema lee ese almacenamiento local y fusiona los artículos con tu cuenta en la nube.',
+        link: 'https://developer.mozilla.org/es/docs/Web/API/Window/localStorage'
+      }
+    },
+    {
+      id: 7,
+      number: 'Clase 7',
+      period: '2do Parcial',
+      title: 'Interactividad avanzada',
+      hours: '2 horas',
+      objective: 'Diseñar componentes de inputs personalizados reutilizables y gestionar su comportamiento con vinculación bidireccional (two-way binding) y validación en Svelte.',
+      icon: '🎛️',
+      color: '#059669',
+      concepts: [
+        { term: 'Two-way binding (bind:value)', desc: 'Directiva que mantiene sincronizados automáticamente el estado de la variable de JavaScript y el valor en el DOM.' },
+        { term: 'Inputs como componentes', desc: 'Encapsulación de etiquetas label, estilos, estados de error y accesibilidad dentro de un archivo .svelte independiente.' },
+        { term: 'Runa $bindable()', desc: 'Característica de Svelte 5 que permite declarar que una prop recibida por un componente hijo puede enlazarse bidireccionalmente por el padre.' },
+        { term: 'Directivas bind múltiples', desc: 'Uso de bind:checked para casillas booleanas, bind:group para selectores de opción (radio) y bind:files para archivos.' },
+        { term: 'Validación reactiva', desc: 'Comprobación instantánea con $derived del estado del formulario para retroalimentar al usuario antes del envío.' }
+      ],
+      codeExamples: [
+        {
+          id: 'login-bind-example',
+          title: '📋 Formulario interactivo con bind:value reactivo',
+          description: 'En src/routes/login/+page.svelte sincronizamos los inputs con el estado reactivo del componente para validar en vivo:',
+          code: `<!-- src/routes/login/+page.svelte -->
+\\x3Cscript lang="ts"\\x3E
+  let username = $state('');
+  let password = $state('');
+  let loading = $state(false);
+
+  // Validación reactiva automática con $derived
+  let isValid = $derived(username.trim().length >= 3 && password.length >= 6);
+
+  async function handleSubmit(e: SubmitEvent) {
+    e.preventDefault();
+    if (!isValid || loading) return;
+    loading = true;
+    // Proceso de autenticación con authApi...
+  }
+\\x3C/script\\x3E
+
+<form onsubmit={handleSubmit}>
+  <div class="field">
+    <label for="usr">Usuario o Correo</label>
+    <input id="usr" type="text" bind:value={username} placeholder="ej. usuario@cinar.edu.co" />
+  </div>
+
+  <div class="field">
+    <label for="pwd">Contraseña</label>
+    <input id="pwd" type="password" bind:value={password} />
+  </div>
+
+  <button type="submit" disabled={!isValid || loading}>
+    {loading ? 'Ingresando...' : 'Iniciar Sesión'}
+  </button>
+</form>`,
+          file: 'src/routes/login/+page.svelte → líneas 40-75'
+        },
+        {
+          id: 'custom-input-bindable',
+          title: '🎛️ Componente CustomInput modular con $bindable()',
+          description: 'En Svelte 5, creamos inputs reutilizables que propagan automáticamente los cambios al componente padre mediante $bindable():',
+          code: `<!-- src/lib/components/CustomInput.svelte -->
+\\x3Cscript lang="ts"\\x3E
+  let {
+    label,
+    value = $bindable(''),      // ← Permite bind:value en el componente padre
+    type = 'text',
+    placeholder = '',
+    error = ''
+  }: {
+    label: string;
+    value?: string;
+    type?: string;
+    placeholder?: string;
+    error?: string;
+  } = $props();
+\\x3C/script\\x3E
+
+<div class="custom-field">
+  <label class="field-label">{label}</label>
+  <input
+    {type}
+    {placeholder}
+    bind:value={value}
+    class:error-border={!!error}
+  />
+  {#if error}
+    <span class="field-error">{error}</span>
+  {/if}
+</div>
+
+<!-- USO EN CUALQUIER PÁGINA PADRE: -->
+<!-- <CustomInput label="Título del Post" bind:value={postTitle} error={titleError} /> -->`,
+          file: 'src/lib/components/CustomInput.svelte (Patrón Modular)'
+        }
+      ],
+      externalExample: {
+        title: '🌐 Ejemplo Práctico: Stripe Checkout / Formularios Bancarios',
+        description: 'Las plataformas de pago como Stripe o Mercado Pago nunca usan inputs HTML crudos. Crean componentes de entrada altamente especializados (como <CardNumberInput />, <ExpiryInput /> y <CvcInput />). Cada componente formatea los números con espacios, valida el algoritmo de tarjeta en vivo y propaga el valor limpio hacia el formulario principal de checkout.',
+        link: 'https://svelte.dev/docs/svelte/bind'
+      }
+    },
+    {
+      id: 8,
+      number: 'Clase 8',
+      period: '2do Parcial',
+      title: 'Comunicación entre componentes',
+      hours: '2 horas',
+      objective: 'Implementar comunicación desacoplada y emisión de eventos entre componentes hijos y padres utilizando createEventDispatcher, eventos personalizados y callback props en Svelte.',
+      icon: '📡',
+      color: '#6366f1',
+      concepts: [
+        { term: 'createEventDispatcher', desc: 'Función de Svelte para crear un despachador que emite eventos personalizados hacia el componente padre.' },
+        { term: 'event.detail', desc: 'Propiedad del objeto CustomEvent que transporta los datos o parámetros enviados por el componente hijo.' },
+        { term: 'Directiva on:[evento]', desc: 'Sintaxis en el componente padre para escuchar y responder a un evento despachado por el hijo.' },
+        { term: 'Callback Props (Svelte 5)', desc: 'Paso de funciones manejadoras como propiedades (ej. onSelect, onAction), el estándar moderno más limpio y tipado.' },
+        { term: 'Desacoplamiento arquitectónico', desc: 'Principio donde el componente hijo solo notifica que algo ocurrió sin asumir cómo el padre procesará la acción.' }
+      ],
+      codeExamples: [
+        {
+          id: 'event-dispatcher-pattern',
+          title: '📡 createEventDispatcher y eventos personalizados',
+          description: 'El patrón clásico de eventos en Svelte (evaluado en el banco de preguntas del Parcial 2):',
+          code: `<!-- Componente Hijo: CourseCard.svelte -->
+\\x3Cscript\\x3E
+  import { createEventDispatcher } from 'svelte';
+  const dispatch = createEventDispatcher();
+
+  let { curso } = $props();
+
+  function handleClick() {
+    // Despacha evento 'seleccionado' con carga de datos en detail
+    dispatch('seleccionado', { cursoId: curso.id, nombre: curso.title });
+  }
+\\x3C/script\\x3E
+
+<button onclick={handleClick} class="course-btn">
+  Ver {curso.title}
+</button>
+
+<!-- Componente Padre: Dashboard.svelte -->
+<!-- Escucha el evento con la directiva on:seleccionado -->
+<CourseCard
+  {curso}
+  on:seleccionado={(evento) => {
+    console.log('Curso seleccionado:', evento.detail.cursoId);
+  }}
+/>`,
+          file: 'Patrón de Comunicación createEventDispatcher → Parcial 2'
+        },
+        {
+          id: 'callback-props-pattern',
+          title: '🔄 Comunicación directa con Callback Props (Svelte 5)',
+          description: 'En Svelte 5, pasar funciones por prop es el estándar para notificar acciones con soporte TypeScript de primer nivel:',
+          code: `<!-- Componente Hijo: ActionButton.svelte -->
+\\x3Cscript lang="ts"\\x3E
+  let { 
+    label, 
+    onAction 
+  }: { 
+    label: string; 
+    onAction?: (actionName: string) => void;
+  } = $props();
+\\x3C/script\\x3E
+
+<button onclick={() => onAction?.(label)} class="action-btn">
+  {label}
+</button>
+
+<!-- En el Padre (Header o Layout): -->
+<ActionButton 
+  label="Cerrar Sesión" 
+  onAction={(name) => {
+    logout();
+    goto('/login');
+  }} 
+/>`,
+          file: 'src/lib/components/SubjectCard.svelte → Integración de acciones'
+        }
+      ],
+      externalExample: {
+        title: '🌐 Ejemplo Práctico: Trello / Tableros Kanban',
+        description: 'En una aplicación como Trello, cada tarjeta de tarea (<KanbanCard />) es un componente hijo independiente. Al hacer clic en "Mover a Completado", la tarjeta no hace la petición a la base de datos ni modifica el tablero. Despacha un evento "cardMoved" con el ID de la tarjeta y la columna destino. El componente padre (<Board />) escucha el evento y actualiza el estado general.',
+        link: 'https://svelte.dev/docs/svelte/v4-migration-guide#event-directives'
+      }
+    },
+    {
+      id: 9,
+      number: 'Clase 9',
+      period: '2do Parcial',
+      title: 'Reutilización avanzada',
+      hours: '2 horas',
+      objective: 'Construir componentes dinámicos y altamente flexibles utilizando slots tradicionales, slots nombrados y la sintaxis moderna de Snippets (children) en Svelte.',
+      icon: '🔲',
+      color: '#d946ef',
+      concepts: [
+        { term: 'Elemento <slot>', desc: 'Marcador de posición en Svelte 3/4 que permite proyectar contenido HTML arbitrario dentro de un componente hijo.' },
+        { term: 'Slots nombrados (Named)', desc: 'Permiten habilitar múltiples áreas de inyección en un solo componente (ej. cabecera, contenido principal y pie de página).' },
+        { term: 'Snippets (Svelte 5)', desc: 'Bloques de marcado reutilizables y parametrizables definidos con {#snippet nombre()} y consumidos con {@render nombre()}.' },
+        { term: 'Prop children', desc: 'En Svelte 5, el contenido por defecto del slot se recibe como la prop children y se renderiza con {@render children()}.' },
+        { term: 'Inversión de control visual', desc: 'El componente contenedor provee la estructura, sombras y comportamiento, mientras la vista consumidora provee el contenido.' }
+      ],
+      codeExamples: [
+        {
+          id: 'layout-render-children',
+          title: '🏗️ Layout principal con {@render children()}',
+          description: 'El layout global src/routes/+layout.svelte utiliza la prop children para proyectar cada página activa dentro de la estructura base:',
+          code: `<!-- src/routes/+layout.svelte — Layout de nuestra plataforma -->
+\\x3Cscript lang="ts"\\x3E
+  import Header from './Header.svelte';
+  
+  // En Svelte 5, los slots se reciben como prop 'children'
+  let { children } = $props();
+\\x3C/script\\x3E
+
+<div class="app">
+  <Header />
+  
+  <main class="page-container">
+    <!-- Aquí se inyecta dinámicamente cada +page.svelte -->
+    {@render children()}
+  </main>
+
+  <footer class="footer">
+    Cinar Sistemas 2026
+  </footer>
+</div>`,
+          file: 'src/routes/+layout.svelte → líneas 80-95'
+        },
+        {
+          id: 'named-snippets-modal',
+          title: '🔲 Contenedores modulares con Snippets en Svelte 5',
+          description: 'Patrón para componentes complejos con múltiples zonas de inyección (cabecera personalizada, cuerpo y pie):',
+          code: `<!-- src/lib/components/ModalCard.svelte -->
+\\x3Cscript lang="ts"\\x3E
+  import type { Snippet } from 'svelte';
+
+  let {
+    header,
+    children,
+    footer
+  }: {
+    header?: Snippet;
+    children: Snippet;      // Contenido principal obligatorio
+    footer?: Snippet;
+  } = $props();
+\\x3C/script\\x3E
+
+<div class="modal-card">
+  {#if header}
+    <div class="card-header">
+      {@render header()}
+    </div>
+  {/if}
+
+  <div class="card-body">
+    {@render children()}
+  </div>
+
+  {#if footer}
+    <div class="card-footer">
+      {@render footer()}
+    </div>
+  {/if}
+</div>`,
+          file: 'src/lib/components/ → Patrón de Snippets modulares'
+        }
+      ],
+      externalExample: {
+        title: '🌐 Ejemplo Práctico: Modales y Diálogos de Bootstrap / Tailwind',
+        description: 'Imagina que creas un componente <Modal />. La animación de aparición, el fondo oscuro semitransparente (backdrop) y el botón de cerrar son siempre iguales. Sin embargo, en una página quieres mostrar un formulario de registro y en otra una confirmación para eliminar un archivo. Con slots o snippets, el componente modal da la caja y cada vista inyecta su propio contenido.',
+        link: 'https://svelte.dev/docs/svelte/snippet'
+      }
+    },
+    {
+      id: 10,
+      number: 'Clase 10',
+      period: '2do Parcial',
+      title: 'Optimización de la aplicación',
+      hours: '2 horas',
+      objective: 'Dominar el ciclo de vida de los componentes con onMount, $effect y funciones de limpieza para optimizar el rendimiento, sincronizar APIs y prevenir fugas de memoria.',
+      icon: '⚡',
+      color: '#f97316',
+      concepts: [
+        { term: 'Ciclo de vida (Lifecycle)', desc: 'Secuencia completa por la que transita un componente: creación, montaje en el DOM, actualización reactiva y destrucción.' },
+        { term: 'onMount', desc: 'Hook que se ejecuta únicamente en el navegador tras insertarse el componente en el DOM; esencial para peticiones HTTP y DOM directo.' },
+        { term: 'Runa $effect y limpieza', desc: 'Ejecuta efectos secundarios reactivos. Si retorna una función, Svelte la ejecuta automáticamente al desmontarse para limpiar recursos.' },
+        { term: 'Fugas de memoria (Memory Leaks)', desc: 'Degeneración de rendimiento que ocurre cuando intervalos (setInterval) o listeners no son cancelados al salir de una página.' },
+        { term: 'Seguridad en SSR vs CSR', desc: 'Evitar errores 500 en el servidor ejecutando APIs del navegador (window, localStorage, document) solo en el cliente.' }
+      ],
+      codeExamples: [
+        {
+          id: 'effect-timer-cleanup',
+          title: '⏱️ Temporizador reactivo con limpieza de memoria',
+          description: 'En los parciales de la plataforma (ej. Parcial 1 DW2), el temporizador utiliza una función de retorno en $effect para prevenir fugas de CPU:',
+          code: `<!-- src/routes/desarrollo-web-2/parcial-1/+page.svelte -->
+\\x3Cscript lang="ts"\\x3E
+  let timeLeft = $state(45 * 60); // 45 minutos en segundos
+  let started = $state(true);
+  let finished = $state(false);
+
+  $effect(() => {
+    if (!started || finished) return;
+
+    // Iniciar intervalo cada segundo
+    const intervalId = setInterval(() => {
+      if (timeLeft > 0) {
+        timeLeft--;
+      }
+    }, 1000);
+
+    // FUNCIÓN DE LIMPIEZA (Cleanup):
+    // Svelte la ejecuta automáticamente cuando el usuario cambia de página.
+    // Esto evita que el temporizador siga consumiendo ciclos de procesador.
+    return () => {
+      clearInterval(intervalId);
+    };
+  });
+\\x3C/script\\x3E`,
+          file: 'src/routes/desarrollo-web-2/parcial-1/+page.svelte → Temporizador'
+        },
+        {
+          id: 'onmount-safe-fetch',
+          title: '🌐 Carga segura en cliente con onMount y protección SSR',
+          description: 'En el dashboard y páginas de notas, los datos se consultan dentro de onMount para garantizar que el DOM está listo y el código corre en el cliente:',
+          code: `<!-- src/routes/desarrollo-web-2/notas/+page.svelte -->
+\\x3Cscript lang="ts"\\x3E
+  import { onMount } from 'svelte';
+  import { gradesApi } from '$lib/api';
+
+  let grades = $state<any[]>([]);
+  let loading = $state(true);
+
+  onMount(async () => {
+    // onMount NUNCA se ejecuta en el servidor (SSR), protegiendo la app
+    try {
+      const data = await gradesApi.getMine();
+      grades = data;
+    } catch (err) {
+      console.error('Error al obtener calificaciones:', err);
+    } finally {
+      loading = false;
+    }
+  });
+\\x3C/script\\x3E`,
+          file: 'src/routes/desarrollo-web-2/notas/+page.svelte → onMount'
+        }
+      ],
+      externalExample: {
+        title: '🌐 Ejemplo Práctico: Google Maps / Gráficos en Tiempo Real',
+        description: 'Cuando abres una página que dibuja un mapa interactivo (Google Maps / Mapbox) o gráficos financieros en vivo (TradingView / Chart.js), la librería no puede ejecutarse en el servidor porque no existe el objeto "window". Debe iniciarse dentro de onMount. Cuando el usuario navega a otra pantalla, es indispensable llamar a map.destroy() en la función de limpieza para evitar que el navegador consuma toda la memoria RAM.',
+        link: 'https://svelte.dev/docs/svelte/$effect'
+      }
     }
   ];
+
+  const filteredClasses = $derived(
+    selectedPeriod === 'all'
+      ? classes
+      : selectedPeriod === 'p1'
+        ? classes.filter(c => c.id <= 5)
+        : classes.filter(c => c.id > 5)
+  );
 
   const currentClass = $derived(classes.find(c => c.id === activeClass)!);
 </script>
@@ -448,21 +905,46 @@ export const categories = [
   <div class="hero">
     <span class="hero-icon">🔬</span>
     <h1>Actividad de la semana</h1>
-    <p class="hero-desc">Temáticas evidenciadas en este proyecto</p>
+    <p class="hero-desc">10 temáticas evidenciadas en este proyecto · Parcial 1 y Parcial 2</p>
   </div>
 
   <div class="info-banner">
     <span class="info-banner-icon">💡</span>
     <div>
-      <strong>Aprende desde el código real.</strong> Estas 3 temáticas no son teoría abstracta: están
+      <strong>Aprende desde el código real.</strong> Estas 10 temáticas no son teoría abstracta: están
       implementadas en esta misma plataforma que estás usando. Cada ejemplo apunta a archivos reales
-      del proyecto.
+      del proyecto. Las clases 1-5 corresponden al primer parcial y las clases 6-10 al segundo parcial.
     </div>
+  </div>
+
+  <!-- Period filter -->
+  <div class="period-filter">
+    <button
+      class="period-btn"
+      class:active={selectedPeriod === 'all'}
+      onclick={() => setPeriodFilter('all')}
+    >
+      📋 Todas (10)
+    </button>
+    <button
+      class="period-btn"
+      class:active={selectedPeriod === 'p1'}
+      onclick={() => setPeriodFilter('p1')}
+    >
+      📝 1er Parcial (1-5)
+    </button>
+    <button
+      class="period-btn"
+      class:active={selectedPeriod === 'p2'}
+      onclick={() => setPeriodFilter('p2')}
+    >
+      📝 2do Parcial (6-10)
+    </button>
   </div>
 
   <!-- Class selector tabs -->
   <div class="class-tabs">
-    {#each classes as cls}
+    {#each filteredClasses as cls}
       <button
         class="class-tab"
         class:active={activeClass === cls.id}
@@ -471,6 +953,7 @@ export const categories = [
       >
         <span class="tab-icon">{cls.icon}</span>
         <span class="tab-info">
+          <span class="tab-number">{cls.number}</span>
           <span class="tab-title">{cls.title}</span>
         </span>
       </button>
@@ -485,7 +968,7 @@ export const categories = [
       <div class="objective-header">
         <span class="objective-icon">{currentClass.icon}</span>
         <div>
-          <span class="objective-label">🎯 Objetivo de la clase</span>
+          <span class="objective-label">🎯 {currentClass.number} · {currentClass.period}</span>
           <h2>{currentClass.title}</h2>
         </div>
       </div>
@@ -552,7 +1035,7 @@ export const categories = [
 
     <!-- Progress indicator -->
     <div class="progress-bar">
-      {#each classes as cls}
+      {#each filteredClasses as cls}
         <div
           class="progress-dot"
           class:active={cls.id === activeClass}
@@ -643,6 +1126,50 @@ export const categories = [
     font-size: 1.4rem;
     flex-shrink: 0;
     margin-top: 0.1rem;
+  }
+
+  /* Period filter */
+  .period-filter {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .period-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 0.6rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    background: white;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .period-btn:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+  }
+
+  .period-btn.active {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #1d4ed8;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  }
+
+  /* Tab number */
+  .tab-number {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--tab-color);
+    opacity: 0.8;
   }
 
   /* Class tabs */
@@ -968,6 +1495,14 @@ export const categories = [
 
     code {
       font-size: 0.7rem;
+    }
+
+    .period-filter {
+      flex-direction: column;
+    }
+
+    .period-btn {
+      min-width: unset;
     }
   }
   .external-example-card {

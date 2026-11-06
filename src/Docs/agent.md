@@ -561,3 +561,17 @@ Cinar/
 - **Validación técnica**:
   - Suite de 37 tests unitarios de backend ejecutada exitosamente (37/37 PASS).
   - Linter ESLint verificado con 0 errores y 0 advertencias.
+
+### 43. Implementación de Temáticas del Segundo Parcial en Actividad de la Semana DW2 (06/11/2026)
+- **Ruta implementada**: `src/routes/desarrollo-web-2/actividad-de-la-semana/+page.svelte`.
+- **Base curricular**: Registros oficiales del syllabus institucional (`CONTENIDO TEMATICO - DESARROLLO WEB 2.docx`), banco de preguntas del curso (`parcial2_dw2.js`) y módulos definidos en `desarrollo-web-2/+page.svelte`.
+- **Temáticas del Segundo Parcial incorporadas (Clases 6 a 10)**:
+  - **Clase 6: Persistencia de datos** (2 horas): Persistencia con `localStorage`, serialización con `JSON.stringify/parse`, autoguardado de borradores y colas de sincronización offline con abstracción directa a `src/lib/stores/auth.js` y `src/lib/exam.js`. Ejemplo externo: MercadoLibre / Carritos de compra.
+  - **Clase 7: Interactividad avanzada** (2 horas): Inputs personalizados, vinculación bidireccional (`bind:value`), runa `$bindable()` de Svelte 5 y validación reactiva con abstracción a `src/routes/login/+page.svelte` y componentes modulares de entrada. Ejemplo externo: Stripe Checkout.
+  - **Clase 8: Comunicación entre componentes** (2 horas): Despacho de eventos desacoplados mediante `createEventDispatcher` (`event.detail`, directiva `on:evento`) y funciones Callback Props en Svelte 5 con abstracción a `src/lib/components/SubjectCard.svelte`. Ejemplo externo: Trello / Tableros Kanban.
+  - **Clase 9: Reutilización avanzada** (2 horas): Proyección de contenido mediante slots tradicionales (`<slot>`), slots nombrados y Snippets de Svelte 5 (`{#snippet}` y `{@render children()}`) con abstracción a `src/routes/+layout.svelte`. Ejemplo externo: Modales y Diálogos de Bootstrap / Tailwind.
+  - **Clase 10: Optimización de la aplicación** (2 horas): Ciclo de vida de componentes (`onMount`), runa `$effect` con funciones de limpieza (cleanup), prevención de fugas de memoria (`clearInterval`) y compatibilidad segura SSR vs CSR con abstracción al temporizador de `src/routes/desarrollo-web-2/parcial-1/+page.svelte` y llamadas en `notas`. Ejemplo externo: Google Maps / Dashboards en tiempo real.
+- **Mejoras de Navegación y UX en la Interfaz**:
+  - Incorporado filtro de períodos tipo pill (`📋 Todas (10)`, `📝 1er Parcial (1-5)`, `📝 2do Parcial (6-10)`).
+  - Indicadores visuales de número de clase y período dentro de cada tarjeta de pestaña (`.tab-number`, `Clase X · 2do Parcial`).
+  - Adaptabilidad responsiva completa para dispositivos móviles y escritorio.

@@ -575,3 +575,21 @@ Cinar/
   - Incorporado filtro de períodos tipo pill (`📋 Todas (10)`, `📝 1er Parcial (1-5)`, `📝 2do Parcial (6-10)`).
   - Indicadores visuales de número de clase y período dentro de cada tarjeta de pestaña (`.tab-number`, `Clase X · 2do Parcial`).
   - Adaptabilidad responsiva completa para dispositivos móviles y escritorio.
+
+### 44. Unificación y Expansión del Banco de Preguntas Parcial 2 DW2 (06/11/2026)
+- **Archivos creados/actualizados**:
+  - [`src/lib/data/parcial2_dw2.js`](file:///c:/Users/USUARIO/Desktop/exams/testcinar26/src/lib/data/parcial2_dw2.js): Banco robusto de **50 preguntas inéditas** siguiendo la arquitectura y estándares de Parcial 1.
+  - [`src/lib/data/__tests__/parcial2_dw2.test.js`](file:///c:/Users/USUARIO/Desktop/exams/testcinar26/src/lib/data/__tests__/parcial2_dw2.test.js): Suite de pruebas unitarias Vitest con 8 validaciones de integridad automatizadas.
+  - [`src/routes/desarrollo-web-2/parcial-2/+page.svelte`](file:///c:/Users/USUARIO/Desktop/exams/testcinar26/src/routes/desarrollo-web-2/parcial-2/+page.svelte): Conectado directamente a `parcial2_dw2.js` reemplazando el import heredado de DW1; propagación de `rubric` y `area` al modelo de calificación docente.
+- **Estructura del Banco (50 preguntas: 25 MC + 25 Abiertas)**:
+  - **25 preguntas de Arquitectura / TrueX Trade Fase 2** (12 MC + 13 Abiertas con rúbrica): Ciclo de vida de intercambios (RF-19: pendiente/aceptado/rechazado/cancelado/completado), validaciones anti-duplicados (RF-18), algoritmo de matching y Wishlists (RNF-15/16), reputación y calificaciones (RNF-21), seguridad JWT y protección contra IDOR (RF-30), optimización de imágenes (RF-27), paginación Mongoose (RNF-12) y flujo Git por ramas e integración semanal.
+  - **25 preguntas de Svelte Clases 6-10** (13 MC + 12 Abiertas con rúbrica):
+    - *Clase 6*: Persistencia con `localStorage`, serialización JSON, autoguardado de borradores y colas de sincronización offline (Sync Queue).
+    - *Clase 7*: Vinculación bidireccional `bind:value`, runa `$bindable()` de Svelte 5, inputs modulares y validación reactiva con `$derived`.
+    - *Clase 8*: Emisión con `createEventDispatcher` (`event.detail`, directiva `on:evento`) y Callback Props modernas tipadas en Svelte 5.
+    - *Clase 9*: Slots tradicionales, slots nombrados y Snippets de Svelte 5 (`{#snippet}` y `{@render children()}`).
+    - *Clase 10*: Ciclo de vida, `onMount` en cliente, runa `$effect` con función de limpieza (cleanup), prevención de fugas de memoria (`clearInterval`) y seguridad en SSR.
+- **Selector Equilibrado (`selectRandomQuestions`)**:
+  - Extrae exactamente 20 preguntas por intento (5 `arq-mc`, 5 `svelte-mc`, 5 `arq-open`, 5 `svelte-open`).
+  - Orden amigable: primero las 10 preguntas de selección múltiple y posteriormente las 10 preguntas abiertas.
+  - 100% de verificaciones de integridad superadas exitosamente.

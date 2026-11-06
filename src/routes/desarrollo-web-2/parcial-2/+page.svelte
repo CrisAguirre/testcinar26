@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { selectRandomQuestions } from '$lib/data/parcial2';
+  import { selectRandomQuestions } from '$lib/data/parcial2_dw2';
   import { gradesApi, authApi, API_URL, scheduleApi, getHealthUrl } from '$lib/api';
   import { currentUser } from '$lib/stores/auth';
   import { onMount, onDestroy } from 'svelte';
@@ -321,7 +321,8 @@
                 correctAnswer: q.type === 'mc' ? q.answer : undefined,
                 studentAnswer: answers[q.id],
                 isCorrect: q.type === 'mc' ? answers[q.id] === q.answer : undefined,
-                openScore: null, openMaxScore: q.type === 'open' ? 5 : undefined
+                openScore: null, openMaxScore: q.type === 'open' ? 5 : undefined,
+                rubric: q.rubric, area: q.area
               }))
             };
             await gradesApi.updateMine(grade._id, { examData: JSON.stringify(examDataForServer) });
@@ -408,7 +409,9 @@
         studentAnswer: answers[q.id],
         isCorrect: q.type === 'mc' ? answers[q.id] === q.answer : undefined,
         openScore: null,
-        openMaxScore: q.type === 'open' ? 5 : undefined
+        openMaxScore: q.type === 'open' ? 5 : undefined,
+        rubric: q.rubric,
+        area: q.area
       }))
     };
 

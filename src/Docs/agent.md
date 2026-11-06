@@ -1,7 +1,6 @@
-# Cinar - Estado Actual de la Plataforma (19 Octubre 2026)
+# Cinar - Estado Actual de la Plataforma (06 Noviembre 2026)
 
 ## Estructura del Proyecto
-x
 ```
 Cinar/
 ├── testcinar26/           # Frontend (SvelteKit)
@@ -17,11 +16,11 @@ Cinar/
 │   │   │   │   └── actividad-de-la-semana/
 │   │   │   ├── desarrollo-web-2/   # DW2
 │   │   │   │   ├── parcial-1/      # HABILITADO 19-21/10 (evaluación con retoma en la nube)
-│   │   │   │   ├── parcial-2/      # BLOQUEADO no-admin
+│   │   │   │   ├── parcial-2/      # Conectado a banco unificado parcial2_dw2.js (50 preguntas: MC + Abiertas)
 │   │   │   │   ├── taller/         # BLOQUEADO no-admin
 │   │   │   │   ├── notas/
 │   │   │   │   ├── enlaces-de-consulta/
-│   │   │   │   ├── actividad-de-la-semana/  # Simplificada y con ejemplos prácticos externos.
+│   │   │   │   ├── actividad-de-la-semana/  # 10 temáticas (P1 Clases 1-5 + P2 Clases 6-10) con filtro dinámico por períodos y ejemplos prácticos reales.
 │   │   │   │   └── proyecto-colaborativo/   # TrueX Trade (Intercambios P2P): React front + roles asignados (6+docente) + cronograma 6 sem. Maquetado ordenado 01/02/03.
 │   │   │   ├── admin/              # Módulo Administrativo (6 sub-rutas)
 │   │   │   │   ├── +page.svelte           # Panel principal con 6 tarjetas animadas
@@ -152,7 +151,7 @@ Cinar/
 
 3. **Actividad de la Semana (Mejoras)**
    - **Algoritmos**: Integrados los enunciados en PDF para los ejercicios DFD de Nivel 1. Los archivos `.dfd` ahora se cargan automáticamente en el editor al hacer clic en los menús para mejorar la experiencia del estudiante.
-   - **DW2**: Limpieza de UI (se retiraron los tags de horas y el prefijo de clases). Se añadieron **Ejemplos Prácticos externos** al final de cada temática (E-commerce, Social Media, etc). Solucionado el error 500 inyectando scripts HTML parseados a hexadecimal.
+   - **DW2**: Cobertura ampliada al 100% del programa curricular oficial (10 clases completas: P1 Clases 1 a 5 y P2 Clases 6 a 10). Integración de selector dinámico por períodos (📋 Todas / 📝 1er Parcial / 📝 2do Parcial), numeración formal de clases, conceptos clave, código real de la arquitectura SvelteKit del proyecto (auth.js, exam.js, login, layout, stores, inputs modulares con $bindable() y casos prácticos externos de la industria (MercadoLibre, Stripe, Trello, Modales UI, Google Maps). Solucionado el error 500 inyectando scripts HTML parseados a hexadecimal.
    - **Enlaces Algoritmos (IA y Aprendizaje)**: agregados 3 items debajo de Anthropic en `src/lib/data/enlacesData.ts`: UNAD ITP Cisco (redes/CCNA/ciberseguridad), MongoDB University (cursos/certificación NoSQL con dashboard), Capacítate para el Empleo Fundación Slim (oficios/tecnología con diploma).
 
 5. **Editor Visual DFD (Algoritmos `/algoritmos/dfd`) — v2 (26-29/09)**
